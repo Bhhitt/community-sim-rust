@@ -132,22 +132,6 @@ use crate::map::Map;
 
 pub fn agent_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentMovementSystem")
-<<<<<<< HEAD
-        .with_query(<(legion::Entity, &mut Position, &AgentType, &mut Hunger, &mut Energy)>::query())
-        .read_resource::<Map>()
-        .build(|_, world, map, query| {
-            let map = &*map;
-            // First pass: collect movement data immutably
-            let mut collect_query = <(legion::Entity, &Position, &AgentType)>::query();
-            let mut to_move = Vec::new();
-            for (entity, pos, agent_type) in collect_query.iter(world) {
-                to_move.push((*entity, pos.x, pos.y, agent_type.move_speed, agent_type.move_probability));
-            }
-            let mut rng = SmallRng::from_entropy();
-            // Second pass: mutate components
-            for (entity, x, y, move_speed, move_probability) in to_move {
-                let move_prob = move_probability.unwrap_or(1.0);
-=======
         .with_query(<(&mut Position, &AgentType, &mut Hunger, &mut Energy, Option<&mut Target>, Option<&mut Path>)>::query())
         .read_resource::<Map>()
         .build(|_, world, map, query| {
@@ -156,26 +140,9 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                 let mut rng = SmallRng::from_entropy();
                 // --- Movement probability logic ---
                 let move_prob = agent_type.move_probability.unwrap_or(1.0);
->>>>>>> 5731501 (updated colors, added a* for pathing lol should be parallelized)
                 if rng.gen::<f32>() > move_prob {
-                    continue;
+                    return;
                 }
-<<<<<<< HEAD
-                let dx = rng.gen_range(-1.0..=1.0) * move_speed;
-                let dy = rng.gen_range(-1.0..=1.0) * move_speed;
-                let mut new_x = x + dx;
-                let mut new_y = y + dy;
-                new_x = new_x.max(0.0).min(map.width as f32 - 1.0);
-                new_y = new_y.max(0.0).min(map.height as f32 - 1.0);
-                let distance = ((new_x - x).powi(2) + (new_y - y).powi(2)).sqrt();
-                if let Ok((_, pos, _, hunger, energy)) = query.get_mut(world, entity) {
-                    pos.x = new_x;
-                    pos.y = new_y;
-                    hunger.value -= 0.1;
-                    energy.value -= distance * 0.1;
-                }
-            }
-=======
                 // --- Pathfinding logic ---
                 let _map_w = map.width as f32;
                 let _map_h = map.height as f32;
@@ -306,7 +273,6 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                 }
                 // else: impassable, do not move
             });
->>>>>>> 5731501 (updated colors, added a* for pathing lol should be parallelized)
         })
 }
 
@@ -449,7 +415,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
                         use rand::seq::SliceRandom;
                         foods_in_range.shuffle(&mut rng);
                         let (food_e, _fx, _fy, nutrition) = *foods_in_range[0];
-                        food_eaten.push((agent_entity, *food_e, *nutrition));
+                        food_eaten.push((agent_entity, food_e, nutrition));
                     }
                 }
             }
