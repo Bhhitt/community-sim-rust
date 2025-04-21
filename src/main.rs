@@ -1,6 +1,8 @@
 use clap::Parser;
 use community_sim::*;
 
+pub mod terrain;
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {

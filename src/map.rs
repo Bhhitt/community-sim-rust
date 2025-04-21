@@ -1,6 +1,7 @@
 //! Map/grid logic
 
 use rand::Rng;
+use crate::terrain::{generator, types::TerrainType};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Terrain {
@@ -21,6 +22,19 @@ impl Terrain {
     }
 }
 
+impl From<TerrainType> for Terrain {
+    fn from(tt: TerrainType) -> Self {
+        match tt {
+            TerrainType::Water => Terrain::Water,
+            TerrainType::Dirt => Terrain::Grass, // No Dirt in original, map to Grass for now
+            TerrainType::Grass => Terrain::Grass,
+            TerrainType::Forest => Terrain::Forest,
+            TerrainType::Mountain => Terrain::Mountain,
+            TerrainType::Beach => Terrain::Grass, // No Beach in original, map to Grass for now
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Food {
     None,
@@ -36,23 +50,12 @@ pub struct Map {
 
 impl Map {
     pub fn new(width: i32, height: i32) -> Self {
-        let mut rng = rand::thread_rng();
-        let mut tiles = vec![vec![Terrain::Grass; width as usize]; height as usize];
-        // Example: randomly place some terrain
-        for y in 0..height as usize {
-            for x in 0..width as usize {
-                let r = rng.gen_range(0.0..1.0);
-                tiles[y][x] = if r < 0.1 {
-                    Terrain::Water
-                } else if r < 0.2 {
-                    Terrain::Forest
-                } else if r < 0.22 {
-                    Terrain::Mountain
-                } else {
-                    Terrain::Grass
-                };
-            }
-        }
+        let seed = 42; // TODO: parameterize
+        let terrain_grid = generator::generate_terrain(width as usize, height as usize, seed);
+        let tiles = terrain_grid
+            .into_iter()
+            .map(|row| row.into_iter().map(Terrain::from).collect())
+            .collect();
         Self { width, height, tiles }
     }
 

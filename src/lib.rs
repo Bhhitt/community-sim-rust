@@ -8,3 +8,4 @@ pub mod ecs_hello;
 pub mod ecs_components;
 pub mod ecs_sim;
 pub mod ecs_simulation;
+pub mod terrain;
