@@ -3,6 +3,9 @@ use legion;
 use legion::IntoQuery;
 use legion::SystemBuilder;
 use std::collections::VecDeque;
+use rand::SeedableRng;
+use rand::rngs::SmallRng;
+use rand::Rng;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Position {
@@ -18,10 +21,10 @@ pub struct Velocity {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AgentType {
-    pub name: &'static str,
+    pub name: String,
     pub move_speed: f32,
     pub move_probability: Option<f32>,
-    pub color: &'static str,
+    pub color: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -34,10 +37,10 @@ pub struct Energy {
     pub value: f32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Renderable {
     pub icon: char,
-    pub color: &'static str,
+    pub color: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -82,33 +85,32 @@ impl EventLog {
 
 // --- Entity Spawning Functions ---
 pub fn spawn_agent(world: &mut legion::World, pos: Position, agent_type: AgentType) -> legion::Entity {
-    let color = agent_type.color;
-    world.push((pos, agent_type.clone(), Hunger { value: 100.0 }, Energy { value: 100.0 }, Renderable { icon: '@', color }, InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0 }))
+    let color = agent_type.color.clone();
+    world.push((pos, agent_type, Hunger { value: 100.0 }, Energy { value: 100.0 }, Renderable { icon: '@', color }, InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0 }))
 }
 
 pub fn spawn_food(world: &mut legion::World, pos: Position) -> legion::Entity {
     use rand::Rng;
     let nutrition = rand::thread_rng().gen_range(5.0..=10.0);
-    world.push((pos, Food { nutrition }, Renderable { icon: '*', color: "green" }))
+    world.push((pos, Food { nutrition }, Renderable { icon: '*', color: "green".to_string() }))
 }
 
 // --- ECS Agent Movement System ---
 use crate::map::Map;
-use rand::Rng;
 
 pub fn agent_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentMovementSystem")
         .with_query(<(&mut Position, &AgentType, &mut Hunger, &mut Energy)>::query())
         .read_resource::<Map>()
-        .build(|_, _world, map, query| {
+        .build(|_, world, map, query| {
             let map = &*map;
-            let mut rng = rand::thread_rng();
-            for (pos, agent_type, hunger, energy) in query.iter_mut(_world) {
+            query.for_each_mut(world, |(pos, agent_type, hunger, energy)| {
+                let mut rng = SmallRng::from_entropy();
                 // --- Movement probability logic ---
                 let move_prob = agent_type.move_probability.unwrap_or(1.0);
                 if rng.gen::<f32>() > move_prob {
                     // Skip movement this tick
-                    continue;
+                    return;
                 }
                 // Random walk: pick a random direction and move
                 let dx = rng.gen_range(-1.0..=1.0) * agent_type.move_speed;
@@ -126,7 +128,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                 hunger.value -= 0.1;
                 // Energy decay is now proportional to distance traveled, but scaled down
                 energy.value -= distance * 0.1;
-            }
+            });
         })
 }
 
@@ -221,9 +223,10 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
 // }
 
 // --- Food spawn collection as an ECS system ---
-pub fn collect_food_spawn_positions_system(map: crate::map::Map) -> impl legion::systems::Runnable {
+pub fn collect_food_spawn_positions_system() -> impl legion::systems::Runnable {
     use legion::systems::CommandBuffer;
     use legion::*;
+    use rand::Rng;
     SystemBuilder::new("CollectFoodSpawnPositionsSystem")
         .write_resource::<crate::ecs_components::PendingFoodSpawns>()
         .read_resource::<crate::map::Map>()
@@ -232,8 +235,9 @@ pub fn collect_food_spawn_positions_system(map: crate::map::Map) -> impl legion:
             let mut rng = rand::thread_rng();
             let mut positions_to_spawn = Vec::new();
             for _ in 0..num_to_spawn {
+                let mut x;
+                let mut y;
                 let mut tries = 0;
-                let (mut x, mut y);
                 loop {
                     x = rng.gen_range(0..map.width) as f32;
                     y = rng.gen_range(0..map.height) as f32;
@@ -263,7 +267,7 @@ pub fn food_spawn_apply_system() -> impl legion::systems::Runnable {
                 cmd.push((
                     Position { x, y },
                     Food { nutrition: rand::thread_rng().gen_range(5.0..=10.0) },
-                    Renderable { icon: '*', color: "green" }
+                    Renderable { icon: '*', color: "green".to_string() }
                 ));
             }
         })

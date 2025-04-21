@@ -7,6 +7,8 @@ use sdl2::keyboard::Keycode;
 use std::time::Duration;
 use sdl2::render::TextureQuery;
 use rand::Rng;
+use std::io::Write;
+use std::fs::File;
 
 const CELL_SIZE: u32 = 6;
 const AGENT_COLOR: Color = Color::RGB(220, 40, 40);
@@ -48,38 +50,34 @@ fn terrain_color(terrain: &super::map::Terrain) -> Color {
     }
 }
 
-pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types: &[crate::agent::AgentType]) {
-    use crate::ecs_components::{spawn_agent, AgentType as ECSAgentType, agent_movement_system, entity_interaction_system, food_spawn_apply_system, agent_death_system, PendingFoodSpawns};
+pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types: &[crate::agent::AgentType], profile_systems: bool, profile_csv: &str) {
+    use crate::ecs_components::{spawn_agent, AgentType, agent_movement_system, entity_interaction_system, food_spawn_apply_system, agent_death_system, PendingFoodSpawns};
     use legion::*;
     use std::io::Write;
+    use std::fs::File;
     // --- ECS World Setup ---
     let mut world = World::default();
     let map = super::map::Map::new(map_size, map_size);
-    let render_map = map.clone();
+    let render_map = map.clone(); // OK to clone for rendering only
     let mut rng = rand::thread_rng();
-    // Convert agent_types from agent.rs to ECSAgentType
-    let ecs_agent_types: Vec<ECSAgentType> = agent_types.iter().map(|a| ECSAgentType {
-        name: Box::leak(a.r#type.clone().into_boxed_str()),
+    // Convert agent_types from agent.rs to ecs_components::AgentType
+    let ecs_agent_types: Vec<AgentType> = agent_types.iter().map(|a| AgentType {
+        name: a.r#type.clone(),
         move_speed: a.move_speed,
         move_probability: a.move_probability,
-        color: Box::leak(a.color.clone().into_boxed_str()),
+        color: a.color.clone(),
     }).collect();
-    println!("[DEBUG] Loaded {} agent types", ecs_agent_types.len());
-    // Restore agent count for normal simulation
-    let num_agents = 1000;
-    // Only spawn agents if num_agents > 0
     let mut agent_count = 0;
     let mut attempts = 0;
-    if num_agents > 0 {
-        for i in 0..num_agents {
-            // Find a random passable tile
+    if _num_agents > 0 {
+        for i in 0.._num_agents {
             let mut x;
             let mut y;
             let mut tries = 0;
             loop {
                 x = rng.gen_range(0..map_size) as f32;
                 y = rng.gen_range(0..map_size) as f32;
-                if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
+                if map.tiles[y as usize][x as usize] == super::map::Terrain::Grass || map.tiles[y as usize][x as usize] == super::map::Terrain::Forest {
                     break;
                 }
                 tries += 1;
@@ -93,56 +91,93 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
             attempts += tries;
         }
     }
-    println!("[DEBUG] Total spawn attempts: {} (avg {:.2} per agent)", attempts, attempts as f32 / agent_count as f32);
-    // Print total entity count in the world after spawning
-    let total_entities = world.len();
-    println!("[DEBUG] Total entities in world after spawning: {}", total_entities);
-    std::io::stdout().flush().unwrap();
-    println!("[DEBUG] Spawned {} agents", agent_count);
-    let mut camera = Camera::new(render_map.width, render_map.height, CELL_SIZE);
-
-    // --- ECS Resources & Schedule ---
+    // DEBUG: Print number of agents spawned
+    let agent_count_check = <(Read<crate::ecs_components::Position>,)>::query().iter(&world).count();
+    println!("[DEBUG] Number of agents spawned: {}", agent_count_check);
     let mut resources = Resources::default();
-    resources.insert(map);
+    resources.insert(map.clone());
     resources.insert(crate::ecs_components::InteractionStats::default());
     resources.insert(crate::ecs_components::EventLog::new(200));
     resources.insert(PendingFoodSpawns(Vec::new()));
-    let mut schedule = crate::ecs_simulation::build_simulation_schedule(render_map.clone());
+    // (Removed: archetypes debug print, not accessible)
+    let mut schedule = crate::ecs_simulation::build_simulation_schedule();
+    // DEBUG: Print number of entities matching agent_movement_system query
+    let agent_query_count = <(
+        &mut crate::ecs_components::Position,
+        &crate::ecs_components::AgentType,
+        &mut crate::ecs_components::Hunger,
+        &mut crate::ecs_components::Energy,
+    )>::query().iter_mut(&mut world).count();
+    println!("[DEBUG] Entities matching agent_movement_system query: {}", agent_query_count);
+    // Profiling support
+    let mut csv_file = if profile_systems {
+        Some(File::create(profile_csv).expect("Failed to create csv file"))
+    } else {
+        None
+    };
+    if let Some(csv_file) = csv_file.as_mut() {
+        writeln!(csv_file, "tick,agent_movement,entity_interaction,agent_death,food_spawn_collect,food_spawn_apply").unwrap();
+    }
+    let mut tick = 0;
+    // --- Build ECS systems ONCE for profiling ---
+    let mut agent_movement = agent_movement_system();
+    let mut entity_interaction = entity_interaction_system();
+    let mut agent_death = agent_death_system();
+    let mut food_spawn_collect = crate::ecs_components::collect_food_spawn_positions_system();
+    let mut food_spawn_apply = food_spawn_apply_system();
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
-    let window = video_subsystem.window("Community Sim", WINDOW_WIDTH, WINDOW_HEIGHT)
-        .position_centered().build().unwrap();
-    let main_window_id = window.id();
-    let mut canvas = window.into_canvas().present_vsync().build().unwrap();
-
-    // --- Stats window setup ---
-    let ttf_context = sdl2::ttf::init().unwrap();
-    let font = ttf_context.load_font("/System/Library/Fonts/Supplemental/Arial.ttf", 18).unwrap();
-    let stats_window = video_subsystem.window("Stats", 320, 480)
-        .position(0, 0) // Spawn at top-left corner
-        .resizable()
-        .build().unwrap();
-    let mut stats_canvas = stats_window.into_canvas().present_vsync().build().unwrap();
-
+    let window = video_subsystem
+        .window("Community Simulator", WINDOW_WIDTH, WINDOW_HEIGHT)
+        .position_centered()
+        .build()
+        .unwrap();
+    let mut canvas = window.into_canvas().build().unwrap();
+    let window_id = canvas.window().id();
+    let texture_creator = canvas.texture_creator();
     let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut last_stats_update = std::time::Instant::now();
-    let mut cached_agent_counts: Vec<(String, usize)> = Vec::new();
+    let mut camera = Camera::new(map_size, map_size, CELL_SIZE);
     let mut paused = false;
     let mut advance_one = false;
+    let ascii_snapshots: Vec<String> = Vec::new();
+
+    let ttf_context = sdl2::ttf::init().unwrap();
+    let font = ttf_context.load_font("/System/Library/Fonts/Supplemental/Arial.ttf", 18).unwrap();
+    let stats_window_canvas = video_subsystem.window("Stats", 320, 480)
+        .position(0, 0)
+        .resizable()
+        .build().unwrap()
+        .into_canvas().build().unwrap();
+    let mut stats_canvas = stats_window_canvas;
+    let stats_window_id = stats_canvas.window().id();
+
+    let mut cached_agent_counts: Vec<(String, usize)> = Vec::new();
+    let mut last_stats_update = std::time::Instant::now();
     let mut selected_agent: Option<legion::Entity> = None;
     let mut empty_cell_flash: Option<(i32, i32, std::time::Instant)> = None;
-    use crate::ecs_simulation::{simulation_tick};
-    // 
-    // 
+
     'running: loop {
         // --- Run ECS systems ---
         if !paused || advance_one {
-            crate::ecs_simulation::simulation_tick(&mut world, &mut resources, &mut schedule);
-            // ASCII rendering is still commented out for now
-            // let ascii = render_simulation_ascii(&world, &render_map);
-            // ascii_snapshots.push(ascii.clone());
-            // println!("{}", ascii);
+            if profile_systems {
+                use crate::ecs_simulation::simulation_tick_profiled;
+                let profile = simulation_tick_profiled(
+                    &mut world,
+                    &mut resources,
+                    &mut agent_movement,
+                    &mut entity_interaction,
+                    &mut agent_death,
+                    &mut food_spawn_collect,
+                    &mut food_spawn_apply,
+                );
+                if let Some(csv_file) = csv_file.as_mut() {
+                    writeln!(csv_file, "{}{}{}", tick, ",", profile.to_csv_row()).unwrap();
+                }
+            } else {
+                schedule.execute(&mut world, &mut resources);
+            }
+            tick += 1;
             advance_one = false;
         }
         // --- Print latest EventLog entry to console ---
@@ -151,79 +186,94 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
                 println!("{}", last_event);
             }
         }
-
         // Handle events
         for event in event_pump.poll_iter() {
             match event {
-                Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => break 'running,
-                Event::KeyDown { keycode: Some(key), .. } => {
-                    match key {
-                        Keycode::Left => camera.move_by(-10.0, 0.0, render_map.width, render_map.height, CELL_SIZE),
-                        Keycode::Right => camera.move_by(10.0, 0.0, render_map.width, render_map.height, CELL_SIZE),
-                        Keycode::Up => camera.move_by(0.0, -10.0, render_map.width, render_map.height, CELL_SIZE),
-                        Keycode::Down => camera.move_by(0.0, 10.0, render_map.width, render_map.height, CELL_SIZE),
-                        Keycode::Space => paused = !paused,
-                        Keycode::Period => advance_one = true,
-                        Keycode::A => {
-                            // Spawn a new agent at a random passable tile
-                            let mut rng = rand::thread_rng();
-                            let mut x;
-                            let mut y;
-                            let mut tries = 0;
-                            loop {
-                                x = rng.gen_range(0..render_map.width) as f32;
-                                y = rng.gen_range(0..render_map.height) as f32;
-                                if render_map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || render_map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
-                                    break;
-                                }
-                                tries += 1;
-                                if tries > 1000 {
-                                    println!("[WARN] Could not find passable tile for agent after 1000 tries");
-                                    return;
-                                }
-                            }
-                            // Pick a random agent type
-                            if !ecs_agent_types.is_empty() {
-                                let idx = rng.gen_range(0..ecs_agent_types.len());
-                                let agent_type = ecs_agent_types[idx].clone();
-                                spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
-                                println!("[DEBUG] Spawned agent at ({}, {})", x, y);
-                            }
-                        },
-                        Keycode::S => {
-                            // Spawn 100 new agents at random passable tiles
-                            let mut rng = rand::thread_rng();
-                            for _ in 0..100 {
-                                let mut x;
-                                let mut y;
-                                let mut tries = 0;
-                                loop {
-                                    x = rng.gen_range(0..render_map.width) as f32;
-                                    y = rng.gen_range(0..render_map.height) as f32;
-                                    if render_map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || render_map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
-                                        break;
-                                    }
-                                    tries += 1;
-                                    if tries > 1000 {
-                                        println!("[WARN] Could not find passable tile for agent after 1000 tries");
-                                        break;
-                                    }
-                                }
-                                if !ecs_agent_types.is_empty() {
-                                    let idx = rng.gen_range(0..ecs_agent_types.len());
-                                    let agent_type = ecs_agent_types[idx].clone();
-                                    spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
-                                }
-                            }
-                            println!("[DEBUG] Spawned 100 random agents");
-                        },
-                        _ => {}
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => break 'running,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Space),
+                    ..
+                } => paused = !paused,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Right), .. } => camera.move_by(5.0, 0.0, map_size, map_size, CELL_SIZE),
+                Event::KeyDown {
+                    keycode: Some(Keycode::Left), .. } => camera.move_by(-5.0, 0.0, map_size, map_size, CELL_SIZE),
+                Event::KeyDown {
+                    keycode: Some(Keycode::Up), .. } => camera.move_by(0.0, -5.0, map_size, map_size, CELL_SIZE),
+                Event::KeyDown {
+                    keycode: Some(Keycode::Down), .. } => camera.move_by(0.0, 5.0, map_size, map_size, CELL_SIZE),
+                Event::KeyDown {
+                    keycode: Some(Keycode::A),
+                    ..
+                } => {
+                    // Add agent at a random passable location
+                    let mut rng = rand::thread_rng();
+                    let mut x;
+                    let mut y;
+                    let mut tries = 0;
+                    loop {
+                        x = rng.gen_range(0..map_size) as f32;
+                        y = rng.gen_range(0..map_size) as f32;
+                        if map.tiles[y as usize][x as usize] == super::map::Terrain::Grass || map.tiles[y as usize][x as usize] == super::map::Terrain::Forest {
+                            break;
+                        }
+                        tries += 1;
+                        if tries > 1000 {
+                            println!("[ERROR] Could not find passable tile for agent after 1000 tries");
+                            break;
+                        }
                     }
-                }
-                Event::MouseButtonDown { x, y, window_id, .. } => {
+                    // Use the first agent type for simplicity
+                    if let Some(agent_type) = ecs_agent_types.get(0) {
+                        let agent_type = agent_type.clone();
+                        spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
+                        println!("[DEBUG] Added agent at ({}, {})", x, y);
+                    } else {
+                        println!("[ERROR] No agent types defined!");
+                    }
+                },
+                Event::KeyDown {
+                    keycode: Some(Keycode::S),
+                    ..
+                } => {
+                    // Spawn 100 random agents at 100 different locations, each with a random agent type
+                    let mut rng = rand::thread_rng();
+                    let mut spawned = 0;
+                    let mut attempts = 0;
+                    let max_agents = 100;
+                    let max_tries_per_agent = 1000;
+                    let num_types = ecs_agent_types.len().max(1);
+                    while spawned < max_agents && attempts < max_agents * max_tries_per_agent {
+                        let x = rng.gen_range(0..map_size) as f32;
+                        let y = rng.gen_range(0..map_size) as f32;
+                        if map.tiles[y as usize][x as usize] == super::map::Terrain::Grass || map.tiles[y as usize][x as usize] == super::map::Terrain::Forest {
+                            let type_idx = rng.gen_range(0..num_types);
+                            let agent_type = ecs_agent_types[type_idx].clone();
+                            spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
+                            spawned += 1;
+                        }
+                        attempts += 1;
+                    }
+                    println!("[DEBUG] Spawned {} agents ({} attempts)", spawned, attempts);
+                },
+                Event::KeyDown {
+                    keycode: Some(Keycode::Period),
+                    ..
+                } => {
+                    // Advance one tick if paused
+                    if paused {
+                        advance_one = true;
+                        println!("[DEBUG] Advance one tick (paused)");
+                    }
+                },
+                Event::MouseButtonDown { x, y, window_id: evt_win_id, .. } => {
                     // DEBUG: Print mouse click info
-                    println!("[DEBUG] Mouse click at ({}, {}) in window {}", x, y, window_id);
-                    if window_id == main_window_id {
+                    println!("[DEBUG] Mouse click at ({}, {}) in window {}", x, y, evt_win_id);
+                    if evt_win_id == window_id {
                         let map_x = (x as f32 / CELL_SIZE as f32 + camera.x).floor();
                         let map_y = (y as f32 / CELL_SIZE as f32 + camera.y).floor();
                         println!("[DEBUG] Map coords: ({}, {})", map_x, map_y);
@@ -261,7 +311,7 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
                             empty_cell_flash = Some((map_x as i32, map_y as i32, std::time::Instant::now()));
                         }
                     }
-                }
+                },
                 _ => {}
             }
         }
@@ -296,7 +346,7 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
                 canvas.fill_rect(rect).ok();
             } else {
                 // Render agents as colored '@' squares (or whatever icon/color they use)
-                let color = match renderable.color {
+                let color = match renderable.color.as_str() {
                     "blue" => Color::RGB(0, 128, 255),
                     "green" => Color::RGB(0, 200, 0),
                     "red" => Color::RGB(220, 40, 40),
@@ -338,27 +388,28 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
 
         // --- Stats window rendering ---
         if last_stats_update.elapsed().as_secs_f32() >= 1.0 {
-            println!("[DEBUG] About to count agent types for stats");
-            use crate::ecs_components::AgentType as ECSAgentType;
-            let mut agent_counts: std::collections::HashMap<&'static str, usize> = std::collections::HashMap::new();
-            println!("[DEBUG] About to query agent types for stats");
-            for (_entity, agent_type) in <(Read<crate::ecs_components::Position>, Read<ECSAgentType>)>::query().iter(&world) {
-                *agent_counts.entry(agent_type.name).or_insert(0) += 1;
-            }
-            // Count food entities
-            println!("[DEBUG] About to query food entities for stats");
-            let food_count = <(Read<crate::ecs_components::Position>,)>::query()
-                .filter(component::<crate::ecs_components::Food>())
-                .iter(&world)
-                .count();
-            // Store as sorted Vec for static rendering
-            let mut counts_vec: Vec<(String, usize)> = agent_counts.iter().map(|(k, v)| ((*k).to_string(), *v)).collect();
+            // Update agent counts for stats display
+            use crate::ecs_components::AgentType;
+            let agent_counts = {
+                let mut agent_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+                for (_entity, agent_type) in <(Read<crate::ecs_components::Position>, Read<AgentType>)>::query().iter(&world) {
+                    *agent_counts.entry(agent_type.name.clone()).or_insert(0) += 1;
+                }
+                agent_counts
+            };
+            let food_count = {
+                <(Read<crate::ecs_components::Position>,)>::query()
+                    .filter(component::<crate::ecs_components::Food>())
+                    .iter(&world)
+                    .count()
+            };
+            let mut counts_vec: Vec<(String, usize)> = agent_counts.iter().map(|(k, v)| (k.clone(), *v)).collect();
             counts_vec.sort_by(|a, b| a.0.cmp(&b.0));
-            cached_agent_counts = counts_vec;
-            // Fetch interaction count
+            // Add food and interactions
             let interaction_count = resources.get::<crate::ecs_components::InteractionStats>().map_or(0, |stats| stats.agent_interactions);
-            cached_agent_counts.push(("food".to_string(), food_count));
-            cached_agent_counts.push(("interactions".to_string(), interaction_count));
+            counts_vec.push(("food".to_string(), food_count));
+            counts_vec.push(("interactions".to_string(), interaction_count));
+            cached_agent_counts = counts_vec;
             last_stats_update = std::time::Instant::now();
         }
         // Query current stats window size in case it was resized

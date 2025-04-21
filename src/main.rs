@@ -28,6 +28,9 @@ pub struct Args {
     /// Enable ECS system profiling (timings, CSV output)
     #[arg(long)]
     profile_systems: bool,
+    /// CSV file for system profiling output
+    #[arg(long, default_value = "system_profile.csv")]
+    profile_csv: String,
 }
 
 fn main() {
@@ -39,10 +42,10 @@ fn main() {
         if args.scale {
             simulation::run_scaling_benchmarks();
         } else {
-            simulation::run_profiles_from_yaml("sim_profiles.yaml", &agent_types, args.profile_systems);
+            simulation::run_profiles_from_yaml("sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
         }
     } else {
         println!("Running with graphics");
-        simulation::run_profile_from_yaml("sim_profiles.yaml", &args.profile, &agent_types, args.profile_systems);
+        simulation::run_profile_from_yaml("sim_profiles.yaml", &args.profile, &agent_types, args.profile_systems, &args.profile_csv);
     }
 }
