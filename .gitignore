@@ -1,0 +1,18 @@
+# Rust build artifacts
+/target/
+
+# Simulation outputs
+simulation_map_*.txt
+
+# OS-specific files
+.DS_Store
+
+# Editor/IDE files
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Agent type definitions (user-editable, but not needed in repo by default)
+# Uncomment the next line if you want to ignore agent_types.yaml:
+# agent_types.yaml

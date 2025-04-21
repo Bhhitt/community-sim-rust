@@ -1,0 +1,15 @@
+[package]
+name = "community_sim"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sdl2 = { version = "0.35", features = ["ttf"] }
+clap = { version = "4.4", features = ["derive"] }
+rayon = "1.8"
+log = "0.4"
+env_logger = "0.11"
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+legion = "0.4.0"

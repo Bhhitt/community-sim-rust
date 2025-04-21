@@ -1,0 +1,49 @@
+//! Minimal ECS simulation loop using new ECS components
+use legion::*;
+use crate::ecs_components::*;
+
+pub fn run_ecs_sim() {
+    let mut world = World::default();
+    let mut resources = Resources::default();
+    // Spawn some agents
+    let agent_types = [
+        AgentType { name: "worker", move_speed: 1.0, color: "blue" },
+        AgentType { name: "scout", move_speed: 2.0, color: "green" },
+    ];
+    for i in 0..5 {
+        let pos = Position { x: i as f32, y: 0.0 };
+        let agent_type = agent_types[i % agent_types.len()].clone();
+        spawn_agent(&mut world, pos, agent_type);
+    }
+    // Spawn some food
+    for i in 0..3 {
+        let pos = Position { x: i as f32, y: 2.0 };
+        spawn_food(&mut world, pos);
+    }
+    // --- Example system: Print all entities and their positions ---
+    let mut schedule = Schedule::builder()
+        .add_system(
+            SystemBuilder::new("PrintEntities")
+                .with_query(<(&Position, Option<&Food>, Option<&AgentType>)>::query())
+                .build(|_, world, _, query| {
+                    for (pos, food, agent_type) in query.iter(world) {
+                        if let Some(_food) = food {
+                            println!("Food at ({}, {})", pos.x, pos.y);
+                        } else if let Some(agent_type) = agent_type {
+                            println!("Agent '{}' at ({}, {})", agent_type.name, pos.x, pos.y);
+                        }
+                    }
+                })
+        )
+        .build();
+    schedule.execute(&mut world, &mut resources);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_ecs_sim() {
+        run_ecs_sim();
+    }
+}
