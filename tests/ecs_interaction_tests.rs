@@ -7,10 +7,10 @@ use community_sim::ecs_components::{spawn_agent, Position, AgentType, agent_inte
 fn test_ecs_agent_interaction_system_runs() {
     let mut world = World::default();
     let agent_type = AgentType {
-        name: "worker",
+        name: "worker".to_string(),
         move_speed: 1.0,
         move_probability: None,
-        color: "blue",
+        color: "blue".to_string(),
     };
     // Spawn two agents adjacent to each other
     spawn_agent(&mut world, Position { x: 5.0, y: 5.0 }, agent_type.clone());

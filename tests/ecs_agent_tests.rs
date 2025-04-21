@@ -7,10 +7,10 @@ use community_sim::ecs_components::{spawn_agent, Position, AgentType};
 fn test_ecs_agent_spawn_and_query() {
     let mut world = World::default();
     let agent_type = AgentType {
-        name: "worker",
+        name: "worker".to_string(),
         move_speed: 1.0,
         move_probability: None,
-        color: "blue",
+        color: "blue".to_string(),
     };
     let pos = Position { x: 10.0, y: 20.0 };
     let _entity = spawn_agent(&mut world, pos, agent_type.clone());
