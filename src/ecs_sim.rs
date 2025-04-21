@@ -14,7 +14,9 @@ pub fn run_ecs_sim() {
     for i in 0..5 {
         let pos = Position { x: i as f32, y: 0.0 };
         let agent_type = agent_types[i % agent_types.len()].clone();
-        spawn_agent(&mut world, pos, agent_type);
+        // NOTE: This is a minimal ECS sim; pass a dummy map for now (or refactor if needed)
+        let dummy_map = crate::map::Map::new(10, 10);
+        spawn_agent(&mut world, pos, agent_type, &dummy_map);
     }
     // Spawn some food
     for i in 0..3 {

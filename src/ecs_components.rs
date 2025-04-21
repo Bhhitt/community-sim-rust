@@ -6,6 +6,8 @@ use std::collections::VecDeque;
 use rand::SeedableRng;
 use rand::rngs::SmallRng;
 use rand::Rng;
+use std::ops::DerefMut;
+use std::sync::Mutex;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Position {
@@ -76,22 +78,25 @@ pub struct InteractionStats {
 }
 
 pub struct EventLog {
-    pub events: VecDeque<String>,
+    pub events: Mutex<VecDeque<String>>,
     pub max_len: usize,
 }
 
 impl EventLog {
     pub fn new(max_len: usize) -> Self {
-        Self { events: VecDeque::with_capacity(max_len), max_len }
+        Self { events: Mutex::new(VecDeque::with_capacity(max_len)), max_len }
     }
-    pub fn log(&mut self, msg: String) {
-        if self.events.len() >= self.max_len {
-            self.events.pop_front();
+    pub fn log(&self, msg: String) {
+        let mut events = self.events.lock().unwrap();
+        if events.len() >= self.max_len {
+            events.pop_front();
         }
-        self.events.push_back(msg);
+        events.push_back(msg);
     }
-    pub fn get(&self) -> &VecDeque<String> {
-        &self.events
+    pub fn get(&self) -> Vec<String> {
+        // Return a cloned Vec for thread safety
+        let events = self.events.lock().unwrap();
+        events.iter().cloned().collect()
     }
 }
 
@@ -114,10 +119,10 @@ fn random_passable_target<R: Rng>(map: &crate::map::Map, agent_type: &AgentType,
 }
 
 // --- Entity Spawning Functions ---
-pub fn spawn_agent(world: &mut legion::World, pos: Position, agent_type: AgentType) -> legion::Entity {
+pub fn spawn_agent(world: &mut legion::World, pos: Position, agent_type: AgentType, map: &crate::map::Map) -> legion::Entity {
     let color = agent_type.color.clone();
     let mut rng = rand::thread_rng();
-    let (tx, ty) = random_passable_target(&crate::map::Map::new(100, 100), &agent_type, &mut rng); // FIXME: pass actual map
+    let (tx, ty) = random_passable_target(map, &agent_type, &mut rng);
     world.push((pos, agent_type, Hunger { value: 100.0 }, Energy { value: 100.0 }, Renderable { icon: '@', color }, InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0 }, Target { x: tx, y: ty, stuck_ticks: 0 }, Path { waypoints: VecDeque::new() }))
 }
 
@@ -134,9 +139,27 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentMovementSystem")
         .with_query(<(&mut Position, &AgentType, &mut Hunger, &mut Energy, Option<&mut Target>, Option<&mut Path>)>::query())
         .read_resource::<Map>()
-        .build(|_, world, map, query| {
+        .write_resource::<crate::ecs_components::EventLog>()
+        .build(|_, world, (map, event_log), query| {
             let map = &*map;
-            query.par_for_each_mut(world, |(pos, agent_type, hunger, energy, target, mut path)| {
+            let event_log = event_log;
+            query.par_for_each_mut(
+                world,
+                |(
+                    pos,
+                    agent_type,
+                    hunger,
+                    energy,
+                    target,
+                    mut path
+                ): (
+                    &mut Position,
+                    &AgentType,
+                    &mut Hunger,
+                    &mut Energy,
+                    Option<&mut Target>,
+                    Option<&mut Path>
+                )| {
                 let mut rng = SmallRng::from_entropy();
                 // --- Movement probability logic ---
                 let move_prob = agent_type.move_probability.unwrap_or(1.0);
@@ -158,17 +181,45 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     }
                     if (pos.x - target.x).abs() < 0.1 && (pos.y - target.y).abs() < 0.1 || stuck_ticks > 10 {
                         // Pick a new target within 10 squares
-                        let mut tx;
-                        let mut ty;
+                        let mut tx = pos.x;
+                        let mut ty = pos.y;
                         let mut tries = 0;
-                        loop {
+                        let mut found = false;
+                        while tries < 20 {
                             let dx = rng.gen_range(-10..=10);
                             let dy = rng.gen_range(-10..=10);
-                            tx = (pos.x.round() as i32 + dx).clamp(0, map.width-1) as f32;
-                            ty = (pos.y.round() as i32 + dy).clamp(0, map.height-1) as f32;
-                            if map.is_passable(tx as i32, ty as i32) { break; }
+                            let candidate_tx = (pos.x.round() as i32 + dx).clamp(0, map.width-1) as f32;
+                            let candidate_ty = (pos.y.round() as i32 + dy).clamp(0, map.height-1) as f32;
+                            if map.is_passable(candidate_tx as i32, candidate_ty as i32) {
+                                tx = candidate_tx;
+                                ty = candidate_ty;
+                                found = true;
+                                break;
+                            }
                             tries += 1;
-                            if tries > 20 { break; }
+                        }
+                        if !found {
+                            // Fallback: try a global random passable tile
+                            let mut global_tries = 0;
+                            while global_tries < 100 {
+                                let candidate_gtx = rng.gen_range(0..map.width) as f32;
+                                let candidate_gty = rng.gen_range(0..map.height) as f32;
+                                if map.is_passable(candidate_gtx as i32, candidate_gty as i32) {
+                                    tx = candidate_gtx;
+                                    ty = candidate_gty;
+                                    found = true;
+                                    break;
+                                }
+                                global_tries += 1;
+                            }
+                            if !found {
+                                event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a passable target after {} tries (local+global)", pos.x, pos.y, tries + global_tries));
+                                target.stuck_ticks = stuck_ticks;
+                                if let Some(ref mut path) = path {
+                                    path.waypoints.clear();
+                                }
+                                return;
+                            }
                         }
                         target.x = tx;
                         target.y = ty;
@@ -178,6 +229,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                                 path.waypoints = new_path.into();
                             } else {
                                 path.waypoints.clear();
+                                event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new target ({:.1}, {:.1})", pos.x, pos.y, tx, ty));
                             }
                         }
                         (tx, ty, 0)
@@ -188,14 +240,17 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                             if path.waypoints.is_empty() || target_changed {
                                 if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (target.x.round() as i32, target.y.round() as i32), 10) {
                                     path.waypoints = new_path.into();
+                                } else {
+                                    path.waypoints.clear();
+                                    event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to target ({:.1}, {:.1})", pos.x, pos.y, target.x, target.y));
                                 }
                             }
                         }
                         (target.x, target.y, stuck_ticks)
                     }
                 } else {
-                    // No target component; do not move
-                    return;
+                    // No target component, skip
+                    (pos.x, pos.y, 0)
                 };
                 // --- Path following ---
                 let mut next_x = target_x;
@@ -317,7 +372,7 @@ fn a_star_path(map: &crate::map::Map, agent_type: &AgentType, start: (i32, i32),
     f_score.insert(start, h(start.0, start.1));
     open.push(Node { x: start.0, y: start.1, cost: 0.0, est_total: h(start.0, start.1) });
     let neighbors = [(-1,0),(1,0),(0,-1),(0,1)];
-    while let Some(Node { x, y, cost, .. }) = open.pop() {
+    while let Some(Node { x, y, cost: _, .. }) = open.pop() {
         if (x, y) == goal {
             // reconstruct path
             let mut path = vec![(x as f32 + 0.5, y as f32 + 0.5)];
@@ -381,6 +436,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
         .with_query(<(legion::Entity, &Position, &Food)>::query()) // food
         .with_query(<(legion::Entity, &mut Position, &mut Hunger, &mut Energy)>::query())
         .build(|cmd, world, (stats, event_log), (agent_query, food_query, agent_stats_query)| {
+            let event_log = event_log;
             let agent_count = agent_query.iter(world).count();
             let food_count = food_query.iter(world).count();
             event_log.log(format!("[TICK] Agents: {}, Food: {}", agent_count, food_count));
@@ -464,7 +520,7 @@ pub fn collect_food_spawn_positions_system() -> impl legion::systems::Runnable {
     SystemBuilder::new("CollectFoodSpawnPositionsSystem")
         .write_resource::<crate::ecs_components::PendingFoodSpawns>()
         .read_resource::<crate::map::Map>()
-        .build(|_, world, (pending_food, map), _| {
+        .build(|_, _world, (pending_food, map), _| {
             let num_to_spawn = (map.width * map.height / 20000).max(2);
             let mut rng = rand::thread_rng();
             let mut positions_to_spawn = Vec::new();

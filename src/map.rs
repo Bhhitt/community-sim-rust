@@ -59,7 +59,15 @@ pub struct Map {
 impl Map {
     pub fn new(width: i32, height: i32) -> Self {
         let seed = 42; // TODO: parameterize
-        let terrain_grid = generator::generate_terrain(width as usize, height as usize, seed);
+        let terrain_grid = generator::generate_terrain(
+            width as usize,
+            height as usize,
+            seed,
+            0.015,   // scale
+            4,       // octaves
+            0.5,     // persistence
+            2.0      // lacunarity
+        );
         let tiles = terrain_grid
             .into_iter()
             .map(|row| row.into_iter().map(Terrain::from).collect())

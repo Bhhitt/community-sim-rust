@@ -1,5 +1,8 @@
 use clap::Parser;
 use community_sim::*;
+use chrono;
+use fern;
+use log;
 
 pub mod terrain;
 
@@ -35,19 +38,39 @@ pub struct Args {
     profile_csv: String,
 }
 
+// Logging setup with fern
+fn setup_logging() {
+    let log_file = "community_sim.log";
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{} [{}] {}",
+                chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+                record.level(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Info)
+        .level_for("community_sim", log::LevelFilter::Debug)
+        .chain(std::io::stdout())
+        .chain(fern::log_file(log_file).unwrap())
+        .apply()
+        .unwrap();
+}
+
 fn main() {
-    env_logger::init();
+    setup_logging();
     let args = Args::parse();
     let agent_types = util::load_agent_types(&args.agent_types);
     if args.headless {
-        println!("Running in headless mode");
+        log::info!("Running in headless mode");
         if args.scale {
             simulation::run_scaling_benchmarks();
         } else {
             simulation::run_profiles_from_yaml("sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
         }
     } else {
-        println!("Running with graphics");
+        log::info!("Running with graphics");
         simulation::run_profile_from_yaml("sim_profiles.yaml", &args.profile, &agent_types, args.profile_systems, &args.profile_csv);
     }
 }

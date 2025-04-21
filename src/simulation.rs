@@ -14,8 +14,8 @@ use crate::ecs_simulation::{simulation_tick, render_simulation_ascii, build_simu
 use log;
 
 fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) -> (f64, f64, f64) {
-    println!("[TEST] Entered run_simulation");
-    println!("\n=== Running {}: map {}x{}, {} agents, {} ticks ===", label, map_width, map_height, num_agents, ticks);
+    log::info!("[TEST] Entered run_simulation");
+    log::info!("\n=== Running {}: map {}x{}, {} agents, {} ticks ===", label, map_width, map_height, num_agents, ticks);
     // --- ECS World Setup (MATCH graphics mode) ---
     let mut world = World::default();
     let map = Map::new(map_width, map_height);
@@ -47,7 +47,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 }
             }
             let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
-            spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
+            spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type, &map);
             agent_count += 1;
             attempts += tries;
         }
@@ -179,7 +179,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         let mut file = std::fs::File::create("simulation_ascii.txt").expect("Unable to create ascii output file");
         file.write_all(summary.as_bytes()).expect("Unable to write summary");
         file.write_all(last_ascii.as_bytes()).expect("Unable to write ascii output");
-        println!("[INFO] Simulation summary and final ASCII snapshot written to simulation_ascii.txt");
+        log::info!("[INFO] Simulation summary and final ASCII snapshot written to simulation_ascii.txt");
     }
     // Optionally: write last snapshot to file or keep for further processing
     (0.0, 0.0, 0.0)
@@ -202,49 +202,49 @@ pub fn load_profiles_from_yaml(path: &str) -> Vec<SimProfile> {
 
 pub fn run_profiles_from_yaml(path: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) {
     let profiles = load_profiles_from_yaml(path);
-    println!("\n===== Simulation Profiles (YAML) =====");
+    log::info!("\n===== Simulation Profiles (YAML) =====");
     for profile in profiles {
         let width = profile.map_width.unwrap_or(profile.map_size.unwrap_or(20));
         let height = profile.map_height.unwrap_or(profile.map_size.unwrap_or(20));
-        println!("Running profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
+        log::info!("Running profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
         let (total, move_time, interact_time) = run_simulation(width, height, profile.num_agents, profile.ticks, &profile.name, agent_types, profile_systems, profile_csv);
-        println!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", profile.name, total, move_time, interact_time);
+        log::info!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", profile.name, total, move_time, interact_time);
     }
 }
 
 pub fn run_profile_from_yaml(path: &str, profile_name: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) {
-    println!("[TEST] Entered run_profile_from_yaml");
+    log::info!("[TEST] Entered run_profile_from_yaml");
     let profiles = load_profiles_from_yaml(path);
     let profile = profiles.into_iter().find(|p| p.name == profile_name)
         .unwrap_or_else(|| panic!("Profile '{}' not found in {}", profile_name, path));
     let width = profile.map_width.unwrap_or(profile.map_size.unwrap_or(20));
     let height = profile.map_height.unwrap_or(profile.map_size.unwrap_or(20));
-    println!("\n===== Simulation Profile: {} =====", profile.name);
-    println!("Launching GUI with profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
+    log::info!("\n===== Simulation Profile: {} =====", profile.name);
+    log::info!("Launching GUI with profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
     crate::graphics::run_with_graphics_profile(width, height, profile.num_agents, agent_types, profile_systems, profile_csv);
 }
 
 pub fn run_gui_with_profile(_path: &str, _profile_name: &str, _agent_types: &[crate::agent::AgentType]) {
-    println!("[WARNING] run_gui_with_profile is a stub. Use run_with_graphics_profile instead.");
+    log::warn!("[WARNING] run_gui_with_profile is a stub. Use run_with_graphics_profile instead.");
 }
 
 pub fn run_profiles(agent_types: &[AgentType]) {
-    println!("\n===== Simulation Profiles =====");
+    log::info!("\n===== Simulation Profiles =====");
     for profile in load_profiles_from_yaml("sim_profiles.yaml") {
         let width = profile.map_width.unwrap_or(profile.map_size.unwrap_or(20));
         let height = profile.map_height.unwrap_or(profile.map_size.unwrap_or(20));
-        println!("Running profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
+        log::info!("Running profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
         let (total, move_time, interact_time) = run_simulation(width, height, profile.num_agents, profile.ticks, &profile.name, agent_types, false, "profile.csv");
-        println!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", profile.name, total, move_time, interact_time);
+        log::info!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", profile.name, total, move_time, interact_time);
     }
 }
 
 pub fn run_headless(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, agent_types: &[AgentType]) {
     let (total, move_time, interact_time) = run_simulation(map_width, map_height, num_agents, ticks, "custom", agent_types, false, "headless.csv");
-    println!("\nPerformance summary:");
-    println!("  Total:    {:.3}s", total);
-    println!("  Movement: {:.3}s", move_time);
-    println!("  Interact: {:.3}s", interact_time);
+    log::info!("\nPerformance summary:");
+    log::info!("  Total:    {:.3}s", total);
+    log::info!("  Movement: {:.3}s", move_time);
+    log::info!("  Interact: {:.3}s", interact_time);
 }
 
 pub fn run_scaling_benchmarks() {
@@ -254,9 +254,9 @@ pub fn run_scaling_benchmarks() {
         (400, 400, 400, 10, "20x"),
         (2000, 2000, 10000, 10, "100x"),
     ];
-    println!("\n===== Scaling Benchmarks =====");
+    log::info!("\n===== Scaling Benchmarks =====");
     for &(map_width, map_height, num_agents, ticks, label) in &configs {
         let (total, move_time, interact_time) = run_simulation(map_width, map_height, num_agents, ticks, label, &[], false, "scaling_benchmark.csv");
-        println!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", label, total, move_time, interact_time);
+        log::info!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", label, total, move_time, interact_time);
     }
 }

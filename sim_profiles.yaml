@@ -31,3 +31,8 @@
   map_height: 700
   num_agents: 5000
   ticks: 10
+- name: med_run
+  map_width: 700
+  map_height: 500
+  num_agents: 1000
+  ticks: 10

@@ -10,6 +10,7 @@ use rand::Rng;
 use std::fs::File;
 use std::io::Write;
 use log::debug;
+use log::info;
 
 const CELL_SIZE: u32 = 6;
 // Modern, vibrant agent color (used as fallback only)
@@ -86,7 +87,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                 }
             }
             let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
-            spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
+            spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type, &map);
             _agent_count += 1;
             _attempts += tries;
         }
@@ -152,6 +153,15 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
     let mut stats_canvas = stats_window_canvas;
     let _stats_window_id = stats_canvas.window().id();
 
+    // --- New: Event Log Window ---
+    let log_window_canvas = video_subsystem.window("Event Log", 600, 480)
+        .position(340, 0)
+        .resizable()
+        .build().unwrap()
+        .into_canvas().build().unwrap();
+    let mut log_canvas = log_window_canvas;
+    let _log_window_id = log_canvas.window().id();
+
     let mut cached_agent_counts: Vec<(String, usize)> = Vec::new();
     let mut last_stats_update = std::time::Instant::now();
     let mut selected_agent: Option<legion::Entity> = None;
@@ -183,9 +193,30 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
         }
         // --- Print latest EventLog entry to console ---
         if let Some(event_log) = resources.get::<crate::ecs_components::EventLog>() {
-            if let Some(last_event) = event_log.get().back() {
+            if let Some(last_event) = event_log.get().last() {
                 debug!("{}", last_event);
             }
+        }
+        // --- Render Event Log Window ---
+        if let Some(event_log) = resources.get::<crate::ecs_components::EventLog>() {
+            log_canvas.set_draw_color(Color::RGB(30, 30, 30));
+            log_canvas.clear();
+            let mut y = 10;
+            let line_height = 20;
+            let max_lines = 22;
+            let events_vec = event_log.get();
+            let events: Vec<_> = events_vec.iter().rev().take(max_lines).collect();
+            let texture_creator = log_canvas.texture_creator();
+            for entry in events.iter().rev() {
+                let surface = font.render(entry)
+                    .blended(Color::RGB(220, 220, 220)).unwrap();
+                let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
+                let TextureQuery { width, height, .. } = texture.query();
+                let target = Rect::new(10, y, width, height);
+                log_canvas.copy(&texture, None, Some(target)).unwrap();
+                y += line_height;
+            }
+            log_canvas.present();
         }
         // Handle events
         for event in event_pump.poll_iter() {
@@ -224,14 +255,13 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                         }
                         tries += 1;
                         if tries > 1000 {
-                            debug!("[ERROR] Could not find passable tile for agent after 1000 tries");
-                            break;
+                            panic!("Could not find passable tile for agent after 1000 tries");
                         }
                     }
                     // Use the first agent type for simplicity
                     if let Some(agent_type) = ecs_agent_types.get(0) {
                         let agent_type = agent_type.clone();
-                        spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
+                        spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type, &map);
                         debug!("[DEBUG] Added agent at ({}, {})", x, y);
                     } else {
                         debug!("[ERROR] No agent types defined!");
@@ -254,7 +284,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                         if map.tiles[y as usize][x as usize] == super::map::Terrain::Grass || map.tiles[y as usize][x as usize] == super::map::Terrain::Forest {
                             let type_idx = rng.gen_range(0..num_types);
                             let agent_type = ecs_agent_types[type_idx].clone();
-                            spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
+                            spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type, &map);
                             spawned += 1;
                         }
                         attempts += 1;
@@ -554,5 +584,5 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
     let mut file = std::fs::File::create("simulation_ascii.txt").expect("Unable to create ascii output file");
     file.write_all(summary.as_bytes()).expect("Unable to write summary");
     file.write_all(ascii_snapshot.as_bytes()).expect("Unable to write ascii output");
-    debug!("[INFO] Simulation summary and final ASCII snapshot written to simulation_ascii.txt");
+    info!("[INFO] Simulation summary and final ASCII snapshot written to simulation_ascii.txt");
 }
