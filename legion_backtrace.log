@@ -1,0 +1,2652 @@
+Running with graphics
+[TEST] Entered run_profile_from_yaml
+
+===== Simulation Profile: 50x =====
+Launching GUI with profile: 50x (map 400x400, 1000 agents, 10 ticks)
+[DEBUG] Loaded 7 agent types
+[DEBUG] Total spawn attempts: 199 (avg 0.20 per agent)
+[DEBUG] Total entities in world after spawning: 1000
+[DEBUG] Spawned 1000 agents
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12272) interacted with Agent Entity(13136)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12032) interacted with Agent Entity(14368)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(11472) interacted with Agent Entity(11792)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15488) interacted with Agent Entity(15712)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14496) interacted with Agent Entity(15744)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13568) interacted with Agent Entity(14576)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12304) interacted with Agent Entity(13936)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15632) ate food Entity(16065) (+7.6)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14976) ate food Entity(16066) (+6.7)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13744) interacted with Agent Entity(14032)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15280) ate food Entity(16045) (+8.4)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14944) interacted with Agent Entity(15008)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14944) interacted with Agent Entity(15008)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15824) ate food Entity(16058) (+5.0)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13136) interacted with Agent Entity(15776)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13568) interacted with Agent Entity(14576)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13136) interacted with Agent Entity(15776)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13680) interacted with Agent Entity(15904)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13632) interacted with Agent Entity(14688)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13136) interacted with Agent Entity(13760)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13408) ate food Entity(16129) (+7.1)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13264) interacted with Agent Entity(14224)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13632) interacted with Agent Entity(14688)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12784) interacted with Agent Entity(13744)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12880) interacted with Agent Entity(12944)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(9024) interacted with Agent Entity(14816)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13808) interacted with Agent Entity(15008)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14448) interacted with Agent Entity(14464)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13232) interacted with Agent Entity(13728)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13232) interacted with Agent Entity(13728)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14784) ate food Entity(16095) (+6.5)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(12992) ate food Entity(16096) (+8.1)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(11568) ate food Entity(16175) (+9.6)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13888) ate food Entity(16026) (+9.8)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13728) interacted with Agent Entity(14448)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15952) ate food Entity(16265) (+8.2)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13920) interacted with Agent Entity(15872)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13232) interacted with Agent Entity(13728)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15184) ate food Entity(16231) (+7.9)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13552) ate food Entity(16119) (+7.8)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13872) ate food Entity(16330) (+5.2)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12912) interacted with Agent Entity(15776)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14096) ate food Entity(16234) (+9.8)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12368) interacted with Agent Entity(13072)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15920) ate food Entity(16284) (+9.1)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14672) interacted with Agent Entity(15120)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13200) ate food Entity(16381) (+5.6)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15376) interacted with Agent Entity(15904)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(11392) interacted with Agent Entity(14512)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15600) interacted with Agent Entity(15616)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15600) interacted with Agent Entity(15616)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12784) interacted with Agent Entity(13744)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14672) interacted with Agent Entity(15120)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12784) interacted with Agent Entity(13744)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(11600) ate food Entity(16144) (+6.2)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14816) interacted with Agent Entity(15168)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14816) interacted with Agent Entity(15168)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13152) ate food Entity(16338) (+5.1)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15744) ate food Entity(16394) (+5.5)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14880) interacted with Agent Entity(14912)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14880) interacted with Agent Entity(14912)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14112) interacted with Agent Entity(14496)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15376) interacted with Agent Entity(15904)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15376) interacted with Agent Entity(15904)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14880) interacted with Agent Entity(14912)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15904) ate food Entity(16205) (+9.8)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14944) interacted with Agent Entity(15696)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15520) interacted with Agent Entity(15600)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14544) ate food Entity(16466) (+8.5)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(11648) ate food Entity(16288) (+5.4)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12912) interacted with Agent Entity(14576)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12912) interacted with Agent Entity(13760)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13392) ate food Entity(16436) (+7.9)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14832) ate food Entity(16022) (+9.1)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13616) ate food Entity(16535) (+9.1)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15136) interacted with Agent Entity(15280)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15760) ate food Entity(16612) (+8.9)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15136) interacted with Agent Entity(15280)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12752) interacted with Agent Entity(15456)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13152) interacted with Agent Entity(14736)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14224) interacted with Agent Entity(14432)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(12816) ate food Entity(16541) (+6.5)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14224) interacted with Agent Entity(14432)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13024) ate food Entity(16112) (+8.4)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15248) ate food Entity(16253) (+8.2)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15808) ate food Entity(16147) (+9.2)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15152) ate food Entity(16577) (+9.6)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13632) interacted with Agent Entity(14000)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15936) ate food Entity(16603) (+8.0)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14816) ate food Entity(16046) (+6.3)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14960) ate food Entity(16583) (+5.8)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14384) interacted with Agent Entity(15232)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14272) interacted with Agent Entity(15280)
+[DEBUG] Mouse click at (261, 443) in window 2
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13824) interacted with Agent Entity(15120)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13920) ate food Entity(16177) (+5.8)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15504) ate food Entity(16429) (+8.8)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14272) interacted with Agent Entity(15280)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14592) ate food Entity(16773) (+7.8)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(11168) interacted with Agent Entity(12288)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13376) interacted with Agent Entity(14416)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14272) interacted with Agent Entity(15136)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14160) interacted with Agent Entity(15312)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14160) interacted with Agent Entity(15312)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15760) ate food Entity(16626) (+6.3)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14384) interacted with Agent Entity(15232)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13792) ate food Entity(16585) (+9.4)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13568) interacted with Agent Entity(13888)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15200) ate food Entity(16846) (+7.1)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13136) interacted with Agent Entity(13760)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14192) interacted with Agent Entity(14592)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15344) ate food Entity(16737) (+8.9)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14832) interacted with Agent Entity(15648)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15600) ate food Entity(16698) (+8.3)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15280) interacted with Agent Entity(15472)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(13808) ate food Entity(16569) (+5.0)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(12464) ate food Entity(16877) (+5.5)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14288) ate food Entity(16938) (+8.6)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14736) ate food Entity(16396) (+6.8)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15824) ate food Entity(16098) (+5.6)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14832) interacted with Agent Entity(15648)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15376) ate food Entity(16784) (+7.9)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14400) ate food Entity(16968) (+7.4)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13088) interacted with Agent Entity(14352)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14272) interacted with Agent Entity(15472)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14272) interacted with Agent Entity(15472)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13104) interacted with Agent Entity(15232)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14960) ate food Entity(16898) (+6.3)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14944) interacted with Agent Entity(15696)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15264) ate food Entity(16543) (+8.0)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14048) interacted with Agent Entity(14736)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(11584) interacted with Agent Entity(14160)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14944) interacted with Agent Entity(15696)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15120) ate food Entity(16829) (+5.5)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(15600) interacted with Agent Entity(15984)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(11712) interacted with Agent Entity(14720)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(13808) interacted with Agent Entity(14080)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14944) interacted with Agent Entity(15696)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(15344) ate food Entity(16681) (+9.6)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(14592) ate food Entity(16333) (+7.6)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14048) interacted with Agent Entity(14736)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(14048) interacted with Agent Entity(14736)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(12752) interacted with Agent Entity(15456)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(18464) ate food Entity(16434) (+6.5)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(18672) ate food Entity(16645) (+7.3)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(17392) interacted with Agent Entity(18352)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(18128) ate food Entity(16770) (+6.5)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(19168) ate food Entity(16196) (+7.0)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(21472) ate food Entity(16950) (+7.0)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(22400) ate food Entity(16285) (+7.0)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(25104) ate food Entity(16450) (+6.5)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(24976) ate food Entity(16913) (+7.1)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(28368) ate food Entity(18765) (+7.1)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(29616) ate food Entity(17132) (+6.5)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(29216) ate food Entity(17146) (+9.2)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(32992) ate food Entity(16467) (+8.6)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(34144) ate food Entity(17080) (+7.7)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(34736) interacted with Agent Entity(35936)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(34736) interacted with Agent Entity(35936)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(38384) ate food Entity(17134) (+6.6)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(40272) ate food Entity(16485) (+8.3)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(42176) ate food Entity(18758) (+7.1)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(42320) ate food Entity(16982) (+9.5)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(45040) ate food Entity(18770) (+8.3)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(45344) ate food Entity(33250) (+6.6)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(48368) ate food Entity(16081) (+6.2)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(49936) ate food Entity(16309) (+6.3)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(51456) interacted with Agent Entity(52176)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(52672) ate food Entity(16393) (+5.0)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(55456) ate food Entity(17028) (+6.5)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(57168) ate food Entity(16462) (+7.5)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(55584) interacted with Agent Entity(58096)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(58064) interacted with Agent Entity(58752)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(57168) interacted with Agent Entity(60272)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(63712) ate food Entity(17066) (+8.4)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(61984) interacted with Agent Entity(63664)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(65808) ate food Entity(42902) (+7.7)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(68528) ate food Entity(16700) (+5.5)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(70000) interacted with Agent Entity(70176)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(71104) ate food Entity(52548) (+7.8)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(71808) ate food Entity(71840) (+6.6)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(68352) interacted with Agent Entity(68480)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(75760) ate food Entity(62201) (+6.0)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(78112) ate food Entity(18766) (+5.9)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(78480) interacted with Agent Entity(78800)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(78480) interacted with Agent Entity(78800)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(82144) ate food Entity(16451) (+5.8)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(84256) interacted with Agent Entity(84496)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(85712) ate food Entity(18779) (+9.0)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(85936) interacted with Agent Entity(86128)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(88112) interacted with Agent Entity(88144)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(87328) interacted with Agent Entity(88144)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(92576) ate food Entity(78274) (+6.4)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(91680) interacted with Agent Entity(93008)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(89232) interacted with Agent Entity(92880)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(93456) interacted with Agent Entity(96048)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(96224) interacted with Agent Entity(98736)
+[DEBUG] Spawned 100 random agents
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(97504) interacted with Agent Entity(99312)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(98912) ate food Entity(91138) (+6.9)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(99456) interacted with Agent Entity(100288)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(100352) interacted with Agent Entity(100400)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(99200) ate food Entity(94365) (+9.5)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(100272) ate food Entity(97576) (+8.0)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(99040) interacted with Agent Entity(100320)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(92832) interacted with Agent Entity(98224)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(99040) interacted with Agent Entity(100320)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(99488) interacted with Agent Entity(99776)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(100384) ate food Entity(100803) (+5.2)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(97392) ate food Entity(49339) (+5.5)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(96176) ate food Entity(100873) (+6.2)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(100032) ate food Entity(16765) (+7.5)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(96336) interacted with Agent Entity(100112)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(96336) interacted with Agent Entity(100112)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(91968) interacted with Agent Entity(96624)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(97328) interacted with Agent Entity(97376)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(96512) interacted with Agent Entity(96752)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(97904) interacted with Agent Entity(99168)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(98496) interacted with Agent Entity(99888)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(100160) interacted with Agent Entity(100496)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(99952) interacted with Agent Entity(100336)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(99952) interacted with Agent Entity(100336)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[EAT] Agent Entity(100528) ate food Entity(100955) (+6.3)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(99760) interacted with Agent Entity(100736)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(99760) interacted with Agent Entity(100736)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(99456) interacted with Agent Entity(100288)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(96880) interacted with Agent Entity(97232)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(98976) interacted with Agent Entity(99904)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(97824) interacted with Agent Entity(97840)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to count agent types for stats
+[DEBUG] About to query agent types for stats
+[DEBUG] About to query food entities for stats
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(97824) interacted with Agent Entity(97840)
+[DEBUG] About to render terrain
+[DEBUG] About to query agents for rendering
+[DEBUG] About to present main canvas
+[DEBUG] About to present stats canvas
+[DEBUG] About to run pre_food_schedule
+[DEBUG] Finished pre_food_schedule
+[DEBUG] About to run agent_death_schedule
+[DEBUG] Finished agent_death_schedule
+[DEBUG] About to run food_spawn_apply_schedule
+[DEBUG] Finished food_spawn_apply_schedule
+[INTERACT] Agent Entity(98976) interacted with Agent Entity(99904)

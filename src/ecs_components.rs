@@ -1,7 +1,7 @@
 //! ECS Components for community simulator (Legion)
 use legion;
 use legion::IntoQuery;
-use std::sync::{Arc, Mutex};
+use legion::SystemBuilder;
 use std::collections::VecDeque;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -22,7 +22,6 @@ pub struct AgentType {
     pub move_speed: f32,
     pub move_probability: Option<f32>,
     pub color: &'static str,
-    // Add other agent properties as needed
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -60,8 +59,6 @@ pub struct InteractionStats {
     pub active_interactions: usize,
     pub active_interactions_history: VecDeque<usize>,
 }
-
-// Add a rolling log of events
 
 pub struct EventLog {
     pub events: VecDeque<String>,
@@ -139,12 +136,6 @@ pub fn agent_interaction_system() -> impl legion::systems::Runnable {
         .with_query(<(legion::Entity, &Position)>::query())
         .build(|_cmd, _world, _, query| {
             // --- Pass 1: Collect all agent info for matching (read-only) ---
-            // let all_agents: Vec<(legion::Entity, Option<legion::Entity>, u32, u32, Option<legion::Entity>)> = unsafe {
-            //     query.iter_unchecked(_world)
-            //         .map(|(e, _p)| (*e, None, 0, 0, None))
-            //         .collect()
-            // };
-            // --- Pass 2: Mutate only the current entity, use info from pass 1 ---
             for (_entity, _pos) in query.iter(_world) {
                 // No-op
             }
@@ -163,15 +154,14 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
         .with_query(<(legion::Entity, &Position, &AgentType)>::query()) // agents
         .with_query(<(legion::Entity, &Position, &Food)>::query()) // food
         .with_query(<(legion::Entity, &Position, &mut Hunger, &mut Energy)>::query())
-        .with_query(<(legion::Entity, &Position, &Food)>::query())
-        .build(|cmd, world, (stats, event_log), (agent_query, food_query, ref mut agent_stats_query, food_query2)| {
-            let agent_count = agent_query.iter(world).count();
-            let food_count = food_query.iter(world).count();
+        .build(|cmd, _world, (stats, event_log), (agent_query, food_query, agent_stats_query)| {
+            let agent_count = agent_query.iter(_world).count();
+            let food_count = food_query.iter(_world).count();
             event_log.log(format!("[TICK] Agents: {}, Food: {}", agent_count, food_count));
             let mut interactions_this_tick = 0;
             let mut active_interactions = 0;
-            let agents: Vec<_> = agent_query.iter(world).map(|(entity, pos, _)| (*entity, pos.x, pos.y)).collect();
-            let foods: Vec<_> = food_query.iter(world).map(|(e, pos, food)| (*e, pos.x, pos.y, food.nutrition)).collect();
+            let agents: Vec<_> = agent_query.iter(_world).map(|(entity, pos, _)| (*entity, pos.x, pos.y)).collect();
+            let foods: Vec<_> = food_query.iter(_world).map(|(e, pos, food)| (*e, pos.x, pos.y, food.nutrition)).collect();
             let mut interacted = vec![false; agents.len()];
             for i in 0..agents.len() {
                 let (agent_entity, x, y) = agents[i];
@@ -191,7 +181,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
                     // Agent-food interaction
                     for (food_e, fx, fy, nutrition) in &foods {
                         if (x - *fx).abs() < 1.0 && (y - *fy).abs() < 1.0 {
-                            if let Some((_entity, _pos, hunger, energy)) = agent_stats_query.iter_mut(world).find(|(e, _pos, _h, _en)| **e == agent_entity) {
+                            if let Some((_entity, _pos, hunger, energy)) = agent_stats_query.iter_mut(_world).find(|(e, _pos, _h, _en)| **e == agent_entity) {
                                 hunger.value += *nutrition;
                                 energy.value += *nutrition;
                                 event_log.log(format!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition));
@@ -210,32 +200,40 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
         })
 }
 
-// --- ECS Food Spawning System ---
-pub fn food_spawn_system() -> impl legion::systems::Runnable {
-    legion::SystemBuilder::new("FoodSpawnSystem")
-        .read_resource::<crate::map::Map>()
-        .build(|cmd, world, map, _| {
-            let mut rng = rand::thread_rng();
-            let map = &*map;
-            let num_to_spawn = (map.width * map.height / 20000).max(2);
-            for _ in 0..num_to_spawn {
-                let x = rng.gen_range(0..map.width) as f32;
-                let y = rng.gen_range(0..map.height) as f32;
-                let ix = x as i32;
-                let iy = y as i32;
-                let exists = Arc::new(Mutex::new(false));
-                let exists_clone = Arc::clone(&exists);
-                cmd.exec_mut(move |world, _| {
-                    let found = <(&Position, &Food)>::query()
-                        .iter(world)
-                        .any(|(pos, _)| pos.x.round() as i32 == ix && pos.y.round() as i32 == iy);
-                    *exists_clone.lock().unwrap() = found;
-                    if !found {
-                        use rand::Rng;
-                        let nutrition = rand::thread_rng().gen_range(5.0..=10.0);
-                        world.push((Position { x, y }, Food { nutrition }, Renderable { icon: '*', color: "green" }));
-                    }
-                });
+// --- Food spawn collection as a regular function (not a system) ---
+pub fn collect_food_spawn_positions(world: &legion::World, map: &crate::map::Map) -> Vec<(f32, f32)> {
+    let mut rng = rand::thread_rng();
+    let num_to_spawn = (map.width * map.height / 20000).max(2);
+    let mut positions_to_spawn = Vec::new();
+    for _ in 0..num_to_spawn {
+        let x = rng.gen_range(0..map.width) as f32;
+        let y = rng.gen_range(0..map.height) as f32;
+        let ix = x as i32;
+        let iy = y as i32;
+        let found = <(&Position, &Food)>::query()
+            .iter(world)
+            .any(|(pos, _)| pos.x.round() as i32 == ix && pos.y.round() as i32 == iy);
+        if !found {
+            positions_to_spawn.push((x, y));
+        }
+    }
+    positions_to_spawn
+}
+
+// --- Resource for pending food spawn positions ---
+pub struct PendingFoodSpawns(pub Vec<(f32, f32)>);
+
+// --- ECS Food Spawn Apply System (mutation only) ---
+pub fn food_spawn_apply_system() -> impl legion::systems::Runnable {
+    SystemBuilder::new("FoodSpawnApplySystem")
+        .write_resource::<PendingFoodSpawns>()
+        .build(|cmd, _world, pending, _| {
+            for (x, y) in pending.0.drain(..) {
+                cmd.push((
+                    Position { x, y },
+                    Food { nutrition: rand::thread_rng().gen_range(5.0..=10.0) },
+                    Renderable { icon: '*', color: "green" }
+                ));
             }
         })
 }
@@ -244,9 +242,9 @@ pub fn food_spawn_system() -> impl legion::systems::Runnable {
 pub fn agent_death_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentDeathSystem")
         .with_query(<(legion::Entity, &Hunger, &Energy)>::query())
-        .build(|cmd, world, _, query| {
+        .build(|cmd, _world, _, query| {
             let mut to_remove = Vec::new();
-            for (entity, hunger, energy) in query.iter(world) {
+            for (entity, hunger, energy) in query.iter(_world) {
                 if hunger.value <= 0.0 || energy.value <= 0.0 {
                     to_remove.push(*entity);
                 }
@@ -256,7 +254,3 @@ pub fn agent_death_system() -> impl legion::systems::Runnable {
             }
         })
 }
-
-// Example usage (in tests or migration):
-// let agent = spawn_agent(&mut world, Position { x: 1.0, y: 2.0 }, AgentType { name: "worker", move_speed: 1.0, color: "blue" });
-// let food = spawn_food(&mut world, Position { x: 3.0, y: 4.0 });

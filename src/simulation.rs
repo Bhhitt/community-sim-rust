@@ -8,10 +8,9 @@ use std::fs::File;
 use std::io::Write;
 use std::time::Instant;
 use serde_yaml;
-use legion::systems::Runnable;
 use legion::IntoQuery;
 use rand::Rng;
-use crate::ecs_components::{spawn_agent, agent_movement_system, entity_interaction_system, food_spawn_system, agent_death_system, Hunger, Energy, Renderable, InteractionState};
+use crate::ecs_components::{spawn_agent, agent_movement_system, entity_interaction_system, collect_food_spawn_positions, food_spawn_apply_system, agent_death_system, PendingFoodSpawns};
 use legion::{World, Resources, Schedule};
 
 fn run_simulation(map_size: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType]) -> (f64, f64, f64) {
@@ -64,19 +63,11 @@ fn run_simulation(map_size: i32, num_agents: usize, ticks: usize, label: &str, a
         legion::Entity,
         &crate::ecs_components::Position,
         Option<&crate::ecs_components::AgentType>,
-        Option<&crate::ecs_components::Hunger>,
-        Option<&crate::ecs_components::Energy>,
-        Option<&crate::ecs_components::Renderable>,
-        Option<&crate::ecs_components::InteractionState>,
         Option<&crate::ecs_components::Food>
     )>::query();
-    for (entity, _pos, agent_type, hunger, energy, render, interact, food) in query.iter(&world) {
+    for (entity, _pos, agent_type, food) in query.iter(&world) {
         let mut comps = vec!["Position"];
         if agent_type.is_some() { comps.push("AgentType"); }
-        if hunger.is_some() { comps.push("Hunger"); }
-        if energy.is_some() { comps.push("Energy"); }
-        if render.is_some() { comps.push("Renderable"); }
-        if interact.is_some() { comps.push("InteractionState"); }
         if food.is_some() { comps.push("Food"); }
         println!("  Entity {:?}: [{}]", entity, comps.join(", "));
     }
@@ -102,25 +93,45 @@ fn run_simulation(map_size: i32, num_agents: usize, ticks: usize, label: &str, a
     println!("[DEBUG] Seeded {} initial food entities", initial_food);
     // --- END FOOD SEED ---
     let start = Instant::now();
-    let mut move_time = 0.0;
-    let mut interact_time = 0.0;
+    let move_time = 0.0;
+    let interact_time = 0.0;
     // --- SETUP SYSTEM SCHEDULE ---
     let mut schedule = Schedule::builder()
         .add_system(agent_movement_system())
         .add_system(entity_interaction_system())
-        .add_system(food_spawn_system())
         .add_system(agent_death_system())
+        .build();
+    let mut food_spawn_apply_schedule = Schedule::builder()
+        .add_system(food_spawn_apply_system())
         .build();
     // ECS: Setup Legion resources
     let mut resources = Resources::default();
     resources.insert(map.clone());
     resources.insert(crate::ecs_components::InteractionStats::default());
     resources.insert(crate::ecs_components::EventLog::new(200));
+    resources.insert(PendingFoodSpawns(Vec::new()));
+    // Silence unused variable warning for agent_types
+    let _ = agent_types;
     for tick in 0..ticks {
         println!("Tick {}", tick);
         println!("[DEBUG] Before schedule execution");
         let t1 = Instant::now();
         schedule.execute(&mut world, &mut resources);
+        println!("[DEBUG] About to run agent_death_schedule");
+        let mut agent_death_schedule = Schedule::builder()
+            .add_system(agent_death_system())
+            .build();
+        agent_death_schedule.execute(&mut world, &mut resources);
+        println!("[DEBUG] Finished agent_death_schedule");
+        // Collect food spawn positions outside ECS schedule
+        {
+            let map = resources.get::<crate::map::Map>().unwrap();
+            let positions = collect_food_spawn_positions(&world, &map);
+            resources.get_mut::<PendingFoodSpawns>().unwrap().0 = positions;
+        }
+        println!("[DEBUG] About to run food_spawn_apply_schedule");
+        food_spawn_apply_schedule.execute(&mut world, &mut resources);
+        println!("[DEBUG] Finished food_spawn_apply_schedule");
         let total_elapsed = t1.elapsed().as_secs_f64();
         println!("[DEBUG] After schedule execution");
         println!("[DEBUG] Tick time: {:.6}s", total_elapsed);

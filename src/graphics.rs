@@ -1,6 +1,5 @@
 //! SDL2 graphics frontend
 
-use crate::util;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::event::Event;
@@ -8,7 +7,6 @@ use sdl2::keyboard::Keycode;
 use std::time::Duration;
 use sdl2::render::TextureQuery;
 use rand::Rng;
-use legion::IntoQuery;
 
 const CELL_SIZE: u32 = 6;
 const AGENT_COLOR: Color = Color::RGB(220, 40, 40);
@@ -50,8 +48,8 @@ fn terrain_color(terrain: &super::map::Terrain) -> Color {
     }
 }
 
-pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: &[crate::agent::AgentType]) {
-    use crate::ecs_components::{spawn_agent, AgentType as ECSAgentType, agent_movement_system, entity_interaction_system, food_spawn_system, agent_death_system};
+pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types: &[crate::agent::AgentType]) {
+    use crate::ecs_components::{spawn_agent, AgentType as ECSAgentType, agent_movement_system, entity_interaction_system, collect_food_spawn_positions, food_spawn_apply_system, agent_death_system, PendingFoodSpawns};
     use legion::*;
     use std::io::Write;
     // --- ECS World Setup ---
@@ -108,14 +106,18 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
     resources.insert(map);
     resources.insert(crate::ecs_components::InteractionStats::default());
     resources.insert(crate::ecs_components::EventLog::new(200));
+    resources.insert(PendingFoodSpawns(Vec::new()));
     let mut pre_food_schedule = Schedule::builder()
         .add_system(agent_movement_system())
         .add_system(entity_interaction_system())
         .flush()
         .build();
-    let mut post_food_schedule = Schedule::builder()
-        .add_system(food_spawn_system())
+    // SPLIT: Separate schedules for agent_death and food_spawn
+    let mut agent_death_schedule = Schedule::builder()
         .add_system(agent_death_system())
+        .build();
+    let mut food_spawn_apply_schedule = Schedule::builder()
+        .add_system(food_spawn_apply_system())
         .build();
 
     let sdl_context = sdl2::init().unwrap();
@@ -128,9 +130,7 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
     // --- Stats window setup ---
     let ttf_context = sdl2::ttf::init().unwrap();
     let font = ttf_context.load_font("/System/Library/Fonts/Supplemental/Arial.ttf", 18).unwrap();
-    let stats_window_width = 320u32;
-    let stats_window_height = 480u32; // Increased height
-    let stats_window = video_subsystem.window("Stats", stats_window_width, stats_window_height)
+    let stats_window = video_subsystem.window("Stats", 320, 480)
         .position(0, 0) // Spawn at top-left corner
         .resizable()
         .build().unwrap();
@@ -146,8 +146,21 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
     'running: loop {
         // --- Run ECS systems ---
         if !paused || advance_one {
+            println!("[DEBUG] About to run pre_food_schedule");
             pre_food_schedule.execute(&mut world, &mut resources);
-            post_food_schedule.execute(&mut world, &mut resources);
+            println!("[DEBUG] Finished pre_food_schedule");
+            println!("[DEBUG] About to run agent_death_schedule");
+            agent_death_schedule.execute(&mut world, &mut resources);
+            println!("[DEBUG] Finished agent_death_schedule");
+            // Collect food spawn positions outside ECS schedule
+            {
+                let map = resources.get::<crate::map::Map>().unwrap();
+                let positions = collect_food_spawn_positions(&world, &map);
+                resources.get_mut::<PendingFoodSpawns>().unwrap().0 = positions;
+            }
+            println!("[DEBUG] About to run food_spawn_apply_schedule");
+            food_spawn_apply_schedule.execute(&mut world, &mut resources);
+            println!("[DEBUG] Finished food_spawn_apply_schedule");
             if advance_one {
                 advance_one = false;
             }
@@ -274,6 +287,7 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
             }
         }
         // Draw terrain
+        println!("[DEBUG] About to render terrain");
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
         for y in 0..render_map.height as usize {
@@ -289,6 +303,7 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
             }
         }
         // Draw ECS agents
+        println!("[DEBUG] About to query agents for rendering");
         for (entity, (pos, renderable)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Renderable))>::query().iter(&world) {
             let rect = Rect::new(
                 ((pos.x - camera.x) * CELL_SIZE as f32) as i32,
@@ -339,17 +354,20 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
                 empty_cell_flash = None;
             }
         }
+        println!("[DEBUG] About to present main canvas");
         canvas.present();
 
         // --- Stats window rendering ---
         if last_stats_update.elapsed().as_secs_f32() >= 1.0 {
-            // Count agent types once per second
+            println!("[DEBUG] About to count agent types for stats");
             use crate::ecs_components::AgentType as ECSAgentType;
             let mut agent_counts: std::collections::HashMap<&'static str, usize> = std::collections::HashMap::new();
+            println!("[DEBUG] About to query agent types for stats");
             for (_entity, agent_type) in <(Read<crate::ecs_components::Position>, Read<ECSAgentType>)>::query().iter(&world) {
                 *agent_counts.entry(agent_type.name).or_insert(0) += 1;
             }
             // Count food entities
+            println!("[DEBUG] About to query food entities for stats");
             let food_count = <(Read<crate::ecs_components::Position>,)>::query()
                 .filter(component::<crate::ecs_components::Food>())
                 .iter(&world)
@@ -365,7 +383,7 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
             last_stats_update = std::time::Instant::now();
         }
         // Query current stats window size in case it was resized
-        let (stats_window_width, stats_window_height) = stats_canvas.window().size();
+        let (_stats_window_width, _stats_window_height) = stats_canvas.window().size();
         stats_canvas.set_draw_color(Color::RGB(30, 30, 30));
         stats_canvas.clear();
         // Render cached agent type counts as static text
@@ -428,6 +446,7 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
         if let Some(sel) = selected_agent {
             // Try to show agent stats first
             let mut shown = false;
+            println!("[DEBUG] About to query agent stats");
             for (entity, (pos, agent_type, hunger, energy)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::AgentType, &crate::ecs_components::Hunger, &crate::ecs_components::Energy))>::query().iter(&world) {
                 if *entity == sel {
                     let text = format!("Selected Agent:\nPos: ({:.1}, {:.1})\nType: {}\nHunger: {:.1}\nEnergy: {:.1}", pos.x, pos.y, agent_type.name, hunger.value, energy.value);
@@ -445,6 +464,7 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
             }
             // If not an agent, try to show food stats
             if !shown {
+                println!("[DEBUG] About to query food stats");
                 for (entity, (pos, food)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Food))>::query().iter(&world) {
                     if *entity == sel {
                         let text = format!("Selected Food:\nPos: ({:.1}, {:.1})\nNutrition: {:.1}", pos.x, pos.y, food.nutrition);
@@ -461,6 +481,7 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
                 }
             }
         }
+        println!("[DEBUG] About to present stats canvas");
         stats_canvas.present();
         ::std::thread::sleep(Duration::from_millis(16)); // ~60 FPS for main window
     }
