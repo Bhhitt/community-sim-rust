@@ -1,6 +1,7 @@
 //! Minimal ECS simulation loop using new ECS components
 use legion::*;
 use crate::ecs_components::*;
+use log::debug;
 
 pub fn run_ecs_sim() {
     let mut world = World::default();
@@ -28,9 +29,9 @@ pub fn run_ecs_sim() {
                 .build(|_, world, _, query| {
                     for (pos, food, agent_type) in query.iter(world) {
                         if let Some(_food) = food {
-                            println!("Food at ({}, {})", pos.x, pos.y);
+                            debug!("Food at ({}, {})", pos.x, pos.y);
                         } else if let Some(agent_type) = agent_type {
-                            println!("Agent '{}' at ({}, {})", agent_type.name, pos.x, pos.y);
+                            debug!("Agent '{}' at ({}, {})", agent_type.name, pos.x, pos.y);
                         }
                     }
                 })
