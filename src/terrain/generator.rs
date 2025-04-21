@@ -6,7 +6,7 @@ pub fn generate_terrain(width: usize, height: usize, seed: u32) -> Vec<Vec<Terra
     let mut map = vec![vec![TerrainType::Grass; width]; height];
 
     // Parameters for noise scaling
-    let scale = 0.05;
+    let scale = 0.015; // Lower scale = larger, smoother regions
     let beach_margin = 0.08;
     let mountain_thresh = 0.7;
     let forest_thresh = 0.4;

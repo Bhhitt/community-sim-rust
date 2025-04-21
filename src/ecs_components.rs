@@ -56,6 +56,18 @@ pub struct InteractionState {
     pub cooldown: u32,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Target {
+    pub x: f32,
+    pub y: f32,
+    pub stuck_ticks: u32, // Track how many ticks agent is stuck
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Path {
+    pub waypoints: VecDeque<(f32, f32)>,
+}
+
 #[derive(Default)]
 pub struct InteractionStats {
     pub agent_interactions: usize,
@@ -83,10 +95,30 @@ impl EventLog {
     }
 }
 
+// Helper: Pick a random passable tile for this agent type
+fn random_passable_target<R: Rng>(map: &crate::map::Map, agent_type: &AgentType, rng: &mut R) -> (f32, f32) {
+    let mut tries = 0;
+    loop {
+        let x = rng.gen_range(0..map.width) as i32;
+        let y = rng.gen_range(0..map.height) as i32;
+        let terrain = map.tiles[y as usize][x as usize];
+        let is_scout = agent_type.name == "scout";
+        let passable = match terrain {
+            crate::map::Terrain::Mountain => is_scout, // only scouts cross mountains
+            _ => terrain.movement_cost().is_some(),
+        };
+        if passable { return (x as f32 + rng.gen_range(0.0..1.0), y as f32 + rng.gen_range(0.0..1.0)); }
+        tries += 1;
+        if tries > 1000 { return (x as f32, y as f32); } // fallback
+    }
+}
+
 // --- Entity Spawning Functions ---
 pub fn spawn_agent(world: &mut legion::World, pos: Position, agent_type: AgentType) -> legion::Entity {
     let color = agent_type.color.clone();
-    world.push((pos, agent_type, Hunger { value: 100.0 }, Energy { value: 100.0 }, Renderable { icon: '@', color }, InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0 }))
+    let mut rng = rand::thread_rng();
+    let (tx, ty) = random_passable_target(&crate::map::Map::new(100, 100), &agent_type, &mut rng); // FIXME: pass actual map
+    world.push((pos, agent_type, Hunger { value: 100.0 }, Energy { value: 100.0 }, Renderable { icon: '@', color }, InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0 }, Target { x: tx, y: ty, stuck_ticks: 0 }, Path { waypoints: VecDeque::new() }))
 }
 
 pub fn spawn_food(world: &mut legion::World, pos: Position) -> legion::Entity {
@@ -100,6 +132,7 @@ use crate::map::Map;
 
 pub fn agent_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentMovementSystem")
+<<<<<<< HEAD
         .with_query(<(legion::Entity, &mut Position, &AgentType, &mut Hunger, &mut Energy)>::query())
         .read_resource::<Map>()
         .build(|_, world, map, query| {
@@ -114,9 +147,20 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
             // Second pass: mutate components
             for (entity, x, y, move_speed, move_probability) in to_move {
                 let move_prob = move_probability.unwrap_or(1.0);
+=======
+        .with_query(<(&mut Position, &AgentType, &mut Hunger, &mut Energy, Option<&mut Target>, Option<&mut Path>)>::query())
+        .read_resource::<Map>()
+        .build(|_, world, map, query| {
+            let map = &*map;
+            query.par_for_each_mut(world, |(pos, agent_type, hunger, energy, target, mut path)| {
+                let mut rng = SmallRng::from_entropy();
+                // --- Movement probability logic ---
+                let move_prob = agent_type.move_probability.unwrap_or(1.0);
+>>>>>>> 5731501 (updated colors, added a* for pathing lol should be parallelized)
                 if rng.gen::<f32>() > move_prob {
                     continue;
                 }
+<<<<<<< HEAD
                 let dx = rng.gen_range(-1.0..=1.0) * move_speed;
                 let dy = rng.gen_range(-1.0..=1.0) * move_speed;
                 let mut new_x = x + dx;
@@ -131,7 +175,219 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     energy.value -= distance * 0.1;
                 }
             }
+=======
+                // --- Pathfinding logic ---
+                let _map_w = map.width as f32;
+                let _map_h = map.height as f32;
+                let (target_x, target_y, _stuck_ticks) = if let Some(target) = target {
+                    let mut stuck_ticks = target.stuck_ticks;
+                    let progress = ((pos.x - target.x).abs() + (pos.y - target.y).abs()) > 0.1;
+                    // Only recalc path if target changed or path is empty (not every time stuck)
+                    let target_changed = (target.x - pos.x).abs() > 0.1 || (target.y - pos.y).abs() > 0.1;
+                    if !progress {
+                        stuck_ticks += 1;
+                    } else {
+                        stuck_ticks = 0;
+                    }
+                    if (pos.x - target.x).abs() < 0.1 && (pos.y - target.y).abs() < 0.1 || stuck_ticks > 10 {
+                        // Pick a new target within 10 squares
+                        let mut tx;
+                        let mut ty;
+                        let mut tries = 0;
+                        loop {
+                            let dx = rng.gen_range(-10..=10);
+                            let dy = rng.gen_range(-10..=10);
+                            tx = (pos.x.round() as i32 + dx).clamp(0, map.width-1) as f32;
+                            ty = (pos.y.round() as i32 + dy).clamp(0, map.height-1) as f32;
+                            if map.is_passable(tx as i32, ty as i32) { break; }
+                            tries += 1;
+                            if tries > 20 { break; }
+                        }
+                        target.x = tx;
+                        target.y = ty;
+                        target.stuck_ticks = 0;
+                        if let Some(ref mut path) = path {
+                            if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (tx.round() as i32, ty.round() as i32), 10) {
+                                path.waypoints = new_path.into();
+                            } else {
+                                path.waypoints.clear();
+                            }
+                        }
+                        (tx, ty, 0)
+                    } else {
+                        target.stuck_ticks = stuck_ticks;
+                        // Only recalc path if empty or target changed
+                        if let Some(ref mut path) = path {
+                            if path.waypoints.is_empty() || target_changed {
+                                if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (target.x.round() as i32, target.y.round() as i32), 10) {
+                                    path.waypoints = new_path.into();
+                                }
+                            }
+                        }
+                        (target.x, target.y, stuck_ticks)
+                    }
+                } else {
+                    // No target component; do not move
+                    return;
+                };
+                // --- Path following ---
+                let mut next_x = target_x;
+                let mut next_y = target_y;
+                if let Some(ref mut path) = path {
+                    if let Some(&(wx, wy)) = path.waypoints.front() {
+                        let dist = ((pos.x - wx).powi(2) + (pos.y - wy).powi(2)).sqrt();
+                        if dist < 0.5 {
+                            path.waypoints.pop_front();
+                        }
+                        if let Some(&(wx, wy)) = path.waypoints.front() {
+                            next_x = wx;
+                            next_y = wy;
+                        }
+                    }
+                }
+                // Add wandering/straying noise and repulsion from impassable tiles
+                let stray_angle: f32 = rng.gen_range(-0.2..0.2); // radians
+                let dx = next_x - pos.x;
+                let dy = next_y - pos.y;
+                let dist = (dx * dx + dy * dy).sqrt();
+                if dist < 0.01 {
+                    // Already at target
+                    return;
+                }
+                let step = agent_type.move_speed.min(dist);
+                let mut dir_x = dx / dist;
+                let mut dir_y = dy / dist;
+                // Repulsion from impassable tiles
+                let mut repulse_x = 0.0;
+                let mut repulse_y = 0.0;
+                for ox in -1..=1 {
+                    for oy in -1..=1 {
+                        if ox == 0 && oy == 0 { continue; }
+                        let nx = (pos.x.round() as i32 + ox).clamp(0, map.width-1);
+                        let ny = (pos.y.round() as i32 + oy).clamp(0, map.height-1);
+                        if !map.is_passable(nx, ny) {
+                            let fx = pos.x - nx as f32;
+                            let fy = pos.y - ny as f32;
+                            let d = (fx*fx + fy*fy).sqrt().max(0.1);
+                            repulse_x += fx / d;
+                            repulse_y += fy / d;
+                        }
+                    }
+                }
+                dir_x += 0.3 * repulse_x;
+                dir_y += 0.3 * repulse_y;
+                // Apply stray
+                let cos_a = stray_angle.cos();
+                let sin_a = stray_angle.sin();
+                let stray_x = dir_x * cos_a - dir_y * sin_a;
+                let stray_y = dir_x * sin_a + dir_y * cos_a;
+                dir_x = 0.9 * dir_x + 0.1 * stray_x;
+                dir_y = 0.9 * dir_y + 0.1 * stray_y;
+                let new_x = (pos.x + dir_x * step).max(0.0).min(map.width as f32 - 1.0);
+                let new_y = (pos.y + dir_y * step).max(0.0).min(map.height as f32 - 1.0);
+                let tx = new_x.round() as i32;
+                let ty = new_y.round() as i32;
+                if tx < 0 || ty < 0 || tx >= map.width || ty >= map.height {
+                    return;
+                }
+                let terrain = map.tiles[ty as usize][tx as usize];
+                let is_scout = agent_type.name == "scout";
+                let mountain_cost = if is_scout { Some(3.0) } else { None };
+                let cost = match terrain {
+                    crate::map::Terrain::Mountain => mountain_cost,
+                    _ => terrain.movement_cost(),
+                };
+                if let Some(cost) = cost {
+                    let distance = ((new_x - pos.x).powi(2) + (new_y - pos.y).powi(2)).sqrt();
+                    pos.x = new_x;
+                    pos.y = new_y;
+                    hunger.value -= 0.1 * cost;
+                    energy.value -= distance * 0.1 * cost;
+                }
+                // else: impassable, do not move
+            });
+>>>>>>> 5731501 (updated colors, added a* for pathing lol should be parallelized)
         })
+}
+
+// --- A* Pathfinding Helper ---
+use std::collections::{BinaryHeap, HashMap};
+use std::cmp::Ordering;
+
+#[derive(Copy, Clone, Debug)]
+struct Node {
+    x: i32,
+    y: i32,
+    cost: f32,
+    est_total: f32,
+}
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        self.est_total == other.est_total
+    }
+}
+impl Eq for Node {}
+impl Ord for Node {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Reverse for min-heap
+        other.est_total.partial_cmp(&self.est_total).unwrap_or(Ordering::Equal)
+    }
+}
+impl PartialOrd for Node {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+fn a_star_path(map: &crate::map::Map, agent_type: &AgentType, start: (i32, i32), goal: (i32, i32), max_distance: i32) -> Option<Vec<(f32, f32)>> {
+    let mut open = BinaryHeap::new();
+    let mut came_from: HashMap<(i32, i32), (i32, i32)> = HashMap::new();
+    let mut g_score: HashMap<(i32, i32), f32> = HashMap::new();
+    let mut f_score: HashMap<(i32, i32), f32> = HashMap::new();
+    let is_scout = agent_type.name == "scout";
+    let h = |x: i32, y: i32| ((x - goal.0).abs() + (y - goal.1).abs()) as f32;
+    g_score.insert(start, 0.0);
+    f_score.insert(start, h(start.0, start.1));
+    open.push(Node { x: start.0, y: start.1, cost: 0.0, est_total: h(start.0, start.1) });
+    let neighbors = [(-1,0),(1,0),(0,-1),(0,1)];
+    while let Some(Node { x, y, cost, .. }) = open.pop() {
+        if (x, y) == goal {
+            // reconstruct path
+            let mut path = vec![(x as f32 + 0.5, y as f32 + 0.5)];
+            let mut curr = (x, y);
+            while let Some(&prev) = came_from.get(&curr) {
+                path.push((prev.0 as f32 + 0.5, prev.1 as f32 + 0.5));
+                curr = prev;
+            }
+            path.reverse();
+            return Some(path);
+        }
+        // Enforce max search distance
+        if (x - start.0).abs() > max_distance || (y - start.1).abs() > max_distance {
+            continue;
+        }
+        for (dx, dy) in neighbors.iter() {
+            let nx = x + dx;
+            let ny = y + dy;
+            if nx < 0 || ny < 0 || nx >= map.width || ny >= map.height { continue; }
+            let terrain = map.tiles[ny as usize][nx as usize];
+            let passable = match terrain {
+                crate::map::Terrain::Mountain => is_scout,
+                _ => terrain.movement_cost().is_some(),
+            };
+            if !passable { continue; }
+            let tentative_g = g_score.get(&(x, y)).unwrap_or(&f32::INFINITY) + 1.0;
+            if tentative_g < *g_score.get(&(nx, ny)).unwrap_or(&f32::INFINITY) {
+                came_from.insert((nx, ny), (x, y));
+                g_score.insert((nx, ny), tentative_g);
+                let f = tentative_g + h(nx, ny);
+                f_score.insert((nx, ny), f);
+                open.push(Node { x: nx, y: ny, cost: tentative_g, est_total: f });
+            }
+        }
+    }
+    None
 }
 
 // --- ECS Agent Interaction System ---
@@ -152,7 +408,7 @@ pub fn agent_interaction_system() -> impl legion::systems::Runnable {
 
 // --- ECS Interaction System (agent-agent, agent-food) ---
 pub fn entity_interaction_system() -> impl legion::systems::Runnable {
-    legion::SystemBuilder::new("EntityInteractionSystem")
+    SystemBuilder::new("EntityInteractionSystem")
         .write_resource::<InteractionStats>()
         .write_resource::<EventLog>()
         .with_query(<(legion::Entity, &Position, &AgentType)>::query()) // agents
@@ -167,6 +423,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
             let agents: Vec<_> = agent_query.iter(world).map(|(entity, pos, _)| (*entity, pos.x, pos.y)).collect();
             let foods: Vec<_> = food_query.iter(world).map(|(e, pos, food)| (*e, pos.x, pos.y, food.nutrition)).collect();
             let mut interacted = vec![false; agents.len()];
+            let mut rng = rand::thread_rng();
             // Collect interaction events first
             let mut food_eaten: Vec<(legion::Entity, legion::Entity, f32)> = Vec::new();
             for i in 0..agents.len() {
@@ -184,15 +441,19 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
                             break;
                         }
                     }
-                    // Agent-food interaction
-                    for (food_e, fx, fy, nutrition) in &foods {
-                        if (x - *fx).abs() < 1.0 && (y - *fy).abs() < 1.0 {
-                            food_eaten.push((agent_entity, *food_e, *nutrition));
-                        }
+                    // Agent-food interaction (randomize food selection if multiple in range)
+                    let mut foods_in_range: Vec<_> = foods.iter()
+                        .filter(|(_food_e, fx, fy, _nutrition)| (x - *fx).abs() < 1.0 && (y - *fy).abs() < 1.0)
+                        .collect();
+                    if !foods_in_range.is_empty() {
+                        use rand::seq::SliceRandom;
+                        foods_in_range.shuffle(&mut rng);
+                        let (food_e, _fx, _fy, nutrition) = *foods_in_range[0];
+                        food_eaten.push((agent_entity, *food_e, *nutrition));
                     }
                 }
             }
-            // Apply food eaten mutations in a separate pass
+            // Second pass: apply food eaten mutations
             for (agent_entity, food_e, nutrition) in food_eaten {
                 if let Some((_entity, _pos, hunger, energy)) = agent_stats_query.iter_mut(world).find(|(e, _pos, _h, _en)| **e == agent_entity) {
                     hunger.value += nutrition;

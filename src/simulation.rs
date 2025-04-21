@@ -11,6 +11,7 @@ use rand::Rng;
 use crate::ecs_components::{spawn_agent, agent_movement_system, entity_interaction_system, food_spawn_apply_system, agent_death_system, PendingFoodSpawns, collect_food_spawn_positions_system};
 use legion::{World, Resources};
 use crate::ecs_simulation::{simulation_tick, render_simulation_ascii, build_simulation_schedule, simulation_tick_profiled};
+use log;
 
 fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) -> (f64, f64, f64) {
     println!("[TEST] Entered run_simulation");
@@ -51,13 +52,13 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
             attempts += tries;
         }
     }
-    println!("[DEBUG] Total spawn attempts: {} (avg {:.2} per agent)", attempts, attempts as f32 / agent_count as f32);
+    log::debug!("[DEBUG] Total spawn attempts: {} (avg {:.2} per agent)", attempts, attempts as f32 / agent_count as f32);
     let total_entities = world.len();
-    println!("[DEBUG] Total entities in world after spawning: {}", total_entities);
+    log::debug!("[DEBUG] Total entities in world after spawning: {}", total_entities);
     std::io::stdout().flush().unwrap();
-    println!("[DEBUG] Spawned {} agents", agent_count);
+    log::debug!("[DEBUG] Spawned {} agents", agent_count);
     // --- DEBUG: Print all entities with Position and their component type names before tick loop ---
-    println!("[DEBUG] Entities with Position and their component types before tick loop:");
+    log::debug!("[DEBUG] Entities with Position and their component types before tick loop:");
     let mut query = <(
         legion::Entity,
         &crate::ecs_components::Position,
@@ -68,7 +69,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         let mut comps = vec!["Position"];
         if agent_type.is_some() { comps.push("AgentType"); }
         if food.is_some() { comps.push("Food"); }
-        println!("  Entity {:?}: [{}]", entity, comps.join(", "));
+        log::debug!("  Entity {:?}: [{}]", entity, comps.join(", "));
     }
     // --- Main simulation loop ---
     let mut resources = Resources::default();
@@ -89,7 +90,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         let mut min_profile: Option<crate::ecs_simulation::SystemProfile> = None;
         let mut max_profile: Option<crate::ecs_simulation::SystemProfile> = None;
         for tick in 0..ticks {
-            println!("Tick {}", tick);
+            log::debug!("Tick {}", tick);
             let profile = simulation_tick_profiled(
                 &mut world,
                 &mut resources,
@@ -100,7 +101,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 &mut food_spawn_apply,
             );
             writeln!(csv_file, "{}{}{}", tick, if tick == 0 { "," } else { "," }, profile.to_csv_row()).unwrap();
-            println!("[PROFILE] agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
+            log::debug!("[PROFILE] agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
                 profile.agent_movement, profile.entity_interaction, profile.agent_death, profile.food_spawn_collect, profile.food_spawn_apply);
             sum_profile.add(&profile);
             min_profile = Some(match min_profile {
@@ -129,22 +130,22 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         let ticks_f = ticks as f64;
         let mut avg_profile = sum_profile.clone();
         avg_profile.div_assign(ticks_f);
-        println!("\n=== System Profile Summary ===");
-        println!("Average:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
+        log::debug!("\n=== System Profile Summary ===");
+        log::debug!("Average:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
             avg_profile.agent_movement, avg_profile.entity_interaction, avg_profile.agent_death, avg_profile.food_spawn_collect, avg_profile.food_spawn_apply);
         if let Some(min) = min_profile {
-            println!("Minimum:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
+            log::debug!("Minimum:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
                 min.agent_movement, min.entity_interaction, min.agent_death, min.food_spawn_collect, min.food_spawn_apply);
         }
         if let Some(max) = max_profile {
-            println!("Maximum:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
+            log::debug!("Maximum:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
                 max.agent_movement, max.entity_interaction, max.agent_death, max.food_spawn_collect, max.food_spawn_apply);
         }
     } else {
         let mut schedule = build_simulation_schedule();
         let mut last_ascii = String::new();
         for tick in 0..ticks {
-            println!("Tick {}", tick);
+            log::debug!("Tick {}", tick);
             simulation_tick(&mut world, &mut resources, &mut schedule);
             // Generate ASCII snapshot at each tick (optional, but we'll save the last)
             last_ascii = render_simulation_ascii(&world, &map);

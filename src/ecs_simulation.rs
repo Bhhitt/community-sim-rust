@@ -4,6 +4,7 @@ use crate::ecs_components::*;
 use legion::systems::Runnable;
 use crate::ecs_components::collect_food_spawn_positions_system;
 use legion::Schedule;
+use log;
 
 #[derive(Debug, Clone, Default)]
 pub struct SystemProfile {
@@ -102,30 +103,30 @@ pub fn simulation_tick_profiled(
     use std::time::Instant;
     let mut profile = SystemProfile::new();
 
-    println!("[DEBUG] Running agent_movement");
+    log::debug!("[DEBUG] Running agent_movement");
     // DEBUG: Check if Map resource is present
     let has_map = resources.get::<crate::map::Map>().is_some();
-    println!("[DEBUG] Map resource present before agent_movement: {}", has_map);
+    log::debug!("[DEBUG] Map resource present before agent_movement: {}", has_map);
     let t = Instant::now();
     agent_movement.run(world, resources);
     profile.agent_movement = t.elapsed().as_secs_f64();
 
-    println!("[DEBUG] Running entity_interaction");
+    log::debug!("[DEBUG] Running entity_interaction");
     let t = Instant::now();
     entity_interaction.run(world, resources);
     profile.entity_interaction = t.elapsed().as_secs_f64();
 
-    println!("[DEBUG] Running agent_death");
+    log::debug!("[DEBUG] Running agent_death");
     let t = Instant::now();
     agent_death.run(world, resources);
     profile.agent_death = t.elapsed().as_secs_f64();
 
-    println!("[DEBUG] Running food_spawn_collect");
+    log::debug!("[DEBUG] Running food_spawn_collect");
     let t = Instant::now();
     food_spawn_collect.run(world, resources);
     profile.food_spawn_collect = t.elapsed().as_secs_f64();
 
-    println!("[DEBUG] Running food_spawn_apply");
+    log::debug!("[DEBUG] Running food_spawn_apply");
     let t = Instant::now();
     food_spawn_apply.run(world, resources);
     profile.food_spawn_apply = t.elapsed().as_secs_f64();

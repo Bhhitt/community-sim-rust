@@ -9,9 +9,11 @@ use sdl2::render::TextureQuery;
 use rand::Rng;
 use std::fs::File;
 use std::io::Write;
+use log::debug;
 
 const CELL_SIZE: u32 = 6;
-const AGENT_COLOR: Color = Color::RGB(220, 40, 40);
+// Modern, vibrant agent color (used as fallback only)
+const AGENT_COLOR: Color = Color::RGB(255, 112, 67); // Vibrant orange
 const WINDOW_WIDTH: u32 = 1280;
 const WINDOW_HEIGHT: u32 = 800;
 
@@ -43,10 +45,10 @@ impl Camera {
 
 fn terrain_color(terrain: &super::map::Terrain) -> Color {
     match terrain {
-        super::map::Terrain::Grass => Color::RGB(60, 180, 75),
-        super::map::Terrain::Water => Color::RGB(0, 120, 220),
-        super::map::Terrain::Forest => Color::RGB(34, 139, 34),
-        super::map::Terrain::Mountain => Color::RGB(120, 120, 120),
+        super::map::Terrain::Grass => Color::RGB(67, 160, 71),      // Fresh green
+        super::map::Terrain::Water => Color::RGB(25, 118, 210),     // Deep blue
+        super::map::Terrain::Forest => Color::RGB(46, 83, 57),      // Deep pine
+        super::map::Terrain::Mountain => Color::RGB(141, 103, 72),  // Muted brown
     }
 }
 
@@ -91,7 +93,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
     }
     // DEBUG: Print number of agents spawned
     let agent_count_check = <(Read<crate::ecs_components::Position>,)>::query().iter(&world).count();
-    println!("[DEBUG] Number of agents spawned: {}", agent_count_check);
+    debug!("[DEBUG] Number of agents spawned: {}", agent_count_check);
     let mut resources = Resources::default();
     resources.insert(map.clone());
     resources.insert(crate::ecs_components::InteractionStats::default());
@@ -106,7 +108,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
         &mut crate::ecs_components::Hunger,
         &mut crate::ecs_components::Energy,
     )>::query().iter_mut(&mut world).count();
-    println!("[DEBUG] Entities matching agent_movement_system query: {}", agent_query_count);
+    debug!("[DEBUG] Entities matching agent_movement_system query: {}", agent_query_count);
     // Profiling support
     let mut csv_file = if profile_systems {
         Some(File::create(profile_csv).expect("Failed to create csv file"))
@@ -182,7 +184,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
         // --- Print latest EventLog entry to console ---
         if let Some(event_log) = resources.get::<crate::ecs_components::EventLog>() {
             if let Some(last_event) = event_log.get().back() {
-                println!("{}", last_event);
+                debug!("{}", last_event);
             }
         }
         // Handle events
@@ -222,7 +224,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                         }
                         tries += 1;
                         if tries > 1000 {
-                            println!("[ERROR] Could not find passable tile for agent after 1000 tries");
+                            debug!("[ERROR] Could not find passable tile for agent after 1000 tries");
                             break;
                         }
                     }
@@ -230,9 +232,9 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                     if let Some(agent_type) = ecs_agent_types.get(0) {
                         let agent_type = agent_type.clone();
                         spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
-                        println!("[DEBUG] Added agent at ({}, {})", x, y);
+                        debug!("[DEBUG] Added agent at ({}, {})", x, y);
                     } else {
-                        println!("[ERROR] No agent types defined!");
+                        debug!("[ERROR] No agent types defined!");
                     }
                 },
                 Event::KeyDown {
@@ -257,7 +259,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                         }
                         attempts += 1;
                     }
-                    println!("[DEBUG] Spawned {} agents ({} attempts)", spawned, attempts);
+                    debug!("[DEBUG] Spawned {} agents ({} attempts)", spawned, attempts);
                 },
                 Event::KeyDown {
                     keycode: Some(Keycode::Period),
@@ -266,16 +268,16 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                     // Advance one tick if paused
                     if paused {
                         advance_one = true;
-                        println!("[DEBUG] Advance one tick (paused)");
+                        debug!("[DEBUG] Advance one tick (paused)");
                     }
                 },
                 Event::MouseButtonDown { x, y, window_id: evt_win_id, .. } => {
                     // DEBUG: Print mouse click info
-                    println!("[DEBUG] Mouse click at ({}, {}) in window {}", x, y, evt_win_id);
+                    debug!("[DEBUG] Mouse click at ({}, {}) in window {}", x, y, evt_win_id);
                     if evt_win_id == window_id {
                         let map_x = (x as f32 / CELL_SIZE as f32 + camera.x).floor();
                         let map_y = (y as f32 / CELL_SIZE as f32 + camera.y).floor();
-                        println!("[DEBUG] Map coords: ({}, {})", map_x, map_y);
+                        debug!("[DEBUG] Map coords: ({}, {})", map_x, map_y);
                         let mut found_agent = None;
                         let mut topmost_y = -1.0_f32;
                         for (entity, (pos, renderable)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Renderable))>::query().iter(&world) {
@@ -303,9 +305,9 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                         }
                         selected_agent = found_agent;
                         if let Some(sel) = selected_agent {
-                            println!("[DEBUG] Selected entity {:?}", sel);
+                            debug!("[DEBUG] Selected entity {:?}", sel);
                         } else {
-                            println!("[DEBUG] No agent or food found at clicked cell");
+                            debug!("[DEBUG] No agent or food found at clicked cell");
                             // Store the cell and the current time for highlighting
                             empty_cell_flash = Some((map_x as i32, map_y as i32, std::time::Instant::now()));
                         }
@@ -315,7 +317,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
             }
         }
         // Draw terrain
-        println!("[DEBUG] About to render terrain");
+        debug!("[DEBUG] About to render terrain");
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
         for y in 0..render_map.height as usize {
@@ -331,7 +333,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
             }
         }
         // Draw ECS agents
-        println!("[DEBUG] About to query agents for rendering");
+        debug!("[DEBUG] About to query agents for rendering");
         for (entity, (pos, renderable)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Renderable))>::query().iter(&world) {
             let rect = Rect::new(
                 ((pos.x - camera.x) * CELL_SIZE as f32) as i32,
@@ -345,15 +347,23 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                 canvas.fill_rect(rect).ok();
             } else {
                 // Render agents as colored '@' squares (or whatever icon/color they use)
-                let color = match renderable.color.as_str() {
-                    "blue" => Color::RGB(0, 128, 255),
-                    "green" => Color::RGB(0, 200, 0),
-                    "red" => Color::RGB(220, 40, 40),
-                    "gray" => Color::RGB(120, 120, 120),
-                    "yellow" => Color::RGB(255, 255, 0),
-                    "brown" => Color::RGB(139, 69, 19),
-                    "white" => Color::RGB(255, 255, 255),
-                    _ => AGENT_COLOR,
+                let color = if renderable.color.starts_with('#') && renderable.color.len() == 7 {
+                    // Parse hex color code like #RRGGBB
+                    let r = u8::from_str_radix(&renderable.color[1..3], 16).unwrap_or(255);
+                    let g = u8::from_str_radix(&renderable.color[3..5], 16).unwrap_or(255);
+                    let b = u8::from_str_radix(&renderable.color[5..7], 16).unwrap_or(255);
+                    Color::RGB(r, g, b)
+                } else {
+                    match renderable.color.as_str() {
+                        "blue" => Color::RGB(0, 128, 255),
+                        "green" => Color::RGB(0, 200, 0),
+                        "red" => Color::RGB(220, 40, 40),
+                        "gray" => Color::RGB(120, 120, 120),
+                        "yellow" => Color::RGB(255, 255, 0),
+                        "brown" => Color::RGB(139, 69, 19),
+                        "white" => Color::RGB(255, 255, 255),
+                        _ => AGENT_COLOR,
+                    }
                 };
                 canvas.set_draw_color(color);
                 canvas.fill_rect(rect).ok();
@@ -382,7 +392,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                 empty_cell_flash = None;
             }
         }
-        println!("[DEBUG] About to present main canvas");
+        debug!("[DEBUG] About to present main canvas");
         canvas.present();
 
         // --- Stats window rendering ---
@@ -475,7 +485,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
         if let Some(sel) = selected_agent {
             // Try to show agent stats first
             let mut shown = false;
-            println!("[DEBUG] About to query agent stats");
+            debug!("[DEBUG] About to query agent stats");
             for (entity, (pos, agent_type, hunger, energy)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::AgentType, &crate::ecs_components::Hunger, &crate::ecs_components::Energy))>::query().iter(&world) {
                 if *entity == sel {
                     let text = format!("Selected Agent:\nPos: ({:.1}, {:.1})\nType: {}\nHunger: {:.1}\nEnergy: {:.1}", pos.x, pos.y, agent_type.name, hunger.value, energy.value);
@@ -493,7 +503,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
             }
             // If not an agent, try to show food stats
             if !shown {
-                println!("[DEBUG] About to query food stats");
+                debug!("[DEBUG] About to query food stats");
                 for (entity, (pos, food)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Food))>::query().iter(&world) {
                     if *entity == sel {
                         let text = format!("Selected Food:\nPos: ({:.1}, {:.1})\nNutrition: {:.1}", pos.x, pos.y, food.nutrition);
@@ -510,7 +520,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                 }
             }
         }
-        println!("[DEBUG] About to present stats canvas");
+        debug!("[DEBUG] About to present stats canvas");
         stats_canvas.present();
         ::std::thread::sleep(Duration::from_millis(16)); // ~60 FPS for main window
     }
@@ -544,5 +554,5 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
     let mut file = std::fs::File::create("simulation_ascii.txt").expect("Unable to create ascii output file");
     file.write_all(summary.as_bytes()).expect("Unable to write summary");
     file.write_all(ascii_snapshot.as_bytes()).expect("Unable to write ascii output");
-    println!("[INFO] Simulation summary and final ASCII snapshot written to simulation_ascii.txt");
+    debug!("[INFO] Simulation summary and final ASCII snapshot written to simulation_ascii.txt");
 }

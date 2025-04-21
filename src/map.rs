@@ -19,6 +19,15 @@ impl Terrain {
             Terrain::Mountain => '^',
         }
     }
+
+    pub fn movement_cost(&self) -> Option<f32> {
+        match self {
+            Terrain::Grass => Some(1.0),
+            Terrain::Forest => Some(2.0),
+            Terrain::Mountain => None, // impassable
+            Terrain::Water => None,    // impassable (could be Some(3.0) for special agents)
+        }
+    }
 }
 
 impl From<TerrainType> for Terrain {
