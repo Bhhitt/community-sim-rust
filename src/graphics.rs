@@ -49,7 +49,7 @@ fn terrain_color(terrain: &super::map::Terrain) -> Color {
 }
 
 pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types: &[crate::agent::AgentType]) {
-    use crate::ecs_components::{spawn_agent, AgentType as ECSAgentType, agent_movement_system, entity_interaction_system, collect_food_spawn_positions, food_spawn_apply_system, agent_death_system, PendingFoodSpawns};
+    use crate::ecs_components::{spawn_agent, AgentType as ECSAgentType, agent_movement_system, entity_interaction_system, food_spawn_apply_system, agent_death_system, PendingFoodSpawns};
     use legion::*;
     use std::io::Write;
     // --- ECS World Setup ---
@@ -107,18 +107,7 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
     resources.insert(crate::ecs_components::InteractionStats::default());
     resources.insert(crate::ecs_components::EventLog::new(200));
     resources.insert(PendingFoodSpawns(Vec::new()));
-    let mut pre_food_schedule = Schedule::builder()
-        .add_system(agent_movement_system())
-        .add_system(entity_interaction_system())
-        .flush()
-        .build();
-    // SPLIT: Separate schedules for agent_death and food_spawn
-    let mut agent_death_schedule = Schedule::builder()
-        .add_system(agent_death_system())
-        .build();
-    let mut food_spawn_apply_schedule = Schedule::builder()
-        .add_system(food_spawn_apply_system())
-        .build();
+    let mut schedule = crate::ecs_simulation::build_simulation_schedule(render_map.clone());
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -143,29 +132,19 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
     let mut advance_one = false;
     let mut selected_agent: Option<legion::Entity> = None;
     let mut empty_cell_flash: Option<(i32, i32, std::time::Instant)> = None;
+    use crate::ecs_simulation::{simulation_tick};
+    // 
+    // 
     'running: loop {
         // --- Run ECS systems ---
         if !paused || advance_one {
-            println!("[DEBUG] About to run pre_food_schedule");
-            pre_food_schedule.execute(&mut world, &mut resources);
-            println!("[DEBUG] Finished pre_food_schedule");
-            println!("[DEBUG] About to run agent_death_schedule");
-            agent_death_schedule.execute(&mut world, &mut resources);
-            println!("[DEBUG] Finished agent_death_schedule");
-            // Collect food spawn positions outside ECS schedule
-            {
-                let map = resources.get::<crate::map::Map>().unwrap();
-                let positions = collect_food_spawn_positions(&world, &map);
-                resources.get_mut::<PendingFoodSpawns>().unwrap().0 = positions;
-            }
-            println!("[DEBUG] About to run food_spawn_apply_schedule");
-            food_spawn_apply_schedule.execute(&mut world, &mut resources);
-            println!("[DEBUG] Finished food_spawn_apply_schedule");
-            if advance_one {
-                advance_one = false;
-            }
+            crate::ecs_simulation::simulation_tick(&mut world, &mut resources, &mut schedule);
+            // ASCII rendering is still commented out for now
+            // let ascii = render_simulation_ascii(&world, &render_map);
+            // ascii_snapshots.push(ascii.clone());
+            // println!("{}", ascii);
+            advance_one = false;
         }
-
         // --- Print latest EventLog entry to console ---
         if let Some(event_log) = resources.get::<crate::ecs_components::EventLog>() {
             if let Some(last_event) = event_log.get().back() {

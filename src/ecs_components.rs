@@ -201,23 +201,54 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
 }
 
 // --- Food spawn collection as a regular function (not a system) ---
-pub fn collect_food_spawn_positions(world: &legion::World, map: &crate::map::Map) -> Vec<(f32, f32)> {
-    let mut rng = rand::thread_rng();
-    let num_to_spawn = (map.width * map.height / 20000).max(2);
-    let mut positions_to_spawn = Vec::new();
-    for _ in 0..num_to_spawn {
-        let x = rng.gen_range(0..map.width) as f32;
-        let y = rng.gen_range(0..map.height) as f32;
-        let ix = x as i32;
-        let iy = y as i32;
-        let found = <(&Position, &Food)>::query()
-            .iter(world)
-            .any(|(pos, _)| pos.x.round() as i32 == ix && pos.y.round() as i32 == iy);
-        if !found {
-            positions_to_spawn.push((x, y));
-        }
-    }
-    positions_to_spawn
+// pub fn collect_food_spawn_positions(world: &legion::World, map: &crate::map::Map) -> Vec<(f32, f32)> {
+//     let mut rng = rand::thread_rng();
+//     let num_to_spawn = (map.width * map.height / 20000).max(2);
+//     let mut positions_to_spawn = Vec::new();
+//     for _ in 0..num_to_spawn {
+//         let x = rng.gen_range(0..map.width) as f32;
+//         let y = rng.gen_range(0..map.height) as f32;
+//         let ix = x as i32;
+//         let iy = y as i32;
+//         let found = <(&Position, &Food)>::query()
+//             .iter(world)
+//             .any(|(pos, _)| pos.x.round() as i32 == ix && pos.y.round() as i32 == iy);
+//         if !found {
+//             positions_to_spawn.push((x, y));
+//         }
+//     }
+//     positions_to_spawn
+// }
+
+// --- Food spawn collection as an ECS system ---
+pub fn collect_food_spawn_positions_system(map: crate::map::Map) -> impl legion::systems::Runnable {
+    use legion::systems::CommandBuffer;
+    use legion::*;
+    SystemBuilder::new("CollectFoodSpawnPositionsSystem")
+        .write_resource::<crate::ecs_components::PendingFoodSpawns>()
+        .read_resource::<crate::map::Map>()
+        .build(|_, world, (pending_food, map), _| {
+            let num_to_spawn = (map.width * map.height / 20000).max(2);
+            let mut rng = rand::thread_rng();
+            let mut positions_to_spawn = Vec::new();
+            for _ in 0..num_to_spawn {
+                let mut tries = 0;
+                let (mut x, mut y);
+                loop {
+                    x = rng.gen_range(0..map.width) as f32;
+                    y = rng.gen_range(0..map.height) as f32;
+                    if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
+                        break;
+                    }
+                    tries += 1;
+                    if tries > 1000 {
+                        break;
+                    }
+                }
+                positions_to_spawn.push((x, y));
+            }
+            pending_food.0 = positions_to_spawn;
+        })
 }
 
 // --- Resource for pending food spawn positions ---

@@ -10,8 +10,9 @@ use std::time::Instant;
 use serde_yaml;
 use legion::IntoQuery;
 use rand::Rng;
-use crate::ecs_components::{spawn_agent, agent_movement_system, entity_interaction_system, collect_food_spawn_positions, food_spawn_apply_system, agent_death_system, PendingFoodSpawns};
+use crate::ecs_components::{spawn_agent, agent_movement_system, entity_interaction_system, food_spawn_apply_system, agent_death_system, PendingFoodSpawns};
 use legion::{World, Resources, Schedule};
+use crate::ecs_simulation::{simulation_tick, render_simulation_ascii, build_simulation_schedule};
 
 fn run_simulation(map_size: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType]) -> (f64, f64, f64) {
     println!("[TEST] Entered run_simulation");
@@ -71,79 +72,23 @@ fn run_simulation(map_size: i32, num_agents: usize, ticks: usize, label: &str, a
         if food.is_some() { comps.push("Food"); }
         println!("  Entity {:?}: [{}]", entity, comps.join(", "));
     }
-    // --- END DEBUG ---
-    // --- Seed initial food entities to ensure food archetype exists ---
-    let initial_food = (map_size * map_size / 20000).max(2);
-    for _ in 0..initial_food {
-        let mut tries = 0;
-        let (mut x, mut y);
-        loop {
-            x = rng.gen_range(0..map_size) as f32;
-            y = rng.gen_range(0..map_size) as f32;
-            if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
-                break;
-            }
-            tries += 1;
-            if tries > 1000 {
-                panic!("Could not find passable tile for food after 1000 tries");
-            }
-        }
-        crate::ecs_components::spawn_food(&mut world, crate::ecs_components::Position { x, y });
-    }
-    println!("[DEBUG] Seeded {} initial food entities", initial_food);
-    // --- END FOOD SEED ---
-    let start = Instant::now();
-    let move_time = 0.0;
-    let interact_time = 0.0;
-    // --- SETUP SYSTEM SCHEDULE ---
-    let mut schedule = Schedule::builder()
-        .add_system(agent_movement_system())
-        .add_system(entity_interaction_system())
-        .add_system(agent_death_system())
-        .build();
-    let mut food_spawn_apply_schedule = Schedule::builder()
-        .add_system(food_spawn_apply_system())
-        .build();
-    // ECS: Setup Legion resources
+    // --- Main simulation loop ---
     let mut resources = Resources::default();
     resources.insert(map.clone());
     resources.insert(crate::ecs_components::InteractionStats::default());
     resources.insert(crate::ecs_components::EventLog::new(200));
     resources.insert(PendingFoodSpawns(Vec::new()));
-    // Silence unused variable warning for agent_types
-    let _ = agent_types;
+    let mut schedule = build_simulation_schedule(map.clone());
     for tick in 0..ticks {
         println!("Tick {}", tick);
-        println!("[DEBUG] Before schedule execution");
-        let t1 = Instant::now();
-        schedule.execute(&mut world, &mut resources);
-        println!("[DEBUG] About to run agent_death_schedule");
-        let mut agent_death_schedule = Schedule::builder()
-            .add_system(agent_death_system())
-            .build();
-        agent_death_schedule.execute(&mut world, &mut resources);
-        println!("[DEBUG] Finished agent_death_schedule");
-        // Collect food spawn positions outside ECS schedule
-        {
-            let map = resources.get::<crate::map::Map>().unwrap();
-            let positions = collect_food_spawn_positions(&world, &map);
-            resources.get_mut::<PendingFoodSpawns>().unwrap().0 = positions;
-        }
-        println!("[DEBUG] About to run food_spawn_apply_schedule");
-        food_spawn_apply_schedule.execute(&mut world, &mut resources);
-        println!("[DEBUG] Finished food_spawn_apply_schedule");
-        let total_elapsed = t1.elapsed().as_secs_f64();
-        println!("[DEBUG] After schedule execution");
-        println!("[DEBUG] Tick time: {:.6}s", total_elapsed);
-        std::io::stdout().flush().unwrap();
+        simulation_tick(&mut world, &mut resources, &mut schedule);
+        // ASCII rendering is still commented out for now
+        // let ascii = render_simulation_ascii(&world, &map);
+        // ascii_snapshots.push(ascii.clone());
+        // println!("{}", ascii);
     }
-    let duration = start.elapsed().as_secs_f64();
-    let ascii = map.render_ascii();
-    let fname = format!("simulation_map_{}.txt", label);
-    let mut file = File::create(&fname).expect("Unable to create file");
-    file.write_all(ascii.as_bytes()).expect("Unable to write file");
-    println!("ASCII map saved to {} (elapsed: {:.3}s, move: {:.3}s, interact: {:.3}s)", fname, duration, move_time, interact_time);
-    (duration, move_time, interact_time)
+    // Optionally: write last snapshot to file or keep for further processing
+    (0.0, 0.0, 0.0)
 }
 
 #[derive(Debug, Deserialize)]
