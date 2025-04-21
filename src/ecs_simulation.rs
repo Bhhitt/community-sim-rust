@@ -6,10 +6,12 @@ use legion::systems::Runnable;
 use crate::ecs_components::collect_food_spawn_positions_system;
 use legion::Schedule;
 
+#[derive(Debug, Clone, Default)]
 pub struct SystemProfile {
     pub agent_movement: f64,
     pub entity_interaction: f64,
     pub agent_death: f64,
+    pub food_spawn_collect: f64,
     pub food_spawn_apply: f64,
 }
 
@@ -19,8 +21,31 @@ impl SystemProfile {
             agent_movement: 0.0,
             entity_interaction: 0.0,
             agent_death: 0.0,
+            food_spawn_collect: 0.0,
             food_spawn_apply: 0.0,
         }
+    }
+    pub fn to_csv_row(&self) -> String {
+        format!("{:.6},{:.6},{:.6},{:.6},{:.6}",
+            self.agent_movement,
+            self.entity_interaction,
+            self.agent_death,
+            self.food_spawn_collect,
+            self.food_spawn_apply)
+    }
+    pub fn add(&mut self, other: &SystemProfile) {
+        self.agent_movement += other.agent_movement;
+        self.entity_interaction += other.entity_interaction;
+        self.agent_death += other.agent_death;
+        self.food_spawn_collect += other.food_spawn_collect;
+        self.food_spawn_apply += other.food_spawn_apply;
+    }
+    pub fn div_assign(&mut self, divisor: f64) {
+        self.agent_movement /= divisor;
+        self.entity_interaction /= divisor;
+        self.agent_death /= divisor;
+        self.food_spawn_collect /= divisor;
+        self.food_spawn_apply /= divisor;
     }
 }
 
@@ -47,6 +72,41 @@ pub fn simulation_tick(world: &mut World, resources: &mut Resources, schedule: &
     let t = std::time::Instant::now();
     schedule.execute(world, resources);
     profile.agent_movement = t.elapsed().as_secs_f64();
+    profile
+}
+
+pub fn simulation_tick_profiled(
+    world: &mut legion::World,
+    resources: &mut legion::Resources,
+    agent_movement: &mut dyn Runnable,
+    entity_interaction: &mut dyn Runnable,
+    agent_death: &mut dyn Runnable,
+    food_spawn_collect: &mut dyn Runnable,
+    food_spawn_apply: &mut dyn Runnable,
+) -> SystemProfile {
+    use std::time::Instant;
+    let mut profile = SystemProfile::new();
+
+    let t = Instant::now();
+    agent_movement.run(world, resources);
+    profile.agent_movement = t.elapsed().as_secs_f64();
+
+    let t = Instant::now();
+    entity_interaction.run(world, resources);
+    profile.entity_interaction = t.elapsed().as_secs_f64();
+
+    let t = Instant::now();
+    agent_death.run(world, resources);
+    profile.agent_death = t.elapsed().as_secs_f64();
+
+    let t = Instant::now();
+    food_spawn_collect.run(world, resources);
+    profile.food_spawn_collect = t.elapsed().as_secs_f64();
+
+    let t = Instant::now();
+    food_spawn_apply.run(world, resources);
+    profile.food_spawn_apply = t.elapsed().as_secs_f64();
+
     profile
 }
 
