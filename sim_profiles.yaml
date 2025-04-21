@@ -18,3 +18,7 @@
   map_size: 2000
   num_agents: 10000
   ticks: 10
+- name: big_run
+  map_size: 4000
+  num_agents: 20000
+  ticks: 10

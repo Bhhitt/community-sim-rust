@@ -99,8 +99,8 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
     resources.insert(crate::ecs_components::InteractionStats::default());
     resources.insert(crate::ecs_components::EventLog::new(200));
     resources.insert(PendingFoodSpawns(Vec::new()));
-    // (Removed: archetypes debug print, not accessible)
-    let mut schedule = crate::ecs_simulation::build_simulation_schedule();
+    // --- Use PARALLEL schedule ---
+    let mut schedule = crate::ecs_simulation::build_simulation_schedule_parallel();
     // DEBUG: Print number of entities matching agent_movement_system query
     let agent_query_count = <(
         &mut crate::ecs_components::Position,
@@ -175,7 +175,8 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
                     writeln!(csv_file, "{}{}{}", tick, ",", profile.to_csv_row()).unwrap();
                 }
             } else {
-                schedule.execute(&mut world, &mut resources);
+                // Use parallel tick
+                let _ = crate::ecs_simulation::simulation_tick_parallel(&mut world, &mut resources, &mut schedule);
             }
             tick += 1;
             advance_one = false;

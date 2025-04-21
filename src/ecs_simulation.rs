@@ -66,8 +66,30 @@ pub fn build_simulation_schedule() -> Schedule {
         .build()
 }
 
+/// Builds a Legion Schedule containing all ECS systems in the correct order.
+/// Legion will automatically parallelize systems that do not have conflicting data access.
+pub fn build_simulation_schedule_parallel() -> Schedule {
+    Schedule::builder()
+        .add_system(agent_movement_system())
+        .add_system(entity_interaction_system())
+        .add_system(agent_death_system())
+        .add_system(collect_food_spawn_positions_system())
+        .add_system(food_spawn_apply_system())
+        .build()
+}
+
 /// Advances the simulation by one tick, running all ECS systems in order and profiling their execution time.
 pub fn simulation_tick(world: &mut World, resources: &mut Resources, schedule: &mut Schedule) -> SystemProfile {
+    let mut profile = SystemProfile::new();
+    let t = std::time::Instant::now();
+    schedule.execute(world, resources);
+    profile.agent_movement = t.elapsed().as_secs_f64();
+    profile
+}
+
+/// Advances the simulation by one tick, running all ECS systems in parallel where possible.
+/// Legion automatically parallelizes systems with non-conflicting data access.
+pub fn simulation_tick_parallel(world: &mut World, resources: &mut Resources, schedule: &mut Schedule) -> SystemProfile {
     let mut profile = SystemProfile::new();
     let t = std::time::Instant::now();
     schedule.execute(world, resources);
