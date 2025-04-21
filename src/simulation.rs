@@ -153,10 +153,35 @@ fn run_simulation(map_size: i32, num_agents: usize, ticks: usize, label: &str, a
             last_ascii = render_simulation_ascii(&world, &map);
             // Optionally print: println!("{}", last_ascii);
         }
-        // Write the last ASCII snapshot to a file
+        // --- Write simulation summary to map file ---
+        use legion::IntoQuery;
+        use crate::ecs_components::InteractionStats;
+        use std::collections::HashMap;
+        // Count agent types at end
+        let mut agent_type_counts: HashMap<String, usize> = HashMap::new();
+        let mut agent_query = <(&crate::ecs_components::AgentType,)>::query();
+        for (agent_type,) in agent_query.iter(&world) {
+            *agent_type_counts.entry(agent_type.name.clone()).or_insert(0) += 1;
+        }
+        // Get interaction stats
+        let stats = resources.get::<InteractionStats>().expect("No InteractionStats resource");
+        let total_interactions = stats.agent_interactions;
+        let avg_interactions_per_tick = if ticks > 0 { total_interactions as f64 / ticks as f64 } else { 0.0 };
+        // Prepare summary string
+        let mut summary = String::new();
+        summary.push_str(&format!("# Simulation Summary\n"));
+        summary.push_str(&format!("Total interactions: {}\n", total_interactions));
+        summary.push_str(&format!("Average interactions per tick: {:.2}\n", avg_interactions_per_tick));
+        summary.push_str("Agent counts at end:\n");
+        for (name, count) in agent_type_counts.iter() {
+            summary.push_str(&format!("  {}: {}\n", name, count));
+        }
+        summary.push_str("\n");
+        // Write summary + ascii to file
         let mut file = std::fs::File::create("simulation_ascii.txt").expect("Unable to create ascii output file");
+        file.write_all(summary.as_bytes()).expect("Unable to write summary");
         file.write_all(last_ascii.as_bytes()).expect("Unable to write ascii output");
-        println!("[INFO] Final ASCII snapshot written to simulation_ascii.txt");
+        println!("[INFO] Simulation summary and final ASCII snapshot written to simulation_ascii.txt");
     }
     // Optionally: write last snapshot to file or keep for further processing
     (0.0, 0.0, 0.0)

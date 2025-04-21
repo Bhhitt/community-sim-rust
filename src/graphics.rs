@@ -515,4 +515,35 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
         stats_canvas.present();
         ::std::thread::sleep(Duration::from_millis(16)); // ~60 FPS for main window
     }
+    // --- At end of simulation, write summary to simulation_ascii.txt ---
+    // (This block is adapted from simulation.rs headless mode)
+    use legion::IntoQuery;
+    use crate::ecs_components::InteractionStats;
+    use std::collections::HashMap;
+    // Count agent types at end
+    let mut agent_type_counts: HashMap<String, usize> = HashMap::new();
+    let mut agent_query = <(&crate::ecs_components::AgentType,)>::query();
+    for (agent_type,) in agent_query.iter(&world) {
+        *agent_type_counts.entry(agent_type.name.clone()).or_insert(0) += 1;
+    }
+    // Get interaction stats
+    let stats = resources.get::<InteractionStats>().expect("No InteractionStats resource");
+    let total_interactions = stats.agent_interactions;
+    let avg_interactions_per_tick = if tick > 0 { total_interactions as f64 / tick as f64 } else { 0.0 };
+    // Prepare summary string
+    let mut summary = String::new();
+    summary.push_str(&format!("# Simulation Summary\n"));
+    summary.push_str(&format!("Total interactions: {}\n", total_interactions));
+    summary.push_str(&format!("Average interactions per tick: {:.2}\n", avg_interactions_per_tick));
+    summary.push_str("Agent counts at end:\n");
+    for (name, count) in agent_type_counts.iter() {
+        summary.push_str(&format!("  {}: {}\n", name, count));
+    }
+    summary.push_str("\n");
+    // Optionally render ASCII snapshot of the map
+    let ascii_snapshot = crate::ecs_simulation::render_simulation_ascii(&world, &render_map);
+    let mut file = std::fs::File::create("simulation_ascii.txt").expect("Unable to create ascii output file");
+    file.write_all(summary.as_bytes()).expect("Unable to write summary");
+    file.write_all(ascii_snapshot.as_bytes()).expect("Unable to write ascii output");
+    println!("[INFO] Simulation summary and final ASCII snapshot written to simulation_ascii.txt");
 }
