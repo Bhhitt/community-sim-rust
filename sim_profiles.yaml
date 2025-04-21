@@ -22,3 +22,12 @@
   map_size: 4000
   num_agents: 20000
   ticks: 10
+- name: extra_run
+  map_size: 1333
+  num_agents: 6667
+  ticks: 10
+- name: base_run
+  map_width: 1200
+  map_height: 700
+  num_agents: 5000
+  ticks: 10

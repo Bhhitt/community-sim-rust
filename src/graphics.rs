@@ -7,8 +7,8 @@ use sdl2::keyboard::Keycode;
 use std::time::Duration;
 use sdl2::render::TextureQuery;
 use rand::Rng;
-use std::io::Write;
 use std::fs::File;
+use std::io::Write;
 
 const CELL_SIZE: u32 = 6;
 const AGENT_COLOR: Color = Color::RGB(220, 40, 40);
@@ -23,9 +23,9 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(_map_width: i32, _map_height: i32, _cell_size: u32) -> Self {
-        let width = WINDOW_WIDTH / CELL_SIZE;
-        let height = WINDOW_HEIGHT / CELL_SIZE;
+    pub fn new(_map_width: i32, _map_height: i32, cell_size: u32) -> Self {
+        let width = WINDOW_WIDTH / cell_size;
+        let height = WINDOW_HEIGHT / cell_size;
         Self {
             x: 0.0,
             y: 0.0,
@@ -50,14 +50,12 @@ fn terrain_color(terrain: &super::map::Terrain) -> Color {
     }
 }
 
-pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types: &[crate::agent::AgentType], profile_systems: bool, profile_csv: &str) {
+pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents: usize, agent_types: &[crate::agent::AgentType], profile_systems: bool, profile_csv: &str) {
     use crate::ecs_components::{spawn_agent, AgentType, agent_movement_system, entity_interaction_system, food_spawn_apply_system, agent_death_system, PendingFoodSpawns};
     use legion::*;
-    use std::io::Write;
-    use std::fs::File;
     // --- ECS World Setup ---
     let mut world = World::default();
-    let map = super::map::Map::new(map_size, map_size);
+    let map = super::map::Map::new(_map_width, _map_height);
     let render_map = map.clone(); // OK to clone for rendering only
     let mut rng = rand::thread_rng();
     // Convert agent_types from agent.rs to ecs_components::AgentType
@@ -67,16 +65,16 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
         move_probability: a.move_probability,
         color: a.color.clone(),
     }).collect();
-    let mut agent_count = 0;
-    let mut attempts = 0;
+    let mut _agent_count = 0;
+    let mut _attempts = 0;
     if _num_agents > 0 {
         for i in 0.._num_agents {
             let mut x;
             let mut y;
             let mut tries = 0;
             loop {
-                x = rng.gen_range(0..map_size) as f32;
-                y = rng.gen_range(0..map_size) as f32;
+                x = rng.gen_range(0.._map_width) as f32;
+                y = rng.gen_range(0.._map_height) as f32;
                 if map.tiles[y as usize][x as usize] == super::map::Terrain::Grass || map.tiles[y as usize][x as usize] == super::map::Terrain::Forest {
                     break;
                 }
@@ -87,8 +85,8 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
             }
             let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
             spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
-            agent_count += 1;
-            attempts += tries;
+            _agent_count += 1;
+            _attempts += tries;
         }
     }
     // DEBUG: Print number of agents spawned
@@ -135,12 +133,12 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
         .unwrap();
     let mut canvas = window.into_canvas().build().unwrap();
     let window_id = canvas.window().id();
-    let texture_creator = canvas.texture_creator();
+    let _texture_creator = canvas.texture_creator();
     let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut camera = Camera::new(map_size, map_size, CELL_SIZE);
+    let mut camera = Camera::new(_map_width, _map_height, CELL_SIZE);
     let mut paused = false;
     let mut advance_one = false;
-    let ascii_snapshots: Vec<String> = Vec::new();
+    let _ascii_snapshots: Vec<String> = Vec::new();
 
     let ttf_context = sdl2::ttf::init().unwrap();
     let font = ttf_context.load_font("/System/Library/Fonts/Supplemental/Arial.ttf", 18).unwrap();
@@ -150,7 +148,7 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
         .build().unwrap()
         .into_canvas().build().unwrap();
     let mut stats_canvas = stats_window_canvas;
-    let stats_window_id = stats_canvas.window().id();
+    let _stats_window_id = stats_canvas.window().id();
 
     let mut cached_agent_counts: Vec<(String, usize)> = Vec::new();
     let mut last_stats_update = std::time::Instant::now();
@@ -200,13 +198,13 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
                     ..
                 } => paused = !paused,
                 Event::KeyDown {
-                    keycode: Some(Keycode::Right), .. } => camera.move_by(5.0, 0.0, map_size, map_size, CELL_SIZE),
+                    keycode: Some(Keycode::Right), .. } => camera.move_by(5.0, 0.0, _map_width, _map_height, CELL_SIZE),
                 Event::KeyDown {
-                    keycode: Some(Keycode::Left), .. } => camera.move_by(-5.0, 0.0, map_size, map_size, CELL_SIZE),
+                    keycode: Some(Keycode::Left), .. } => camera.move_by(-5.0, 0.0, _map_width, _map_height, CELL_SIZE),
                 Event::KeyDown {
-                    keycode: Some(Keycode::Up), .. } => camera.move_by(0.0, -5.0, map_size, map_size, CELL_SIZE),
+                    keycode: Some(Keycode::Up), .. } => camera.move_by(0.0, -5.0, _map_width, _map_height, CELL_SIZE),
                 Event::KeyDown {
-                    keycode: Some(Keycode::Down), .. } => camera.move_by(0.0, 5.0, map_size, map_size, CELL_SIZE),
+                    keycode: Some(Keycode::Down), .. } => camera.move_by(0.0, 5.0, _map_width, _map_height, CELL_SIZE),
                 Event::KeyDown {
                     keycode: Some(Keycode::A),
                     ..
@@ -217,8 +215,8 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
                     let mut y;
                     let mut tries = 0;
                     loop {
-                        x = rng.gen_range(0..map_size) as f32;
-                        y = rng.gen_range(0..map_size) as f32;
+                        x = rng.gen_range(0.._map_width) as f32;
+                        y = rng.gen_range(0.._map_height) as f32;
                         if map.tiles[y as usize][x as usize] == super::map::Terrain::Grass || map.tiles[y as usize][x as usize] == super::map::Terrain::Forest {
                             break;
                         }
@@ -249,8 +247,8 @@ pub fn run_with_graphics_profile(map_size: i32, _num_agents: usize, agent_types:
                     let max_tries_per_agent = 1000;
                     let num_types = ecs_agent_types.len().max(1);
                     while spawned < max_agents && attempts < max_agents * max_tries_per_agent {
-                        let x = rng.gen_range(0..map_size) as f32;
-                        let y = rng.gen_range(0..map_size) as f32;
+                        let x = rng.gen_range(0.._map_width) as f32;
+                        let y = rng.gen_range(0.._map_height) as f32;
                         if map.tiles[y as usize][x as usize] == super::map::Terrain::Grass || map.tiles[y as usize][x as usize] == super::map::Terrain::Forest {
                             let type_idx = rng.gen_range(0..num_types);
                             let agent_type = ecs_agent_types[type_idx].clone();

@@ -38,15 +38,15 @@ impl Map {
     pub fn new(width: i32, height: i32) -> Self {
         let mut rng = rand::thread_rng();
         let mut tiles = vec![vec![Terrain::Grass; width as usize]; height as usize];
-        // Randomly assign terrain types
+        // Example: randomly place some terrain
         for y in 0..height as usize {
             for x in 0..width as usize {
-                let r: f32 = rng.gen();
+                let r = rng.gen_range(0.0..1.0);
                 tiles[y][x] = if r < 0.1 {
                     Terrain::Water
                 } else if r < 0.2 {
                     Terrain::Forest
-                } else if r < 0.25 {
+                } else if r < 0.22 {
                     Terrain::Mountain
                 } else {
                     Terrain::Grass
