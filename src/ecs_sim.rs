@@ -7,8 +7,8 @@ pub fn run_ecs_sim() {
     let mut resources = Resources::default();
     // Spawn some agents
     let agent_types = [
-        AgentType { name: "worker", move_speed: 1.0, color: "blue" },
-        AgentType { name: "scout", move_speed: 2.0, color: "green" },
+        AgentType { name: "worker", move_speed: 1.0, move_probability: Some(1.0), color: "blue" },
+        AgentType { name: "scout", move_speed: 2.0, move_probability: Some(1.0), color: "green" },
     ];
     for i in 0..5 {
         let pos = Position { x: i as f32, y: 0.0 };

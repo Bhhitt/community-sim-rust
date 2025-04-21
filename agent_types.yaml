@@ -8,6 +8,7 @@
   work_rate: 5
   icon: "W"
   damping: 0.85
+  move_probability: 1.0
 - type: "scout"
   color: "green"
   move_speed: 4.0
@@ -17,6 +18,7 @@
   work_rate: 3
   icon: "S"
   damping: 0.85
+  move_probability: 1.0
 - type: "soldier"
   color: "red"
   move_speed: 3.0
@@ -26,6 +28,7 @@
   work_rate: 2
   icon: "X"
   damping: 0.95
+  move_probability: 0.7
 - type: "miner"
   color: "gray"
   move_speed: 2.0
@@ -35,6 +38,7 @@
   work_rate: 7
   icon: "M"
   damping: 0.95
+  move_probability: 0.5
 - type: "farmer"
   color: "yellow"
   move_speed: 2.0
@@ -44,6 +48,7 @@
   work_rate: 8
   icon: "F"
   damping: 0.95
+  move_probability: 0.5
 - type: "builder"
   color: "brown"
   move_speed: 2.0
@@ -53,6 +58,7 @@
   work_rate: 9
   icon: "B"
   damping: 0.95
+  move_probability: 0.5
 - type: "doctor"
   color: "white"
   move_speed: 3.0
@@ -62,3 +68,4 @@
   work_rate: 10
   icon: "+"
   damping: 0.85
+  move_probability: 1.0

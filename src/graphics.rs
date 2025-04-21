@@ -63,32 +63,37 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
     let ecs_agent_types: Vec<ECSAgentType> = agent_types.iter().map(|a| ECSAgentType {
         name: Box::leak(a.r#type.clone().into_boxed_str()),
         move_speed: a.move_speed,
+        move_probability: a.move_probability,
         color: Box::leak(a.color.clone().into_boxed_str()),
     }).collect();
     println!("[DEBUG] Loaded {} agent types", ecs_agent_types.len());
-    // Spawn ECS agents on random passable tiles
+    // Restore agent count for normal simulation
+    let num_agents = 1000;
+    // Only spawn agents if num_agents > 0
     let mut agent_count = 0;
     let mut attempts = 0;
-    for i in 0..num_agents {
-        // Find a random passable tile
-        let mut x;
-        let mut y;
-        let mut tries = 0;
-        loop {
-            x = rng.gen_range(0..map_size) as f32;
-            y = rng.gen_range(0..map_size) as f32;
-            if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
-                break;
+    if num_agents > 0 {
+        for i in 0..num_agents {
+            // Find a random passable tile
+            let mut x;
+            let mut y;
+            let mut tries = 0;
+            loop {
+                x = rng.gen_range(0..map_size) as f32;
+                y = rng.gen_range(0..map_size) as f32;
+                if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
+                    break;
+                }
+                tries += 1;
+                if tries > 1000 {
+                    panic!("Could not find passable tile for agent after 1000 tries");
+                }
             }
-            tries += 1;
-            if tries > 1000 {
-                panic!("Could not find passable tile for agent after 1000 tries");
-            }
+            let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
+            spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
+            agent_count += 1;
+            attempts += tries;
         }
-        let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
-        spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
-        agent_count += 1;
-        attempts += tries;
     }
     println!("[DEBUG] Total spawn attempts: {} (avg {:.2} per agent)", attempts, attempts as f32 / agent_count as f32);
     // Print total entity count in the world after spawning
@@ -102,6 +107,7 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
     let mut resources = Resources::default();
     resources.insert(map);
     resources.insert(crate::ecs_components::InteractionStats::default());
+    resources.insert(crate::ecs_components::EventLog::new(200));
     let mut pre_food_schedule = Schedule::builder()
         .add_system(agent_movement_system())
         .add_system(entity_interaction_system())
@@ -144,6 +150,13 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
             post_food_schedule.execute(&mut world, &mut resources);
             if advance_one {
                 advance_one = false;
+            }
+        }
+
+        // --- Print latest EventLog entry to console ---
+        if let Some(event_log) = resources.get::<crate::ecs_components::EventLog>() {
+            if let Some(last_event) = event_log.get().back() {
+                println!("{}", last_event);
             }
         }
 

@@ -14,4 +14,5 @@ pub struct AgentType {
     pub work_rate: i32,
     pub icon: String,
     pub damping: Option<f32>,
+    pub move_probability: Option<f32>, // Probability to move each tick (0.0-1.0)
 }

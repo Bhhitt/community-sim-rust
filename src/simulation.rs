@@ -23,6 +23,7 @@ fn run_simulation(map_size: i32, num_agents: usize, ticks: usize, label: &str, a
         let ecs_type = ECSAgentType {
             name: Box::leak(t.r#type.clone().into_boxed_str()),
             move_speed: t.move_speed,
+            move_probability: t.move_probability,
             color: Box::leak(t.color.clone().into_boxed_str()),
         };
         let pos = ECSPosition { x: (i as i32 % map_size) as f32, y: (i as i32 / map_size) as f32 };

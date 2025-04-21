@@ -20,6 +20,7 @@ pub struct Velocity {
 pub struct AgentType {
     pub name: &'static str,
     pub move_speed: f32,
+    pub move_probability: Option<f32>,
     pub color: &'static str,
     // Add other agent properties as needed
 }
@@ -60,6 +61,28 @@ pub struct InteractionStats {
     pub active_interactions_history: VecDeque<usize>,
 }
 
+// Add a rolling log of events
+
+pub struct EventLog {
+    pub events: VecDeque<String>,
+    pub max_len: usize,
+}
+
+impl EventLog {
+    pub fn new(max_len: usize) -> Self {
+        Self { events: VecDeque::with_capacity(max_len), max_len }
+    }
+    pub fn log(&mut self, msg: String) {
+        if self.events.len() >= self.max_len {
+            self.events.pop_front();
+        }
+        self.events.push_back(msg);
+    }
+    pub fn get(&self) -> &VecDeque<String> {
+        &self.events
+    }
+}
+
 // --- Entity Spawning Functions ---
 pub fn spawn_agent(world: &mut legion::World, pos: Position, agent_type: AgentType) -> legion::Entity {
     let color = agent_type.color;
@@ -84,6 +107,12 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
             let map = &*map;
             let mut rng = rand::thread_rng();
             for (pos, agent_type, hunger, energy) in query.iter_mut(_world) {
+                // --- Movement probability logic ---
+                let move_prob = agent_type.move_probability.unwrap_or(1.0);
+                if rng.gen::<f32>() > move_prob {
+                    // Skip movement this tick
+                    continue;
+                }
                 // Random walk: pick a random direction and move
                 let dx = rng.gen_range(-1.0..=1.0) * agent_type.move_speed;
                 let dy = rng.gen_range(-1.0..=1.0) * agent_type.move_speed;
@@ -128,41 +157,44 @@ pub fn agent_interaction_system() -> impl legion::systems::Runnable {
 
 // --- ECS Interaction System (agent-agent, agent-food) ---
 pub fn entity_interaction_system() -> impl legion::systems::Runnable {
-    
     legion::SystemBuilder::new("EntityInteractionSystem")
         .write_resource::<InteractionStats>()
-        .with_query(<(legion::Entity, &Position)>::query())
-        .with_query(<(legion::Entity, &Position)>::query())
+        .write_resource::<EventLog>()
+        .with_query(<(legion::Entity, &Position, &AgentType)>::query()) // agents
+        .with_query(<(legion::Entity, &Position, &Food)>::query()) // food
         .with_query(<(legion::Entity, &Position, &mut Hunger, &mut Energy)>::query())
         .with_query(<(legion::Entity, &Position, &Food)>::query())
-        .build(|cmd, world, stats, ( _entity_query, _agent_query, ref mut agent_stats_query, food_query )| {
+        .build(|cmd, world, (stats, event_log), (agent_query, food_query, ref mut agent_stats_query, food_query2)| {
+            let agent_count = agent_query.iter(world).count();
+            let food_count = food_query.iter(world).count();
+            event_log.log(format!("[TICK] Agents: {}, Food: {}", agent_count, food_count));
             let mut interactions_this_tick = 0;
             let mut active_interactions = 0;
-            // Gather all agent entities and positions
-            let agents: Vec<_> = _agent_query.iter(world).map(|(entity, pos)| (*entity, pos.x, pos.y)).collect();
-            let mut foods: Vec<_> = food_query.iter(world).map(|(e, pos, food)| (*e, pos.x, pos.y, food.nutrition)).collect();
+            let agents: Vec<_> = agent_query.iter(world).map(|(entity, pos, _)| (*entity, pos.x, pos.y)).collect();
+            let foods: Vec<_> = food_query.iter(world).map(|(e, pos, food)| (*e, pos.x, pos.y, food.nutrition)).collect();
             let mut interacted = vec![false; agents.len()];
             for i in 0..agents.len() {
                 let (agent_entity, x, y) = agents[i];
                 if !interacted[i] {
                     // Agent-agent interaction
                     for j in (i+1)..agents.len() {
-                        let (_, ox, oy) = agents[j];
+                        let (other_entity, ox, oy) = agents[j];
                         if (x - ox).abs() < 1.5 && (y - oy).abs() < 1.5 {
                             interactions_this_tick += 1;
                             active_interactions += 1;
                             interacted[i] = true;
                             interacted[j] = true;
+                            event_log.log(format!("[INTERACT] Agent {:?} interacted with Agent {:?}", agent_entity, other_entity));
                             break;
                         }
                     }
                     // Agent-food interaction
                     for (food_e, fx, fy, nutrition) in &foods {
                         if (x - *fx).abs() < 1.0 && (y - *fy).abs() < 1.0 {
-                            // Find the agent's Hunger and Energy components and add nutrition
                             if let Some((_entity, _pos, hunger, energy)) = agent_stats_query.iter_mut(world).find(|(e, _pos, _h, _en)| **e == agent_entity) {
                                 hunger.value += *nutrition;
                                 energy.value += *nutrition;
+                                event_log.log(format!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition));
                             }
                             cmd.remove(*food_e);
                         }
@@ -171,7 +203,6 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
             }
             stats.agent_interactions += interactions_this_tick;
             stats.active_interactions = active_interactions;
-            // Maintain a history of active_interactions
             if stats.active_interactions_history.len() >= 100 {
                 stats.active_interactions_history.pop_front();
             }
