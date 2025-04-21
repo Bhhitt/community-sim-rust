@@ -8,49 +8,123 @@ use std::fs::File;
 use std::io::Write;
 use std::time::Instant;
 use serde_yaml;
+use legion::systems::Runnable;
+use legion::IntoQuery;
+use rand::Rng;
+use crate::ecs_components::{spawn_agent, agent_movement_system, entity_interaction_system, food_spawn_system, agent_death_system, Hunger, Energy, Renderable, InteractionState};
+use legion::{World, Resources, Schedule};
 
 fn run_simulation(map_size: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType]) -> (f64, f64, f64) {
+    println!("[TEST] Entered run_simulation");
     println!("\n=== Running {}: map {}x{}, {} agents, {} ticks ===", label, map_size, map_size, num_agents, ticks);
-    // Cycle through agent_types for agent creation
-    // ECS MIGRATION: Create Legion World and spawn ECS agents
-    use crate::ecs_components::{spawn_agent, Position as ECSPosition, AgentType as ECSAgentType, agent_movement_system, agent_interaction_system, food_spawn_system, agent_death_system};
-    use legion::*;
+    // --- ECS World Setup (MATCH graphics mode) ---
     let mut world = World::default();
-    // Spawn ECS agents using Legion
-    for i in 0..num_agents {
-        let t = &agent_types[i % agent_types.len()];
-        // Map legacy AgentType to ECSAgentType (convert as needed)
-        let ecs_type = ECSAgentType {
-            name: Box::leak(t.r#type.clone().into_boxed_str()),
-            move_speed: t.move_speed,
-            move_probability: t.move_probability,
-            color: Box::leak(t.color.clone().into_boxed_str()),
-        };
-        let pos = ECSPosition { x: (i as i32 % map_size) as f32, y: (i as i32 / map_size) as f32 };
-        spawn_agent(&mut world, pos, ecs_type);
-    }
-    // --- Legacy agent Vec and logic removed ---
     let map = Map::new(map_size, map_size);
+    let mut rng = rand::thread_rng();
+    // Convert agent_types from agent.rs::AgentType to ecs_components::AgentType directly
+    let ecs_agent_types: Vec<crate::ecs_components::AgentType> = agent_types.iter().map(|a| crate::ecs_components::AgentType {
+        name: Box::leak(a.r#type.clone().into_boxed_str()),
+        move_speed: a.move_speed,
+        move_probability: a.move_probability,
+        color: Box::leak(a.color.clone().into_boxed_str()),
+    }).collect();
+    let mut agent_count = 0;
+    let mut attempts = 0;
+    if num_agents > 0 {
+        for i in 0..num_agents {
+            // Find a random passable tile
+            let mut x;
+            let mut y;
+            let mut tries = 0;
+            loop {
+                x = rng.gen_range(0..map_size) as f32;
+                y = rng.gen_range(0..map_size) as f32;
+                if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
+                    break;
+                }
+                tries += 1;
+                if tries > 1000 {
+                    panic!("Could not find passable tile for agent after 1000 tries");
+                }
+            }
+            let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
+            spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
+            agent_count += 1;
+            attempts += tries;
+        }
+    }
+    println!("[DEBUG] Total spawn attempts: {} (avg {:.2} per agent)", attempts, attempts as f32 / agent_count as f32);
+    let total_entities = world.len();
+    println!("[DEBUG] Total entities in world after spawning: {}", total_entities);
+    std::io::stdout().flush().unwrap();
+    println!("[DEBUG] Spawned {} agents", agent_count);
+    // --- DEBUG: Print all entities with Position and their component type names before tick loop ---
+    println!("[DEBUG] Entities with Position and their component types before tick loop:");
+    let mut query = <(
+        legion::Entity,
+        &crate::ecs_components::Position,
+        Option<&crate::ecs_components::AgentType>,
+        Option<&crate::ecs_components::Hunger>,
+        Option<&crate::ecs_components::Energy>,
+        Option<&crate::ecs_components::Renderable>,
+        Option<&crate::ecs_components::InteractionState>,
+        Option<&crate::ecs_components::Food>
+    )>::query();
+    for (entity, _pos, agent_type, hunger, energy, render, interact, food) in query.iter(&world) {
+        let mut comps = vec!["Position"];
+        if agent_type.is_some() { comps.push("AgentType"); }
+        if hunger.is_some() { comps.push("Hunger"); }
+        if energy.is_some() { comps.push("Energy"); }
+        if render.is_some() { comps.push("Renderable"); }
+        if interact.is_some() { comps.push("InteractionState"); }
+        if food.is_some() { comps.push("Food"); }
+        println!("  Entity {:?}: [{}]", entity, comps.join(", "));
+    }
+    // --- END DEBUG ---
+    // --- Seed initial food entities to ensure food archetype exists ---
+    let initial_food = (map_size * map_size / 20000).max(2);
+    for _ in 0..initial_food {
+        let mut tries = 0;
+        let (mut x, mut y);
+        loop {
+            x = rng.gen_range(0..map_size) as f32;
+            y = rng.gen_range(0..map_size) as f32;
+            if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
+                break;
+            }
+            tries += 1;
+            if tries > 1000 {
+                panic!("Could not find passable tile for food after 1000 tries");
+            }
+        }
+        crate::ecs_components::spawn_food(&mut world, crate::ecs_components::Position { x, y });
+    }
+    println!("[DEBUG] Seeded {} initial food entities", initial_food);
+    // --- END FOOD SEED ---
     let start = Instant::now();
     let mut move_time = 0.0;
     let mut interact_time = 0.0;
-    // ECS: Setup Legion schedule for agent movement, interaction, and food spawn
-    let mut resources = Resources::default();
-    resources.insert(map.clone());
+    // --- SETUP SYSTEM SCHEDULE ---
     let mut schedule = Schedule::builder()
         .add_system(agent_movement_system())
-        .add_system(agent_interaction_system())
+        .add_system(entity_interaction_system())
         .add_system(food_spawn_system())
         .add_system(agent_death_system())
         .build();
+    // ECS: Setup Legion resources
+    let mut resources = Resources::default();
+    resources.insert(map.clone());
+    resources.insert(crate::ecs_components::InteractionStats::default());
+    resources.insert(crate::ecs_components::EventLog::new(200));
     for tick in 0..ticks {
         println!("Tick {}", tick);
+        println!("[DEBUG] Before schedule execution");
         let t1 = Instant::now();
-        // ECS: Run agent movement, interaction, and food spawn systems
         schedule.execute(&mut world, &mut resources);
-        move_time += t1.elapsed().as_secs_f64();
-        let t2 = Instant::now();
-        interact_time += t2.elapsed().as_secs_f64();
+        let total_elapsed = t1.elapsed().as_secs_f64();
+        println!("[DEBUG] After schedule execution");
+        println!("[DEBUG] Tick time: {:.6}s", total_elapsed);
+        std::io::stdout().flush().unwrap();
     }
     let duration = start.elapsed().as_secs_f64();
     let ascii = map.render_ascii();
@@ -85,6 +159,7 @@ pub fn run_profiles_from_yaml(path: &str, agent_types: &[AgentType]) {
 }
 
 pub fn run_profile_from_yaml(path: &str, profile_name: &str, agent_types: &[AgentType]) {
+    println!("[TEST] Entered run_profile_from_yaml");
     let profiles = load_profiles_from_yaml(path);
     let profile = profiles.into_iter().find(|p| p.name == profile_name)
         .unwrap_or_else(|| panic!("Profile '{}' not found in {}", profile_name, path));

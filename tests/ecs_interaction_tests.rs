@@ -9,6 +9,7 @@ fn test_ecs_agent_interaction_system_runs() {
     let agent_type = AgentType {
         name: "worker",
         move_speed: 1.0,
+        move_probability: None,
         color: "blue",
     };
     // Spawn two agents adjacent to each other

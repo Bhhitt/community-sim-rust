@@ -9,6 +9,7 @@ fn test_ecs_agent_spawn_and_query() {
     let agent_type = AgentType {
         name: "worker",
         move_speed: 1.0,
+        move_probability: None,
         color: "blue",
     };
     let pos = Position { x: 10.0, y: 20.0 };

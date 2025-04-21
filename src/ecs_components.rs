@@ -217,7 +217,7 @@ pub fn food_spawn_system() -> impl legion::systems::Runnable {
         .build(|cmd, world, map, _| {
             let mut rng = rand::thread_rng();
             let map = &*map;
-            let num_to_spawn = (map.width * map.height / 10000).max(5);
+            let num_to_spawn = (map.width * map.height / 20000).max(2);
             for _ in 0..num_to_spawn {
                 let x = rng.gen_range(0..map.width) as f32;
                 let y = rng.gen_range(0..map.height) as f32;

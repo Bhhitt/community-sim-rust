@@ -36,7 +36,7 @@ fn main() {
         if args.scale {
             simulation::run_scaling_benchmarks();
         } else {
-            simulation::run_profile_from_yaml("sim_profiles.yaml", &args.profile, &agent_types);
+            simulation::run_profiles_from_yaml("sim_profiles.yaml", &agent_types);
         }
     } else {
         println!("Running with graphics");
