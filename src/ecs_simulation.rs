@@ -1,7 +1,6 @@
 //! Shared ECS simulation tick for both headless and GUI modes, with profiling support.
 use legion::*;
 use crate::ecs_components::*;
-use std::time::Instant;
 use legion::systems::Runnable;
 use crate::ecs_components::collect_food_spawn_positions_system;
 use legion::Schedule;
@@ -47,12 +46,6 @@ impl SystemProfile {
         self.food_spawn_collect /= divisor;
         self.food_spawn_apply /= divisor;
     }
-}
-
-fn profile_system<F: FnMut(&mut World, &mut Resources)>(mut system: F, world: &mut World, resources: &mut Resources) -> f64 {
-    let t = std::time::Instant::now();
-    system(world, resources);
-    t.elapsed().as_secs_f64()
 }
 
 /// Builds a Legion Schedule containing all ECS systems in the correct order.

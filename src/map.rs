@@ -1,6 +1,5 @@
 //! Map/grid logic
 
-use rand::Rng;
 use crate::terrain::{generator, types::TerrainType};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -224,7 +224,6 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
 
 // --- Food spawn collection as an ECS system ---
 pub fn collect_food_spawn_positions_system() -> impl legion::systems::Runnable {
-    use legion::systems::CommandBuffer;
     use legion::*;
     use rand::Rng;
     SystemBuilder::new("CollectFoodSpawnPositionsSystem")

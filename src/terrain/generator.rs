@@ -1,5 +1,5 @@
 use crate::terrain::types::TerrainType;
-use noise::{NoiseFn, Perlin, Seedable};
+use noise::{NoiseFn, Perlin};
 
 pub fn generate_terrain(width: usize, height: usize, seed: u32) -> Vec<Vec<TerrainType>> {
     let perlin = Perlin::new(seed);
