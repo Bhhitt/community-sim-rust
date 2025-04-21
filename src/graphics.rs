@@ -51,7 +51,7 @@ fn terrain_color(terrain: &super::map::Terrain) -> Color {
 }
 
 pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: &[crate::agent::AgentType]) {
-    use crate::ecs_components::{spawn_agent, AgentType as ECSAgentType, agent_movement_system, entity_interaction_system, food_spawn_system};
+    use crate::ecs_components::{spawn_agent, AgentType as ECSAgentType, agent_movement_system, entity_interaction_system, food_spawn_system, agent_death_system};
     use legion::*;
     use std::io::Write;
     // --- ECS World Setup ---
@@ -109,6 +109,7 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
         .build();
     let mut post_food_schedule = Schedule::builder()
         .add_system(food_spawn_system())
+        .add_system(agent_death_system())
         .build();
 
     let sdl_context = sdl2::init().unwrap();
@@ -122,9 +123,9 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
     let ttf_context = sdl2::ttf::init().unwrap();
     let font = ttf_context.load_font("/System/Library/Fonts/Supplemental/Arial.ttf", 18).unwrap();
     let stats_window_width = 320u32;
-    let stats_window_height = 240u32;
+    let stats_window_height = 480u32; // Increased height
     let stats_window = video_subsystem.window("Stats", stats_window_width, stats_window_height)
-        .position_centered()
+        .position(0, 0) // Spawn at top-left corner
         .resizable()
         .build().unwrap();
     let mut stats_canvas = stats_window.into_canvas().present_vsync().build().unwrap();
@@ -158,6 +159,59 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
                         Keycode::Down => camera.move_by(0.0, 10.0, render_map.width, render_map.height, CELL_SIZE),
                         Keycode::Space => paused = !paused,
                         Keycode::Period => advance_one = true,
+                        Keycode::A => {
+                            // Spawn a new agent at a random passable tile
+                            let mut rng = rand::thread_rng();
+                            let mut x;
+                            let mut y;
+                            let mut tries = 0;
+                            loop {
+                                x = rng.gen_range(0..render_map.width) as f32;
+                                y = rng.gen_range(0..render_map.height) as f32;
+                                if render_map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || render_map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
+                                    break;
+                                }
+                                tries += 1;
+                                if tries > 1000 {
+                                    println!("[WARN] Could not find passable tile for agent after 1000 tries");
+                                    return;
+                                }
+                            }
+                            // Pick a random agent type
+                            if !ecs_agent_types.is_empty() {
+                                let idx = rng.gen_range(0..ecs_agent_types.len());
+                                let agent_type = ecs_agent_types[idx].clone();
+                                spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
+                                println!("[DEBUG] Spawned agent at ({}, {})", x, y);
+                            }
+                        },
+                        Keycode::S => {
+                            // Spawn 100 new agents at random passable tiles
+                            let mut rng = rand::thread_rng();
+                            for _ in 0..100 {
+                                let mut x;
+                                let mut y;
+                                let mut tries = 0;
+                                loop {
+                                    x = rng.gen_range(0..render_map.width) as f32;
+                                    y = rng.gen_range(0..render_map.height) as f32;
+                                    if render_map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || render_map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
+                                        break;
+                                    }
+                                    tries += 1;
+                                    if tries > 1000 {
+                                        println!("[WARN] Could not find passable tile for agent after 1000 tries");
+                                        break;
+                                    }
+                                }
+                                if !ecs_agent_types.is_empty() {
+                                    let idx = rng.gen_range(0..ecs_agent_types.len());
+                                    let agent_type = ecs_agent_types[idx].clone();
+                                    spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type);
+                                }
+                            }
+                            println!("[DEBUG] Spawned 100 random agents");
+                        },
                         _ => {}
                     }
                 }
@@ -182,11 +236,22 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
                                 }
                             }
                         }
+                        // If no agent found, check for food at the cell
+                        if found_agent.is_none() {
+                            for (entity, (pos, _food)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Food))>::query().iter(&world) {
+                                let food_cell_x = pos.x.floor();
+                                let food_cell_y = pos.y.floor();
+                                if (food_cell_x - map_x).abs() < 0.5 && (food_cell_y - map_y).abs() < 0.5 {
+                                    found_agent = Some(*entity);
+                                    break;
+                                }
+                            }
+                        }
                         selected_agent = found_agent;
                         if let Some(sel) = selected_agent {
-                            println!("[DEBUG] Selected agent {:?}", sel);
+                            println!("[DEBUG] Selected entity {:?}", sel);
                         } else {
-                            println!("[DEBUG] No agent found at clicked cell");
+                            println!("[DEBUG] No agent or food found at clicked cell");
                             // Store the cell and the current time for highlighting
                             empty_cell_flash = Some((map_x as i32, map_y as i32, std::time::Instant::now()));
                         }
@@ -201,8 +266,8 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
         for y in 0..render_map.height as usize {
             for x in 0..render_map.width as usize {
                 let rect = Rect::new(
-                    ((x as f32 - camera.x).round() as i32) * CELL_SIZE as i32,
-                    ((y as f32 - camera.y).round() as i32) * CELL_SIZE as i32,
+                    ((x as f32 - camera.x) * CELL_SIZE as f32) as i32,
+                    ((y as f32 - camera.y) * CELL_SIZE as f32) as i32,
                     CELL_SIZE,
                     CELL_SIZE,
                 );
@@ -213,8 +278,8 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
         // Draw ECS agents
         for (entity, (pos, renderable)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Renderable))>::query().iter(&world) {
             let rect = Rect::new(
-                ((pos.x - camera.x).round() as i32) * CELL_SIZE as i32,
-                ((pos.y - camera.y).round() as i32) * CELL_SIZE as i32,
+                ((pos.x - camera.x) * CELL_SIZE as f32) as i32,
+                ((pos.y - camera.y) * CELL_SIZE as f32) as i32,
                 CELL_SIZE,
                 CELL_SIZE,
             );
@@ -346,8 +411,10 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
             }
             y_offset += 80;
         }
-        // Show selected agent stats
+        // Show selected agent or food stats
         if let Some(sel) = selected_agent {
+            // Try to show agent stats first
+            let mut shown = false;
             for (entity, (pos, agent_type, hunger, energy)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::AgentType, &crate::ecs_components::Hunger, &crate::ecs_components::Energy))>::query().iter(&world) {
                 if *entity == sel {
                     let text = format!("Selected Agent:\nPos: ({:.1}, {:.1})\nType: {}\nHunger: {:.1}\nEnergy: {:.1}", pos.x, pos.y, agent_type.name, hunger.value, energy.value);
@@ -359,7 +426,25 @@ pub fn run_with_graphics_profile(map_size: i32, num_agents: usize, agent_types: 
                         let target = Rect::new(10, y_offset + (i as i32) * (height as i32 + 2), width, height);
                         stats_canvas.copy(&texture, None, Some(target)).unwrap();
                     }
+                    shown = true;
                     break;
+                }
+            }
+            // If not an agent, try to show food stats
+            if !shown {
+                for (entity, (pos, food)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Food))>::query().iter(&world) {
+                    if *entity == sel {
+                        let text = format!("Selected Food:\nPos: ({:.1}, {:.1})\nNutrition: {:.1}", pos.x, pos.y, food.nutrition);
+                        for (i, line) in text.lines().enumerate() {
+                            let surface = font.render(line).blended(Color::RGB(200, 255, 50)).unwrap();
+                            let texture_creator = stats_canvas.texture_creator();
+                            let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
+                            let TextureQuery { width, height, .. } = texture.query();
+                            let target = Rect::new(10, y_offset + (i as i32) * (height as i32 + 2), width, height);
+                            stats_canvas.copy(&texture, None, Some(target)).unwrap();
+                        }
+                        break;
+                    }
                 }
             }
         }
