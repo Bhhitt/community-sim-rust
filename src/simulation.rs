@@ -145,14 +145,18 @@ fn run_simulation(map_size: i32, num_agents: usize, ticks: usize, label: &str, a
         }
     } else {
         let mut schedule = build_simulation_schedule();
+        let mut last_ascii = String::new();
         for tick in 0..ticks {
             println!("Tick {}", tick);
             simulation_tick(&mut world, &mut resources, &mut schedule);
-            // ASCII rendering is still commented out for now
-            // let ascii = render_simulation_ascii(&world, &map);
-            // ascii_snapshots.push(ascii.clone());
-            // println!("{}", ascii);
+            // Generate ASCII snapshot at each tick (optional, but we'll save the last)
+            last_ascii = render_simulation_ascii(&world, &map);
+            // Optionally print: println!("{}", last_ascii);
         }
+        // Write the last ASCII snapshot to a file
+        let mut file = std::fs::File::create("simulation_ascii.txt").expect("Unable to create ascii output file");
+        file.write_all(last_ascii.as_bytes()).expect("Unable to write ascii output");
+        println!("[INFO] Final ASCII snapshot written to simulation_ascii.txt");
     }
     // Optionally: write last snapshot to file or keep for further processing
     (0.0, 0.0, 0.0)
