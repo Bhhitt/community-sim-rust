@@ -1,6 +1,7 @@
 //! Map/grid logic
 
 use crate::terrain::{generator, types::TerrainType};
+use rand::Rng;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Terrain {
@@ -58,7 +59,9 @@ pub struct Map {
 
 impl Map {
     pub fn new(width: i32, height: i32) -> Self {
-        let seed = 42; // TODO: parameterize
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        let seed = rng.gen();
         let terrain_grid = generator::generate_terrain(
             width as usize,
             height as usize,

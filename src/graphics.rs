@@ -305,25 +305,31 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                     // DEBUG: Print mouse click info
                     debug!("[DEBUG] Mouse click at ({}, {}) in window {}", x, y, evt_win_id);
                     if evt_win_id == window_id {
-                        let map_x = (x as f32 / CELL_SIZE as f32 + camera.x).floor();
-                        let map_y = (y as f32 / CELL_SIZE as f32 + camera.y).floor();
-                        debug!("[DEBUG] Map coords: ({}, {})", map_x, map_y);
+                        let mouse_x = x;
+                        let mouse_y = y;
                         let mut found_agent = None;
                         let mut topmost_y = -1.0_f32;
                         for (entity, (pos, renderable)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Renderable))>::query().iter(&world) {
                             if renderable.icon != '@' { continue; }
-                            let agent_cell_x = pos.x.floor();
-                            let agent_cell_y = pos.y.floor();
-                            if (agent_cell_x - map_x).abs() < 0.5 && (agent_cell_y - map_y).abs() < 0.5 {
+                            let rect = Rect::new(
+                                ((pos.x - camera.x) * CELL_SIZE as f32) as i32,
+                                ((pos.y - camera.y) * CELL_SIZE as f32) as i32,
+                                CELL_SIZE,
+                                CELL_SIZE,
+                            );
+                            if mouse_x >= rect.x && mouse_x < rect.x + rect.width() as i32 &&
+                               mouse_y >= rect.y && mouse_y < rect.y + rect.height() as i32 {
                                 // Select the agent with the highest Y (lowest on screen) if multiple overlap
-                                if agent_cell_y > topmost_y {
+                                if pos.y > topmost_y {
                                     found_agent = Some(*entity);
-                                    topmost_y = agent_cell_y;
+                                    topmost_y = pos.y;
                                 }
                             }
                         }
-                        // If no agent found, check for food at the cell
+                        // If no agent found, check for food at the cell (legacy logic)
                         if found_agent.is_none() {
+                            let map_x = (x as f32 / CELL_SIZE as f32 + camera.x).floor();
+                            let map_y = (y as f32 / CELL_SIZE as f32 + camera.y).floor();
                             for (entity, (pos, _food)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Food))>::query().iter(&world) {
                                 let food_cell_x = pos.x.floor();
                                 let food_cell_y = pos.y.floor();
@@ -339,6 +345,8 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                         } else {
                             debug!("[DEBUG] No agent or food found at clicked cell");
                             // Store the cell and the current time for highlighting
+                            let map_x = (x as f32 / CELL_SIZE as f32 + camera.x).floor();
+                            let map_y = (y as f32 / CELL_SIZE as f32 + camera.y).floor();
                             empty_cell_flash = Some((map_x as i32, map_y as i32, std::time::Instant::now()));
                         }
                     }
@@ -516,9 +524,24 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
             // Try to show agent stats first
             let mut shown = false;
             debug!("[DEBUG] About to query agent stats");
-            for (entity, (pos, agent_type, hunger, energy)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::AgentType, &crate::ecs_components::Hunger, &crate::ecs_components::Energy))>::query().iter(&world) {
+            for (entity, (pos, agent_type, hunger, energy, target, path, interaction_state)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::AgentType, &crate::ecs_components::Hunger, &crate::ecs_components::Energy, Option<&crate::ecs_components::Target>, Option<&crate::ecs_components::Path>, Option<&crate::ecs_components::InteractionState>))>::query().iter(&world) {
                 if *entity == sel {
-                    let text = format!("Selected Agent:\nPos: ({:.1}, {:.1})\nType: {}\nHunger: {:.1}\nEnergy: {:.1}", pos.x, pos.y, agent_type.name, hunger.value, energy.value);
+                    let mut status = String::new();
+                    // What is the agent doing?
+                    if let Some(target) = target {
+                        let dist = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
+                        if dist > 0.2 {
+                            status = format!("Moving to ({:.1}, {:.1})", target.x, target.y);
+                        } else {
+                            status = "Idle (at target)".to_string();
+                        }
+                    }
+                    if let Some(inter) = interaction_state {
+                        if let Some(_partner) = inter.target {
+                            status = "Interacting with another agent".to_string();
+                        }
+                    }
+                    let text = format!("Selected Agent:\nPos: ({:.1}, {:.1})\nType: {}\nHunger: {:.1}\nEnergy: {:.1}\nStatus: {}", pos.x, pos.y, agent_type.name, hunger.value, energy.value, status);
                     for (i, line) in text.lines().enumerate() {
                         let surface = font.render(line).blended(Color::RGB(255, 200, 50)).unwrap();
                         let texture_creator = stats_canvas.texture_creator();
