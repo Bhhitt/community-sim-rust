@@ -2,6 +2,7 @@
 
 use legion::*;
 use community_sim::ecs_components::{spawn_agent, Position, AgentType};
+use community_sim::map::Map;
 
 #[test]
 fn test_ecs_agent_spawn_and_query() {
@@ -13,7 +14,8 @@ fn test_ecs_agent_spawn_and_query() {
         color: "blue".to_string(),
     };
     let pos = Position { x: 10.0, y: 20.0 };
-    let _entity = spawn_agent(&mut world, pos, agent_type.clone());
+    let map = Map::new(32, 32);
+    let _entity = spawn_agent(&mut world, pos, agent_type.clone(), &map);
     // Query for the agent entity
     let mut found = false;
     for (pos, agent_type_ref) in <(Read<Position>, Read<AgentType>)>::query().iter(&world) {
