@@ -59,7 +59,7 @@ pub struct InteractionState {
     pub cooldown: u32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Target {
     pub x: f32,
     pub y: f32,
@@ -151,7 +151,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     agent_type,
                     hunger,
                     energy,
-                    target,
+                    mut target,
                     mut path
                 ): (
                     &mut Position,
@@ -161,16 +161,15 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     Option<&mut Target>,
                     Option<&mut Path>
                 )| {
-                let mut rng = SmallRng::from_entropy();
                 // --- Movement probability logic ---
-                let move_prob = agent_type.move_probability.unwrap_or(1.0);
-                if rng.gen::<f32>() > move_prob {
-                    return;
-                }
+                // let move_prob = agent_type.move_probability.unwrap_or(1.0);
+                // if rng.gen::<f32>() > move_prob {
+                //     return;
+                // }
                 // --- Pathfinding logic ---
                 let _map_w = map.width as f32;
                 let _map_h = map.height as f32;
-                let (target_x, target_y, _stuck_ticks) = if let Some(target) = target {
+                let (target_x, target_y, _stuck_ticks) = if let Some(ref mut target) = target {
                     let mut stuck_ticks = target.stuck_ticks;
                     let progress = ((pos.x - target.x).abs() + (pos.y - target.y).abs()) > 0.1;
                     // Only recalc path if target changed or path is empty (not every time stuck)
@@ -187,8 +186,8 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                         let mut tries = 0;
                         let mut found = false;
                         while tries < 20 {
-                            let dx = rng.gen_range(-10..=10);
-                            let dy = rng.gen_range(-10..=10);
+                            let dx = 0;
+                            let dy = 0;
                             let candidate_tx = (pos.x.round() as i32 + dx).clamp(0, map.width-1) as f32;
                             let candidate_ty = (pos.y.round() as i32 + dy).clamp(0, map.height-1) as f32;
                             if map.is_passable(candidate_tx as i32, candidate_ty as i32) {
@@ -203,8 +202,8 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                             // Fallback: try a global random passable tile
                             let mut global_tries = 0;
                             while global_tries < 100 {
-                                let candidate_gtx = rng.gen_range(0..map.width) as f32;
-                                let candidate_gty = rng.gen_range(0..map.height) as f32;
+                                let candidate_gtx = pos.x;
+                                let candidate_gty = pos.y;
                                 if map.is_passable(candidate_gtx as i32, candidate_gty as i32) {
                                     tx = candidate_gtx;
                                     ty = candidate_gty;
@@ -256,7 +255,41 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     // No target component, skip
                     (pos.x, pos.y, 0)
                 };
-                // --- Path following ---
+                // --- Measure how close agents get to their destinations ---
+                if let Some(ref target) = target {
+                    let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
+                    if dist_to_target < 1.5 && dist_to_target > 0.15 {
+                        event_log.log(format!("[NEAR_MISS] Agent at ({:.2}, {:.2}) is {:.2} units from target ({:.2}, {:.2}) and did not reach destination", pos.x, pos.y, dist_to_target, target.x, target.y));
+                        log::info!("[NEAR_MISS] Agent at ({:.2}, {:.2}) is {:.2} units from target ({:.2}, {:.2}) and did not reach destination", pos.x, pos.y, dist_to_target, target.x, target.y);
+                    }
+                }
+                // --- Measure agents that are stuck or oscillating far from their target ---
+                if let Some(ref target) = target {
+                    let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
+                    if dist_to_target > 2.0 && dist_to_target < 15.0 {
+                        // Check for oscillation: agent is moving but not getting closer
+                        static mut LAST_POS: Option<(f32, f32)> = None;
+                        static mut LAST_DIST: Option<f32> = None;
+                        let mut oscillating = false;
+                        unsafe {
+                            if let Some((last_x, last_y)) = LAST_POS {
+                                let last_dist = LAST_DIST.unwrap_or(999.0);
+                                let moved = ((pos.x - last_x).powi(2) + (pos.y - last_y).powi(2)).sqrt() > 0.1;
+                                let not_closer = dist_to_target >= last_dist - 0.01;
+                                if moved && not_closer {
+                                    oscillating = true;
+                                }
+                            }
+                            LAST_POS = Some((pos.x, pos.y));
+                            LAST_DIST = Some(dist_to_target);
+                        }
+                        if oscillating {
+                            event_log.log(format!("[OSCILLATE] Agent at ({:.2}, {:.2}) is {:.2} units from target ({:.2}, {:.2}) and not making progress", pos.x, pos.y, dist_to_target, target.x, target.y));
+                            log::info!("[OSCILLATE] Agent at ({:.2}, {:.2}) is {:.2} units from target ({:.2}, {:.2}) and not making progress", pos.x, pos.y, dist_to_target, target.x, target.y);
+                        }
+                    }
+                }
+                // --- Path following with a small stray/noise ---
                 let mut next_x = target_x;
                 let mut next_y = target_y;
                 if let Some(ref mut path) = path {
@@ -271,8 +304,8 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                         }
                     }
                 }
-                // Add wandering/straying noise and repulsion from impassable tiles
-                let stray_angle: f32 = rng.gen_range(-0.2..0.2); // radians
+                let mut rng = rand::thread_rng();
+                let stray_angle: f32 = rng.gen_range(-0.08..0.08); // Tiny stray (radians)
                 let dx = next_x - pos.x;
                 let dy = next_y - pos.y;
                 let dist = (dx * dx + dy * dy).sqrt();
@@ -283,32 +316,13 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                 let step = agent_type.move_speed.min(dist);
                 let mut dir_x = dx / dist;
                 let mut dir_y = dy / dist;
-                // Repulsion from impassable tiles
-                let mut repulse_x = 0.0;
-                let mut repulse_y = 0.0;
-                for ox in -1..=1 {
-                    for oy in -1..=1 {
-                        if ox == 0 && oy == 0 { continue; }
-                        let nx = (pos.x.round() as i32 + ox).clamp(0, map.width-1);
-                        let ny = (pos.y.round() as i32 + oy).clamp(0, map.height-1);
-                        if !map.is_passable(nx, ny) {
-                            let fx = pos.x - nx as f32;
-                            let fy = pos.y - ny as f32;
-                            let d = (fx*fx + fy*fy).sqrt().max(0.1);
-                            repulse_x += fx / d;
-                            repulse_y += fy / d;
-                        }
-                    }
-                }
-                dir_x += 0.3 * repulse_x;
-                dir_y += 0.3 * repulse_y;
-                // Apply stray
+                // Apply stray (rotate direction by stray_angle)
                 let cos_a = stray_angle.cos();
                 let sin_a = stray_angle.sin();
                 let stray_x = dir_x * cos_a - dir_y * sin_a;
                 let stray_y = dir_x * sin_a + dir_y * cos_a;
-                dir_x = 0.9 * dir_x + 0.1 * stray_x;
-                dir_y = 0.9 * dir_y + 0.1 * stray_y;
+                dir_x = 0.95 * dir_x + 0.05 * stray_x;
+                dir_y = 0.95 * dir_y + 0.05 * stray_y;
                 let new_x = (pos.x + dir_x * step).max(0.0).min(map.width as f32 - 1.0);
                 let new_y = (pos.y + dir_y * step).max(0.0).min(map.height as f32 - 1.0);
                 let tx = new_x.round() as i32;
@@ -331,6 +345,46 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     energy.value -= distance * 0.1 * cost;
                 }
                 // else: impassable, do not move
+
+                // --- Enhanced stuck logic: try to unstick if stuck for a while ---
+                if let Some(ref mut target) = target {
+                    if target.stuck_ticks > 10 {
+                        // Try to pick a new random nearby target to unstick
+                        let mut tries = 0;
+                        let mut found = false;
+                        let mut tx = pos.x;
+                        let mut ty = pos.y;
+                        while tries < 20 {
+                            let dx = rng.gen_range(-5..=5);
+                            let dy = rng.gen_range(-5..=5);
+                            let candidate_tx = (pos.x.round() as i32 + dx).clamp(0, map.width-1) as f32;
+                            let candidate_ty = (pos.y.round() as i32 + dy).clamp(0, map.height-1) as f32;
+                            if map.is_passable(candidate_tx as i32, candidate_ty as i32) {
+                                tx = candidate_tx;
+                                ty = candidate_ty;
+                                found = true;
+                                break;
+                            }
+                            tries += 1;
+                        }
+                        if found {
+                            event_log.log(format!("[UNSTUCK] Agent at ({:.1}, {:.1}) picked new target ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, tx, ty, target.stuck_ticks));
+                            log::info!("[UNSTUCK] Agent at ({:.1}, {:.1}) picked new target ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, tx, ty, target.stuck_ticks);
+                            target.x = tx;
+                            target.y = ty;
+                            target.stuck_ticks = 0;
+                            if let Some(ref mut path) = path {
+                                if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (tx.round() as i32, ty.round() as i32), 10) {
+                                    path.waypoints = new_path.into();
+                                } else {
+                                    path.waypoints.clear();
+                                    event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new unstuck target ({:.1}, {:.1})", pos.x, pos.y, tx, ty));
+                                    log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new unstuck target ({:.1}, {:.1})", pos.x, pos.y, tx, ty);
+                                }
+                            }
+                        }
+                    }
+                }
             });
         })
 }
