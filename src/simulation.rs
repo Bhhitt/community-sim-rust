@@ -248,7 +248,7 @@ pub fn run_headless(map_width: i32, map_height: i32, num_agents: usize, ticks: u
     log::info!("  Interact: {:.3}s", interact_time);
 }
 
-pub fn run_scaling_benchmarks() {
+pub fn run_scaling_benchmarks(agent_types: &[AgentType]) {
     let configs = [
         (20, 20, 10, 10, "base"),
         (200, 200, 100, 10, "10x"),
@@ -257,7 +257,7 @@ pub fn run_scaling_benchmarks() {
     ];
     log::info!("\n===== Scaling Benchmarks =====");
     for &(map_width, map_height, num_agents, ticks, label) in &configs {
-        let (total, move_time, interact_time) = run_simulation(map_width, map_height, num_agents, ticks, label, &[], false, "scaling_benchmark.csv");
+        let (total, move_time, interact_time) = run_simulation(map_width, map_height, num_agents, ticks, label, agent_types, false, "scaling_benchmark.csv");
         log::info!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", label, total, move_time, interact_time);
     }
 }

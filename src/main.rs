@@ -80,7 +80,7 @@ fn main() {
     if args.headless {
         log::info!("Running in headless mode");
         if args.scale {
-            simulation::run_scaling_benchmarks();
+            simulation::run_scaling_benchmarks(&agent_types);
         } else {
             simulation::run_profiles_from_yaml("sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
         }
