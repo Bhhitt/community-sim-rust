@@ -66,6 +66,7 @@ pub struct Target {
     pub y: f32,
     pub stuck_ticks: u32, // Track how many ticks agent is stuck
     pub path_ticks: Option<u32>,
+    pub ticks_to_reach: Option<u32>, // Track how long it takes to reach the target
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -126,7 +127,7 @@ pub fn spawn_agent(world: &mut legion::World, pos: Position, agent_type: AgentTy
     let color = agent_type.color.clone();
     let mut rng = rand::thread_rng();
     let (tx, ty) = random_passable_target(map, &agent_type, &mut rng);
-    world.push((pos, agent_type, Hunger { value: 100.0 }, Energy { value: 100.0 }, Renderable { icon: '@', color }, InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0 }, Target { x: tx, y: ty, stuck_ticks: 0, path_ticks: None }, Path { waypoints: VecDeque::new() }))
+    world.push((pos, agent_type, Hunger { value: 100.0 }, Energy { value: 100.0 }, Renderable { icon: '@', color }, InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0 }, Target { x: tx, y: ty, stuck_ticks: 0, path_ticks: None, ticks_to_reach: None }, Path { waypoints: VecDeque::new() }))
 }
 
 pub fn spawn_food(world: &mut legion::World, pos: Position) -> legion::Entity {
@@ -227,14 +228,19 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                         target.y = ty;
                         target.stuck_ticks = 0;
                         target.path_ticks = Some(0);
+                        target.ticks_to_reach = Some(0);
                         if let Some(ref mut path) = path {
                             if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (tx.round() as i32, ty.round() as i32), max_path_distance.try_into().unwrap()) {
+                                log::debug!("[PATH_ASSIGN] Agent at ({:.2}, {:.2}) assigned path ptr: {:p}, waypoints: {:?}", pos.x, pos.y, &new_path as *const _, &new_path);
                                 path.waypoints = new_path.into();
                             } else {
                                 path.waypoints.clear();
                                 event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new target ({:.1}, {:.1})", pos.x, pos.y, tx, ty));
                                 log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new target ({:.1}, {:.1})", pos.x, pos.y, tx, ty);
                             }
+                        }
+                        if log::log_enabled!(log::Level::Debug) {
+                            log::debug!("[TARGET_ASSIGN] Agent at ({:.2},{:.2}) assigned new target ({:.2},{:.2}) [reason: stuck/unstuck or food/random]", pos.x, pos.y, target.x, target.y);
                         }
                         (tx, ty, 0)
                     } else {
@@ -244,6 +250,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                         if let Some(ref mut path) = path {
                             if path.waypoints.is_empty() || target_changed {
                                 if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (target.x.round() as i32, target.y.round() as i32), max_path_distance.try_into().unwrap()) {
+                                    log::debug!("[PATH_ASSIGN] Agent at ({:.2}, {:.2}) assigned path ptr: {:p}, waypoints: {:?}", pos.x, pos.y, &new_path as *const _, &new_path);
                                     path.waypoints = new_path.into();
                                 } else {
                                     path.waypoints.clear();
@@ -252,12 +259,26 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                                 }
                             }
                         }
+                        if log::log_enabled!(log::Level::Debug) {
+                            log::debug!("[TARGET_ASSIGN] Agent at ({:.2},{:.2}) assigned new target ({:.2},{:.2}) [reason: stuck/unstuck or food/random]", pos.x, pos.y, target.x, target.y);
+                        }
                         (target.x, target.y, stuck_ticks)
                     }
                 } else {
                     // No target component, skip
                     (pos.x, pos.y, 0)
                 };
+                // --- Diagnostic Logging: Distance to target and next waypoint ---
+                if let Some(ref target) = target {
+                    let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
+                    log::info!("[DIAG] Agent at ({:.2}, {:.2}) distance to target ({:.2}, {:.2}) = {:.3}", pos.x, pos.y, target.x, target.y, dist_to_target);
+                }
+                if let Some(ref path) = path {
+                    if let Some(&(wx, wy)) = path.waypoints.front() {
+                        let dist_to_waypoint = ((pos.x - wx).powi(2) + (pos.y - wy).powi(2)).sqrt();
+                        log::info!("[DIAG] Agent at ({:.2}, {:.2}) distance to next waypoint ({:.2}, {:.2}) = {:.3}", pos.x, pos.y, wx, wy, dist_to_waypoint);
+                    }
+                }
                 // --- Measure how close agents get to their destinations ---
                 if let Some(ref target) = target {
                     let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
@@ -311,14 +332,19 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                             target.y = fy;
                             target.stuck_ticks = 0;
                             target.path_ticks = Some(0);
+                            target.ticks_to_reach = Some(0);
                             if let Some(ref mut path) = path {
                                 if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (fx.round() as i32, fy.round() as i32), max_path_distance.try_into().unwrap()) {
+                                    log::debug!("[PATH_ASSIGN] Agent at ({:.2}, {:.2}) assigned path ptr: {:p}, waypoints: {:?}", pos.x, pos.y, &new_path as *const _, &new_path);
                                     path.waypoints = new_path.into();
                                 } else {
                                     path.waypoints.clear();
                                     event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to food ({:.1}, {:.1})", pos.x, pos.y, fx, fy));
                                     log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to food ({:.1}, {:.1})", pos.x, pos.y, fx, fy);
                                 }
+                            }
+                            if log::log_enabled!(log::Level::Debug) {
+                                log::debug!("[TARGET_ASSIGN] Agent at ({:.2},{:.2}) assigned new target ({:.2},{:.2}) [reason: stuck/unstuck or food/random]", pos.x, pos.y, target.x, target.y);
                             }
                         } else {
                             // No food found, fallback to previous random unstuck logic
@@ -346,8 +372,10 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                                 target.y = ty;
                                 target.stuck_ticks = 0;
                                 target.path_ticks = Some(0);
+                                target.ticks_to_reach = Some(0);
                                 if let Some(ref mut path) = path {
                                     if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (tx.round() as i32, ty.round() as i32), max_path_distance.try_into().unwrap()) {
+                                        log::debug!("[PATH_ASSIGN] Agent at ({:.2}, {:.2}) assigned path ptr: {:p}, waypoints: {:?}", pos.x, pos.y, &new_path as *const _, &new_path);
                                         path.waypoints = new_path.into();
                                     } else {
                                         path.waypoints.clear();
@@ -355,52 +383,73 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                                         log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new unstuck target ({:.1}, {:.1})", pos.x, pos.y, tx, ty);
                                     }
                                 }
+                                if log::log_enabled!(log::Level::Debug) {
+                                    log::debug!("[TARGET_ASSIGN] Agent at ({:.2},{:.2}) assigned new target ({:.2},{:.2}) [reason: stuck/unstuck or food/random]", pos.x, pos.y, target.x, target.y);
+                                }
                             }
                         }
                     }
                 }
-                // --- Path following with a small stray/noise ---
-                let mut next_x = target_x;
-                let mut next_y = target_y;
-                if let Some(ref mut path) = path {
-                    if let Some(&(wx, wy)) = path.waypoints.front() {
-                        let dist = ((pos.x - wx).powi(2) + (pos.y - wy).powi(2)).sqrt();
-                        if dist < 0.5 {
-                            path.waypoints.pop_front();
-                        }
-                        if let Some(&(wx, wy)) = path.waypoints.front() {
-                            next_x = wx;
-                            next_y = wy;
-                        }
-                    }
-                    // VERBOSE DEBUG LOGGING: Show path and movement when debug is enabled
-                    if log::log_enabled!(log::Level::Debug) {
-                        log::debug!(
-                            "[AGENT_MOVE] Pos=({:.2},{:.2}) Target=({:.2},{:.2}) Next=({:.2},{:.2}) Path=[{}]",
-                            pos.x, pos.y, target_x, target_y, next_x, next_y,
-                            path.waypoints.iter().map(|(x, y)| format!("({:.1},{:.1})", x, y)).collect::<Vec<_>>().join(", ")
-                        );
+                // --- Track time to reach target ---
+                if let Some(ref mut target) = target {
+                    if let Some(ref mut ticks) = target.ticks_to_reach {
+                        *ticks += 1;
+                    } else {
+                        target.ticks_to_reach = Some(1);
                     }
                 }
-                let mut rng = rand::thread_rng();
-                let stray_angle: f32 = rng.gen_range(-0.08..0.08); // Tiny stray (radians)
-                let dx = next_x - pos.x;
-                let dy = next_y - pos.y;
+                // --- Detect arrival and log time taken ---
+                let arrived = if let Some(ref target) = target {
+                    let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
+                    dist_to_target < 0.1
+                } else { false };
+                if arrived {
+                    if let Some(ref mut target) = target {
+                        if let Some(ticks) = target.ticks_to_reach.take() {
+                            event_log.log(format!("[ARRIVAL] Agent at ({:.2}, {:.2}) reached target in {} ticks", pos.x, pos.y, ticks));
+                            log::info!("[ARRIVAL] Agent at ({:.2}, {:.2}) reached target in {} ticks", pos.x, pos.y, ticks);
+                        }
+                        // Assign new random target upon arrival
+                        let mut rng = rand::thread_rng();
+                        let (new_x, new_y) = random_passable_target(map, agent_type, &mut rng);
+                        target.x = new_x;
+                        target.y = new_y;
+                        target.stuck_ticks = 0;
+                        target.path_ticks = Some(0);
+                        target.ticks_to_reach = Some(0);
+                        if let Some(ref mut path) = path {
+                            if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (new_x.round() as i32, new_y.round() as i32), max_path_distance.try_into().unwrap()) {
+                                path.waypoints = new_path.into();
+                            } else {
+                                path.waypoints.clear();
+                                event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new random target ({:.1}, {:.1})", pos.x, pos.y, new_x, new_y));
+                                log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new random target ({:.1}, {:.1})", pos.x, pos.y, new_x, new_y);
+                            }
+                        }
+                        if log::log_enabled!(log::Level::Debug) {
+                            log::debug!("[TARGET_ASSIGN] Agent at ({:.2},{:.2}) assigned new target ({:.2},{:.2}) [reason: arrived]", pos.x, pos.y, target.x, target.y);
+                        }
+                    }
+                }
+                // --- LOGGING: Path and Target memory addresses for debugging shared state ---
+                use std::ptr;
+                if let Some(ref target) = target {
+                    log::debug!("[TARGET_PTR] Agent at ({:.2}, {:.2}) target ptr: {:p}", pos.x, pos.y, target);
+                }
+                if let Some(ref path) = path {
+                    log::debug!("[PATH_PTR] Agent at ({:.2}, {:.2}) path ptr: {:p}", pos.x, pos.y, path);
+                }
+                // Remove stray/noise logic, just move directly along the path
+                let dx = target_x - pos.x;
+                let dy = target_y - pos.y;
                 let dist = (dx * dx + dy * dy).sqrt();
                 if dist < 0.01 {
-                    // Already at target
+                    // Already at target or waypoint
                     return;
                 }
                 let step = agent_type.move_speed.min(dist);
-                let mut dir_x = dx / dist;
-                let mut dir_y = dy / dist;
-                // Apply stray (rotate direction by stray_angle)
-                let cos_a = stray_angle.cos();
-                let sin_a = stray_angle.sin();
-                let stray_x = dir_x * cos_a - dir_y * sin_a;
-                let stray_y = dir_x * sin_a + dir_y * cos_a;
-                dir_x = 0.95 * dir_x + 0.05 * stray_x;
-                dir_y = 0.95 * dir_y + 0.05 * stray_y;
+                let dir_x = dx / dist;
+                let dir_y = dy / dist;
                 let new_x = (pos.x + dir_x * step).max(0.0).min(map.width as f32 - 1.0);
                 let new_y = (pos.y + dir_y * step).max(0.0).min(map.height as f32 - 1.0);
                 let tx = new_x.round() as i32;
@@ -423,6 +472,17 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     energy.value -= distance * 0.1 * cost;
                 }
                 // else: impassable, do not move
+                // --- After movement: Log new position and distances ---
+                if let Some(ref target) = target {
+                    let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
+                    log::info!("[DIAG] Agent now at ({:.2}, {:.2}) distance to target ({:.2}, {:.2}) = {:.3}", pos.x, pos.y, target.x, target.y, dist_to_target);
+                }
+                if let Some(ref path) = path {
+                    if let Some(&(wx, wy)) = path.waypoints.front() {
+                        let dist_to_waypoint = ((pos.x - wx).powi(2) + (pos.y - wy).powi(2)).sqrt();
+                        log::info!("[DIAG] Agent now at ({:.2}, {:.2}) distance to next waypoint ({:.2}, {:.2}) = {:.3}", pos.x, pos.y, wx, wy, dist_to_waypoint);
+                    }
+                }
             });
         })
 }
