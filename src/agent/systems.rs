@@ -12,7 +12,7 @@ use std::collections::VecDeque;
 pub fn spawn_agent(world: &mut legion::World, pos: crate::ecs_components::Position, agent_type: crate::agent::components::AgentType, map: &crate::map::Map) -> legion::Entity {
     let _color = agent_type.color.clone();
     let mut rng = rand::thread_rng();
-    let (tx, ty) = crate::navigation::random_passable_target(map, &agent_type, &mut rng);
+    let (tx, ty) = crate::navigation::random_passable_target(map, &agent_type, &mut rng, None);
     world.push((pos, agent_type, crate::agent::components::Hunger { value: 100.0 }, crate::agent::components::Energy { value: 100.0 }, crate::agent::components::InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0, recent_partners: VecDeque::new() }, crate::navigation::Target { x: tx, y: ty, stuck_ticks: 0, path_ticks: None, ticks_to_reach: None }, crate::navigation::Path { waypoints: std::collections::VecDeque::new() }))
 }
 
@@ -142,20 +142,14 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                             }
                         },
                         "wander" => {
-                            // Pick a random point at least 10 away
-                            let mut attempts = 0;
-                            let (mut rx, mut ry);
-                            loop {
-                                rx = rng.gen_range(0.0..map_w);
-                                ry = rng.gen_range(0.0..map_h);
-                                let d = ((rx - pos.x).powi(2) + (ry - pos.y).powi(2)).sqrt();
-                                if d >= 10.0 || attempts > 10 { break; }
-                                attempts += 1;
-                            }
+                            // Pick a random point within 120 units
+                            let (rx, ry) = crate::navigation::random_passable_target(
+                                map, agent_type, &mut rng, Some((pos.x, pos.y))
+                            );
                             if let Some(ref mut target) = maybe_target {
                                 target.x = rx;
                                 target.y = ry;
-                                event_log.push(format!("[TARGET] Agent at ({:.2}, {:.2}) wanders to ({:.2}, {:.2})", pos.x, pos.y, rx, ry));
+                                event_log.push(format!("[TARGET] Agent at ({:.2}, {:.2}) wanders to ({:.2}, {:.2}) [local 120 units]", pos.x, pos.y, rx, ry));
                             }
                         },
                         "idle" => {

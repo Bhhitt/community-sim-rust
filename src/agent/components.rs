@@ -1,6 +1,26 @@
 use serde::{Serialize, Deserialize};
 use legion::Entity;
 use std::collections::VecDeque;
+use std::collections::HashMap;
+use crate::terrain::types::TerrainType;
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MovementEffect {
+    Normal,
+    Slow(f32),    // Cost multiplier (e.g., 2.0 = double cost)
+    Impassable,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MovementProfile {
+    pub terrain_effects: HashMap<TerrainType, MovementEffect>,
+}
+
+impl MovementProfile {
+    pub fn movement_effect_for(&self, terrain: TerrainType) -> MovementEffect {
+        self.terrain_effects.get(&terrain).copied().unwrap_or(MovementEffect::Normal)
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentType {
@@ -14,6 +34,7 @@ pub struct AgentType {
     pub icon: String,
     pub damping: Option<f32>,
     pub move_probability: Option<f32>, // Probability to move each tick (0.0-1.0)
+    pub movement_profile: MovementProfile,
     pub name: Option<String>,
 }
 

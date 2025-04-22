@@ -37,6 +37,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         work_rate: a.work_rate,
         icon: a.icon.clone(),
         damping: a.damping,
+        movement_profile: a.movement_profile.clone(),
     }).collect();
     let mut agent_count = 0;
     let mut attempts = 0;

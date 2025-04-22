@@ -2,9 +2,10 @@
 use legion::*;
 use crate::ecs_components::*;
 use crate::food::Food;
-use crate::agent::AgentType;
+use crate::agent::{AgentType, MovementProfile};
 use crate::agent::systems::spawn_agent;
 use log::debug;
+use std::collections::HashMap;
 
 pub fn run_ecs_sim() {
     let mut world = World::default();
@@ -23,6 +24,7 @@ pub fn run_ecs_sim() {
             icon: "w".to_string(),
             damping: None,
             name: Some("worker".to_string()),
+            movement_profile: MovementProfile { terrain_effects: HashMap::new() },
         },
         AgentType {
             r#type: "scout".to_string(),
@@ -36,6 +38,7 @@ pub fn run_ecs_sim() {
             icon: "s".to_string(),
             damping: None,
             name: Some("scout".to_string()),
+            movement_profile: MovementProfile { terrain_effects: HashMap::new() },
         },
     ];
     for i in 0..5 {
