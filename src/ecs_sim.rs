@@ -1,6 +1,9 @@
 //! Minimal ECS simulation loop using new ECS components
 use legion::*;
 use crate::ecs_components::*;
+use crate::food::Food;
+use crate::agent::AgentType;
+use crate::agent::systems::spawn_agent;
 use log::debug;
 
 pub fn run_ecs_sim() {
@@ -8,8 +11,32 @@ pub fn run_ecs_sim() {
     let mut resources = Resources::default();
     // Spawn some agents
     let agent_types = [
-        AgentType { name: "worker".to_string(), move_speed: 1.0, move_probability: Some(1.0), color: "blue".to_string() },
-        AgentType { name: "scout".to_string(), move_speed: 2.0, move_probability: Some(1.0), color: "green".to_string() },
+        AgentType {
+            r#type: "worker".to_string(),
+            color: "blue".to_string(),
+            move_speed: 1.0,
+            move_probability: Some(1.0),
+            strength: 1,
+            stamina: 1,
+            vision: 1,
+            work_rate: 1,
+            icon: "w".to_string(),
+            damping: None,
+            name: Some("worker".to_string()),
+        },
+        AgentType {
+            r#type: "scout".to_string(),
+            color: "green".to_string(),
+            move_speed: 2.0,
+            move_probability: Some(1.0),
+            strength: 1,
+            stamina: 1,
+            vision: 1,
+            work_rate: 1,
+            icon: "s".to_string(),
+            damping: None,
+            name: Some("scout".to_string()),
+        },
     ];
     for i in 0..5 {
         let pos = Position { x: i as f32, y: 0.0 };
@@ -33,7 +60,7 @@ pub fn run_ecs_sim() {
                         if let Some(_food) = food {
                             debug!("Food at ({}, {})", pos.x, pos.y);
                         } else if let Some(agent_type) = agent_type {
-                            debug!("Agent '{}' at ({}, {})", agent_type.name, pos.x, pos.y);
+                            debug!("Agent '{}' at ({}, {})", agent_type.r#type, pos.x, pos.y);
                         }
                     }
                 })

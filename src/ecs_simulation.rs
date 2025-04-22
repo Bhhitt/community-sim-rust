@@ -2,9 +2,11 @@
 use legion::*;
 use crate::ecs_components::*;
 use legion::systems::Runnable;
-use crate::ecs_components::collect_food_spawn_positions_system;
+use crate::food::{collect_food_positions_system, collect_food_spawn_positions_system, food_spawn_apply_system};
 use legion::Schedule;
 use log;
+use crate::agent::{agent_movement_system, agent_death_system, AgentType, Hunger, Energy};
+use crate::navigation::{Target, Path};
 
 #[derive(Debug, Clone, Default)]
 pub struct SystemProfile {
@@ -109,26 +111,27 @@ pub fn simulation_tick_profiled(
     // DEBUG: Check if Map resource is present
     let has_map = resources.get::<crate::map::Map>().is_some();
     log::debug!("[DEBUG] Map resource present before agent_movement: {}", has_map);
+    println!("[PROFILE] About to run agent_movement (count: {})", <(&mut crate::ecs_components::Position, &AgentType, &mut Hunger, &mut Energy, Option<&mut Target>, Option<&mut Path>)>::query().iter_mut(world).count());
     let t = Instant::now();
     agent_movement.run(world, resources);
     profile.agent_movement = t.elapsed().as_secs_f64();
 
-    log::debug!("[DEBUG] Running entity_interaction");
+    println!("[PROFILE] About to run entity_interaction (count: {})", <(legion::Entity, &crate::ecs_components::Position, &AgentType)>::query().iter(world).count());
     let t = Instant::now();
     entity_interaction.run(world, resources);
     profile.entity_interaction = t.elapsed().as_secs_f64();
 
-    log::debug!("[DEBUG] Running agent_death");
+    println!("[PROFILE] About to run agent_death (count: {})", <(legion::Entity, &Hunger, &Energy)>::query().iter(world).count());
     let t = Instant::now();
     agent_death.run(world, resources);
     profile.agent_death = t.elapsed().as_secs_f64();
 
-    log::debug!("[DEBUG] Running food_spawn_collect");
+    println!("[PROFILE] About to run food_spawn_collect (count: N/A)");
     let t = Instant::now();
     food_spawn_collect.run(world, resources);
     profile.food_spawn_collect = t.elapsed().as_secs_f64();
 
-    log::debug!("[DEBUG] Running food_spawn_apply");
+    println!("[PROFILE] About to run food_spawn_apply (count: N/A)");
     let t = Instant::now();
     food_spawn_apply.run(world, resources);
     profile.food_spawn_apply = t.elapsed().as_secs_f64();
@@ -146,13 +149,13 @@ pub fn render_simulation_ascii(world: &legion::World, map: &crate::map::Map) -> 
             buffer[y][x] = map.tiles[y][x].to_char();
         }
     }
-    // Overlay food and agents (entities with Position + Renderable)
-    let mut query = <(&crate::ecs_components::Position, &crate::ecs_components::Renderable)>::query();
-    for (pos, renderable) in query.iter(world) {
+    // Overlay food and agents (entities with Position)
+    let mut query = <&crate::ecs_components::Position>::query();
+    for pos in query.iter(world) {
         let x = pos.x.round() as i32;
         let y = pos.y.round() as i32;
         if x >= 0 && y >= 0 && (x as usize) < map.width as usize && (y as usize) < map.height as usize {
-            buffer[y as usize][x as usize] = renderable.icon;
+            buffer[y as usize][x as usize] = 'A';
         }
     }
     // Convert buffer to String

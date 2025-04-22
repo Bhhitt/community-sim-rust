@@ -2,14 +2,10 @@
 use legion;
 use legion::IntoQuery;
 use legion::SystemBuilder;
-use std::collections::VecDeque;
-use rand::SeedableRng;
-use rand::rngs::SmallRng;
 use rand::Rng;
-use std::ops::DerefMut;
-use std::sync::Mutex;
 use log;
-use std::convert::TryInto;
+use crate::food::{Food};
+use crate::agent::components::{InteractionState};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Position {
@@ -23,567 +19,48 @@ pub struct Velocity {
     pub dy: f32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct AgentType {
-    pub name: String,
-    pub move_speed: f32,
-    pub move_probability: Option<f32>,
-    pub color: String,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Hunger {
-    pub value: f32,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Energy {
-    pub value: f32,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Renderable {
-    pub icon: char,
-    pub color: String,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Food {
-    pub nutrition: f32,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct InteractionState {
-    pub target: Option<legion::Entity>,
-    pub ticks: u32,
-    pub last_partner: Option<legion::Entity>,
-    pub cooldown: u32,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Target {
-    pub x: f32,
-    pub y: f32,
-    pub stuck_ticks: u32, // Track how many ticks agent is stuck
-    pub path_ticks: Option<u32>,
-    pub ticks_to_reach: Option<u32>, // Track how long it takes to reach the target
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Path {
-    pub waypoints: VecDeque<(f32, f32)>,
-}
-
-#[derive(Default)]
 pub struct InteractionStats {
     pub agent_interactions: usize,
     pub active_interactions: usize,
-    pub active_interactions_history: VecDeque<usize>,
+    pub active_interactions_history: std::collections::VecDeque<usize>,
+}
+
+impl Default for InteractionStats {
+    fn default() -> Self {
+        Self {
+            agent_interactions: 0,
+            active_interactions: 0,
+            active_interactions_history: std::collections::VecDeque::with_capacity(100),
+        }
+    }
 }
 
 pub struct EventLog {
-    pub events: Mutex<VecDeque<String>>,
-    pub max_len: usize,
+    pub entries: std::collections::VecDeque<String>,
+    pub capacity: usize,
 }
 
 impl EventLog {
-    pub fn new(max_len: usize) -> Self {
-        Self { events: Mutex::new(VecDeque::with_capacity(max_len)), max_len }
+    pub fn new(capacity: usize) -> Self {
+        Self { entries: std::collections::VecDeque::with_capacity(capacity), capacity }
     }
-    pub fn log(&self, msg: String) {
-        let mut events = self.events.lock().unwrap();
-        if events.len() >= self.max_len {
-            events.pop_front();
-        }
-        events.push_back(msg);
-    }
-    pub fn get(&self) -> Vec<String> {
-        // Return a cloned Vec for thread safety
-        let events = self.events.lock().unwrap();
-        events.iter().cloned().collect()
-    }
-}
 
-// Helper: Pick a random passable tile for this agent type
-fn random_passable_target<R: Rng>(map: &crate::map::Map, agent_type: &AgentType, rng: &mut R) -> (f32, f32) {
-    let mut tries = 0;
-    loop {
-        let x = rng.gen_range(0..map.width) as i32;
-        let y = rng.gen_range(0..map.height) as i32;
-        let terrain = map.tiles[y as usize][x as usize];
-        let is_scout = agent_type.name == "scout";
-        let passable = match terrain {
-            crate::map::Terrain::Mountain => is_scout, // only scouts cross mountains
-            _ => terrain.movement_cost().is_some(),
-        };
-        if passable { return (x as f32 + rng.gen_range(0.0..1.0), y as f32 + rng.gen_range(0.0..1.0)); }
-        tries += 1;
-        if tries > 1000 { return (x as f32, y as f32); } // fallback
+    pub fn log(&mut self, entry: String) {
+        if self.entries.len() >= self.capacity {
+            self.entries.pop_front();
+        }
+        self.entries.push_back(entry);
     }
 }
 
 // --- Entity Spawning Functions ---
-pub fn spawn_agent(world: &mut legion::World, pos: Position, agent_type: AgentType, map: &crate::map::Map) -> legion::Entity {
-    let color = agent_type.color.clone();
-    let mut rng = rand::thread_rng();
-    let (tx, ty) = random_passable_target(map, &agent_type, &mut rng);
-    world.push((pos, agent_type, Hunger { value: 100.0 }, Energy { value: 100.0 }, Renderable { icon: '@', color }, InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0 }, Target { x: tx, y: ty, stuck_ticks: 0, path_ticks: None, ticks_to_reach: None }, Path { waypoints: VecDeque::new() }))
-}
-
 pub fn spawn_food(world: &mut legion::World, pos: Position) -> legion::Entity {
     let nutrition = rand::thread_rng().gen_range(5.0..=10.0);
-    world.push((pos, Food { nutrition }, Renderable { icon: '*', color: "green".to_string() }))
-}
-
-// --- ECS Agent Movement System ---
-use crate::map::Map;
-
-pub fn agent_movement_system() -> impl legion::systems::Runnable {
-    legion::SystemBuilder::new("AgentMovementSystem")
-        .with_query(<(&mut Position, &AgentType, &mut Hunger, &mut Energy, Option<&mut Target>, Option<&mut Path>)>::query())
-        .read_resource::<Map>()
-        .read_resource::<FoodPositions>()
-        .write_resource::<crate::ecs_components::EventLog>()
-        .build(|_, world, (map, food_positions, event_log), query| {
-            let map = &*map;
-            let event_log = event_log;
-            let food_positions = food_positions;
-            query.par_for_each_mut(
-                world,
-                |(
-                    pos,
-                    agent_type,
-                    hunger,
-                    energy,
-                    mut target,
-                    mut path
-                )| {
-                // --- Movement probability logic ---
-                // let move_prob = agent_type.move_probability.unwrap_or(1.0);
-                // if rng.gen::<f32>() > move_prob {
-                //     return;
-                // }
-                // --- Pathfinding logic ---
-                let _map_w = map.width as f32;
-                let _map_h = map.height as f32;
-                let max_path_distance = 15;
-                let max_steps_on_path = 2 * max_path_distance;
-                let (target_x, target_y, _stuck_ticks) = if let Some(ref mut target) = target {
-                    let mut stuck_ticks = target.stuck_ticks;
-                    let mut path_ticks = target.path_ticks.unwrap_or(0);
-                    let progress = ((pos.x - target.x).abs() + (pos.y - target.y).abs()) > 0.1;
-                    // Only recalc path if target changed or path is empty (not every time stuck)
-                    let target_changed = (target.x - pos.x).abs() > 0.1 || (target.y - pos.y).abs() > 0.1;
-                    if !progress {
-                        stuck_ticks += 1;
-                    } else {
-                        stuck_ticks = 0;
-                    }
-                    path_ticks += 1;
-                    if (pos.x - target.x).abs() < 0.1 && (pos.y - target.y).abs() < 0.1 || stuck_ticks > 10 || path_ticks > max_steps_on_path {
-                        // Pick a new target within 15 squares
-                        let mut tx = pos.x;
-                        let mut ty = pos.y;
-                        let mut tries = 0;
-                        let mut found = false;
-                        while tries < 20 {
-                            let dx = 0;
-                            let dy = 0;
-                            let candidate_tx = (pos.x.round() as i32 + dx).clamp(0, map.width-1) as f32;
-                            let candidate_ty = (pos.y.round() as i32 + dy).clamp(0, map.height-1) as f32;
-                            if map.is_passable(candidate_tx as i32, candidate_ty as i32) {
-                                tx = candidate_tx;
-                                ty = candidate_ty;
-                                found = true;
-                                break;
-                            }
-                            tries += 1;
-                        }
-                        if !found {
-                            // Fallback: try a global random passable tile
-                            let mut global_tries = 0;
-                            while global_tries < 100 {
-                                let candidate_gtx = pos.x;
-                                let candidate_gty = pos.y;
-                                if map.is_passable(candidate_gtx as i32, candidate_gty as i32) {
-                                    tx = candidate_gtx;
-                                    ty = candidate_gty;
-                                    found = true;
-                                    break;
-                                }
-                                global_tries += 1;
-                            }
-                            if !found {
-                                event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a passable target after {} tries (local+global)", pos.x, pos.y, tries + global_tries));
-                                log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a passable target after {} tries (local+global)", pos.x, pos.y, tries + global_tries);
-                                target.stuck_ticks = stuck_ticks;
-                                target.path_ticks = Some(path_ticks);
-                                if let Some(ref mut path) = path {
-                                    path.waypoints.clear();
-                                }
-                                return;
-                            }
-                        }
-                        target.x = tx;
-                        target.y = ty;
-                        target.stuck_ticks = 0;
-                        target.path_ticks = Some(0);
-                        target.ticks_to_reach = Some(0);
-                        if let Some(ref mut path) = path {
-                            if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (tx.round() as i32, ty.round() as i32), max_path_distance.try_into().unwrap()) {
-                                log::debug!("[PATH_ASSIGN] Agent at ({:.2}, {:.2}) assigned path ptr: {:p}, waypoints: {:?}", pos.x, pos.y, &new_path as *const _, &new_path);
-                                path.waypoints = new_path.into();
-                            } else {
-                                path.waypoints.clear();
-                                event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new target ({:.1}, {:.1})", pos.x, pos.y, tx, ty));
-                                log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new target ({:.1}, {:.1})", pos.x, pos.y, tx, ty);
-                            }
-                        }
-                        if log::log_enabled!(log::Level::Debug) {
-                            log::debug!("[TARGET_ASSIGN] Agent at ({:.2},{:.2}) assigned new target ({:.2},{:.2}) [reason: stuck/unstuck or food/random]", pos.x, pos.y, target.x, target.y);
-                        }
-                        (tx, ty, 0)
-                    } else {
-                        target.stuck_ticks = stuck_ticks;
-                        target.path_ticks = Some(path_ticks);
-                        // Only recalc path if empty or target changed
-                        if let Some(ref mut path) = path {
-                            if path.waypoints.is_empty() || target_changed {
-                                if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (target.x.round() as i32, target.y.round() as i32), max_path_distance.try_into().unwrap()) {
-                                    log::debug!("[PATH_ASSIGN] Agent at ({:.2}, {:.2}) assigned path ptr: {:p}, waypoints: {:?}", pos.x, pos.y, &new_path as *const _, &new_path);
-                                    path.waypoints = new_path.into();
-                                } else {
-                                    path.waypoints.clear();
-                                    event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to target ({:.1}, {:.1})", pos.x, pos.y, target.x, target.y));
-                                    log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to target ({:.1}, {:.1})", pos.x, pos.y, target.x, target.y);
-                                }
-                            }
-                        }
-                        if log::log_enabled!(log::Level::Debug) {
-                            log::debug!("[TARGET_ASSIGN] Agent at ({:.2},{:.2}) assigned new target ({:.2},{:.2}) [reason: stuck/unstuck or food/random]", pos.x, pos.y, target.x, target.y);
-                        }
-                        (target.x, target.y, stuck_ticks)
-                    }
-                } else {
-                    // No target component, skip
-                    (pos.x, pos.y, 0)
-                };
-                // --- Diagnostic Logging: Distance to target and next waypoint ---
-                if let Some(ref target) = target {
-                    let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
-                    log::info!("[DIAG] Agent at ({:.2}, {:.2}) distance to target ({:.2}, {:.2}) = {:.3}", pos.x, pos.y, target.x, target.y, dist_to_target);
-                }
-                if let Some(ref path) = path {
-                    if let Some(&(wx, wy)) = path.waypoints.front() {
-                        let dist_to_waypoint = ((pos.x - wx).powi(2) + (pos.y - wy).powi(2)).sqrt();
-                        log::info!("[DIAG] Agent at ({:.2}, {:.2}) distance to next waypoint ({:.2}, {:.2}) = {:.3}", pos.x, pos.y, wx, wy, dist_to_waypoint);
-                    }
-                }
-                // --- Measure how close agents get to their destinations ---
-                if let Some(ref target) = target {
-                    let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
-                    if dist_to_target < 1.5 && dist_to_target > 0.15 {
-                        event_log.log(format!("[NEAR_MISS] Agent at ({:.2}, {:.2}) is {:.2} units from target ({:.2}, {:.2}) and did not reach destination", pos.x, pos.y, dist_to_target, target.x, target.y));
-                        log::info!("[NEAR_MISS] Agent at ({:.2}, {:.2}) is {:.2} units from target ({:.2}, {:.2}) and did not reach destination", pos.x, pos.y, dist_to_target, target.x, target.y);
-                    }
-                }
-                // --- Measure agents that are stuck or oscillating far from their target ---
-                if let Some(ref target) = target {
-                    let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
-                    if dist_to_target > 2.0 && dist_to_target < 15.0 {
-                        // Check for oscillation: agent is moving but not getting closer
-                        static mut LAST_POS: Option<(f32, f32)> = None;
-                        static mut LAST_DIST: Option<f32> = None;
-                        let mut oscillating = false;
-                        unsafe {
-                            if let Some((last_x, last_y)) = LAST_POS {
-                                let last_dist = LAST_DIST.unwrap_or(999.0);
-                                let moved = ((pos.x - last_x).powi(2) + (pos.y - last_y).powi(2)).sqrt() > 0.1;
-                                let not_closer = dist_to_target >= last_dist - 0.01;
-                                if moved && not_closer {
-                                    oscillating = true;
-                                }
-                            }
-                            LAST_POS = Some((pos.x, pos.y));
-                            LAST_DIST = Some(dist_to_target);
-                        }
-                        if oscillating {
-                            event_log.log(format!("[OSCILLATE] Agent at ({:.2}, {:.2}) is {:.2} units from target ({:.2}, {:.2}) and not making progress", pos.x, pos.y, dist_to_target, target.x, target.y));
-                            log::info!("[OSCILLATE] Agent at ({:.2}, {:.2}) is {:.2} units from target ({:.2}, {:.2}) and not making progress", pos.x, pos.y, dist_to_target, target.x, target.y);
-                        }
-                    }
-                }
-                // --- Enhanced stuck logic: try to unstick if stuck for a while ---
-                if let Some(ref mut target) = target {
-                    if target.stuck_ticks > 10 {
-                        let mut rng = rand::thread_rng();
-                        // Try to pick the nearest food as a new target before random
-                        let mut nearest_food: Option<(f32, f32, f32)> = None; // (x, y, distance)
-                        for (fx, fy) in &food_positions.0 {
-                            let dist = ((pos.x - fx).powi(2) + (pos.y - fy).powi(2)).sqrt();
-                            if nearest_food.is_none() || dist < nearest_food.unwrap().2 {
-                                nearest_food = Some((*fx, *fy, dist));
-                            }
-                        }
-                        if let Some((fx, fy, _)) = nearest_food {
-                            event_log.log(format!("[UNSTUCK] Agent at ({:.1}, {:.1}) targets nearest food at ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, fx, fy, target.stuck_ticks));
-                            log::info!("[UNSTUCK] Agent at ({:.1}, {:.1}) targets nearest food at ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, fx, fy, target.stuck_ticks);
-                            target.x = fx;
-                            target.y = fy;
-                            target.stuck_ticks = 0;
-                            target.path_ticks = Some(0);
-                            target.ticks_to_reach = Some(0);
-                            if let Some(ref mut path) = path {
-                                if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (fx.round() as i32, fy.round() as i32), max_path_distance.try_into().unwrap()) {
-                                    log::debug!("[PATH_ASSIGN] Agent at ({:.2}, {:.2}) assigned path ptr: {:p}, waypoints: {:?}", pos.x, pos.y, &new_path as *const _, &new_path);
-                                    path.waypoints = new_path.into();
-                                } else {
-                                    path.waypoints.clear();
-                                    event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to food ({:.1}, {:.1})", pos.x, pos.y, fx, fy));
-                                    log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to food ({:.1}, {:.1})", pos.x, pos.y, fx, fy);
-                                }
-                            }
-                            if log::log_enabled!(log::Level::Debug) {
-                                log::debug!("[TARGET_ASSIGN] Agent at ({:.2},{:.2}) assigned new target ({:.2},{:.2}) [reason: stuck/unstuck or food/random]", pos.x, pos.y, target.x, target.y);
-                            }
-                        } else {
-                            // No food found, fallback to previous random unstuck logic
-                            let mut tries = 0;
-                            let mut found = false;
-                            let mut tx = pos.x;
-                            let mut ty = pos.y;
-                            while tries < 20 {
-                                let dx = rng.gen_range(-5..=5);
-                                let dy = rng.gen_range(-5..=5);
-                                let candidate_tx = (pos.x.round() as i32 + dx).clamp(0, map.width-1) as f32;
-                                let candidate_ty = (pos.y.round() as i32 + dy).clamp(0, map.height-1) as f32;
-                                if map.is_passable(candidate_tx as i32, candidate_ty as i32) {
-                                    tx = candidate_tx;
-                                    ty = candidate_ty;
-                                    found = true;
-                                    break;
-                                }
-                                tries += 1;
-                            }
-                            if found {
-                                event_log.log(format!("[UNSTUCK] Agent at ({:.1}, {:.1}) picked new target ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, tx, ty, target.stuck_ticks));
-                                log::info!("[UNSTUCK] Agent at ({:.1}, {:.1}) picked new target ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, tx, ty, target.stuck_ticks);
-                                target.x = tx;
-                                target.y = ty;
-                                target.stuck_ticks = 0;
-                                target.path_ticks = Some(0);
-                                target.ticks_to_reach = Some(0);
-                                if let Some(ref mut path) = path {
-                                    if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (tx.round() as i32, ty.round() as i32), max_path_distance.try_into().unwrap()) {
-                                        log::debug!("[PATH_ASSIGN] Agent at ({:.2}, {:.2}) assigned path ptr: {:p}, waypoints: {:?}", pos.x, pos.y, &new_path as *const _, &new_path);
-                                        path.waypoints = new_path.into();
-                                    } else {
-                                        path.waypoints.clear();
-                                        event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new unstuck target ({:.1}, {:.1})", pos.x, pos.y, tx, ty));
-                                        log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new unstuck target ({:.1}, {:.1})", pos.x, pos.y, tx, ty);
-                                    }
-                                }
-                                if log::log_enabled!(log::Level::Debug) {
-                                    log::debug!("[TARGET_ASSIGN] Agent at ({:.2},{:.2}) assigned new target ({:.2},{:.2}) [reason: stuck/unstuck or food/random]", pos.x, pos.y, target.x, target.y);
-                                }
-                            }
-                        }
-                    }
-                }
-                // --- Track time to reach target ---
-                if let Some(ref mut target) = target {
-                    if let Some(ref mut ticks) = target.ticks_to_reach {
-                        *ticks += 1;
-                    } else {
-                        target.ticks_to_reach = Some(1);
-                    }
-                }
-                // --- Detect arrival and log time taken ---
-                let arrived = if let Some(ref target) = target {
-                    let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
-                    dist_to_target < 0.1
-                } else { false };
-                if arrived {
-                    if let Some(ref mut target) = target {
-                        if let Some(ticks) = target.ticks_to_reach.take() {
-                            event_log.log(format!("[ARRIVAL] Agent at ({:.2}, {:.2}) reached target in {} ticks", pos.x, pos.y, ticks));
-                            log::info!("[ARRIVAL] Agent at ({:.2}, {:.2}) reached target in {} ticks", pos.x, pos.y, ticks);
-                        }
-                        // Assign new random target upon arrival
-                        let mut rng = rand::thread_rng();
-                        let (new_x, new_y) = random_passable_target(map, agent_type, &mut rng);
-                        target.x = new_x;
-                        target.y = new_y;
-                        target.stuck_ticks = 0;
-                        target.path_ticks = Some(0);
-                        target.ticks_to_reach = Some(0);
-                        if let Some(ref mut path) = path {
-                            if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (new_x.round() as i32, new_y.round() as i32), max_path_distance.try_into().unwrap()) {
-                                path.waypoints = new_path.into();
-                            } else {
-                                path.waypoints.clear();
-                                event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new random target ({:.1}, {:.1})", pos.x, pos.y, new_x, new_y));
-                                log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new random target ({:.1}, {:.1})", pos.x, pos.y, new_x, new_y);
-                            }
-                        }
-                        if log::log_enabled!(log::Level::Debug) {
-                            log::debug!("[TARGET_ASSIGN] Agent at ({:.2},{:.2}) assigned new target ({:.2},{:.2}) [reason: arrived]", pos.x, pos.y, target.x, target.y);
-                        }
-                    }
-                }
-                // --- LOGGING: Path and Target memory addresses for debugging shared state ---
-                use std::ptr;
-                if let Some(ref target) = target {
-                    log::debug!("[TARGET_PTR] Agent at ({:.2}, {:.2}) target ptr: {:p}", pos.x, pos.y, target);
-                }
-                if let Some(ref path) = path {
-                    log::debug!("[PATH_PTR] Agent at ({:.2}, {:.2}) path ptr: {:p}", pos.x, pos.y, path);
-                }
-                // Remove stray/noise logic, just move directly along the path
-                let dx = target_x - pos.x;
-                let dy = target_y - pos.y;
-                let dist = (dx * dx + dy * dy).sqrt();
-                if dist < 0.01 {
-                    // Already at target or waypoint
-                    return;
-                }
-                let step = agent_type.move_speed.min(dist);
-                let dir_x = dx / dist;
-                let dir_y = dy / dist;
-                let new_x = (pos.x + dir_x * step).max(0.0).min(map.width as f32 - 1.0);
-                let new_y = (pos.y + dir_y * step).max(0.0).min(map.height as f32 - 1.0);
-                let tx = new_x.round() as i32;
-                let ty = new_y.round() as i32;
-                if tx < 0 || ty < 0 || tx >= map.width || ty >= map.height {
-                    return;
-                }
-                let terrain = map.tiles[ty as usize][tx as usize];
-                let is_scout = agent_type.name == "scout";
-                let mountain_cost = if is_scout { Some(3.0) } else { None };
-                let cost = match terrain {
-                    crate::map::Terrain::Mountain => mountain_cost,
-                    _ => terrain.movement_cost(),
-                };
-                if let Some(cost) = cost {
-                    let distance = ((new_x - pos.x).powi(2) + (new_y - pos.y).powi(2)).sqrt();
-                    pos.x = new_x;
-                    pos.y = new_y;
-                    hunger.value -= 0.1 * cost;
-                    energy.value -= distance * 0.1 * cost;
-                }
-                // else: impassable, do not move
-                // --- After movement: Log new position and distances ---
-                if let Some(ref target) = target {
-                    let dist_to_target = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
-                    log::info!("[DIAG] Agent now at ({:.2}, {:.2}) distance to target ({:.2}, {:.2}) = {:.3}", pos.x, pos.y, target.x, target.y, dist_to_target);
-                }
-                if let Some(ref path) = path {
-                    if let Some(&(wx, wy)) = path.waypoints.front() {
-                        let dist_to_waypoint = ((pos.x - wx).powi(2) + (pos.y - wy).powi(2)).sqrt();
-                        log::info!("[DIAG] Agent now at ({:.2}, {:.2}) distance to next waypoint ({:.2}, {:.2}) = {:.3}", pos.x, pos.y, wx, wy, dist_to_waypoint);
-                    }
-                }
-            });
-        })
+    world.push((pos, crate::food::Food { nutrition }))
 }
 
 // --- Resource for food positions (for agent movement system) ---
 pub struct FoodPositions(pub Vec<(f32, f32)>);
-
-// --- ECS System: Collect Food Positions ---
-pub fn collect_food_positions_system() -> impl legion::systems::Runnable {
-    use legion::*;
-    SystemBuilder::new("CollectFoodPositionsSystem")
-        .write_resource::<FoodPositions>()
-        .with_query(<(&Position, &Food)>::query())
-        .build(|_, world, food_positions, query| {
-            let mut positions = Vec::new();
-            for (pos, _food) in query.iter(world) {
-                positions.push((pos.x, pos.y));
-            }
-            food_positions.0 = positions;
-        })
-}
-
-// --- A* Pathfinding Helper ---
-use std::collections::{BinaryHeap, HashMap};
-use std::cmp::Ordering;
-
-#[derive(Copy, Clone, Debug)]
-struct Node {
-    x: i32,
-    y: i32,
-    cost: f32,
-    est_total: f32,
-}
-
-impl PartialEq for Node {
-    fn eq(&self, other: &Self) -> bool {
-        self.est_total == other.est_total
-    }
-}
-impl Eq for Node {}
-impl Ord for Node {
-    fn cmp(&self, other: &Self) -> Ordering {
-        // Reverse for min-heap
-        other.est_total.partial_cmp(&self.est_total).unwrap_or(Ordering::Equal)
-    }
-}
-impl PartialOrd for Node {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-fn a_star_path(map: &crate::map::Map, agent_type: &AgentType, start: (i32, i32), goal: (i32, i32), max_distance: i32) -> Option<Vec<(f32, f32)>> {
-    let mut open = BinaryHeap::new();
-    let mut came_from: HashMap<(i32, i32), (i32, i32)> = HashMap::new();
-    let mut g_score: HashMap<(i32, i32), f32> = HashMap::new();
-    let mut f_score: HashMap<(i32, i32), f32> = HashMap::new();
-    let is_scout = agent_type.name == "scout";
-    let h = |x: i32, y: i32| ((x - goal.0).abs() + (y - goal.1).abs()) as f32;
-    g_score.insert(start, 0.0);
-    f_score.insert(start, h(start.0, start.1));
-    open.push(Node { x: start.0, y: start.1, cost: 0.0, est_total: h(start.0, start.1) });
-    let neighbors = [(-1,0),(1,0),(0,-1),(0,1)];
-    while let Some(Node { x, y, cost: _, .. }) = open.pop() {
-        if (x, y) == goal {
-            // reconstruct path
-            let mut path = vec![(x as f32 + 0.5, y as f32 + 0.5)];
-            let mut curr = (x, y);
-            while let Some(&prev) = came_from.get(&curr) {
-                path.push((prev.0 as f32 + 0.5, prev.1 as f32 + 0.5));
-                curr = prev;
-            }
-            path.reverse();
-            return Some(path);
-        }
-        // Enforce max search distance
-        if (x - start.0).abs() > max_distance || (y - start.1).abs() > max_distance {
-            continue;
-        }
-        for (dx, dy) in neighbors.iter() {
-            let nx = x + dx;
-            let ny = y + dy;
-            if nx < 0 || ny < 0 || nx >= map.width || ny >= map.height { continue; }
-            let terrain = map.tiles[ny as usize][nx as usize];
-            let passable = match terrain {
-                crate::map::Terrain::Mountain => is_scout,
-                _ => terrain.movement_cost().is_some(),
-            };
-            if !passable { continue; }
-            let tentative_g = g_score.get(&(x, y)).unwrap_or(&f32::INFINITY) + 1.0;
-            if tentative_g < *g_score.get(&(nx, ny)).unwrap_or(&f32::INFINITY) {
-                came_from.insert((nx, ny), (x, y));
-                g_score.insert((nx, ny), tentative_g);
-                let f = tentative_g + h(nx, ny);
-                f_score.insert((nx, ny), f);
-                open.push(Node { x: nx, y: ny, cost: tentative_g, est_total: f });
-            }
-        }
-    }
-    None
-}
 
 // --- ECS Agent Interaction System ---
 pub fn agent_interaction_system() -> impl legion::systems::Runnable {
@@ -606,9 +83,9 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
     SystemBuilder::new("EntityInteractionSystem")
         .write_resource::<InteractionStats>()
         .write_resource::<EventLog>()
-        .with_query(<(legion::Entity, &Position, &AgentType)>::query()) // agents
+        .with_query(<(legion::Entity, &Position, &InteractionState)>::query()) // agents
         .with_query(<(legion::Entity, &Position, &Food)>::query()) // food
-        .with_query(<(legion::Entity, &mut Position, &mut Hunger, &mut Energy)>::query())
+        .with_query(<(legion::Entity, &mut Position)>::query())
         .build(|cmd, world, (stats, event_log), (agent_query, food_query, agent_stats_query)| {
             let event_log = event_log;
             let agent_count = agent_query.iter(world).count();
@@ -652,9 +129,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
             }
             // Second pass: apply food eaten mutations
             for (agent_entity, food_e, nutrition) in food_eaten {
-                if let Some((_entity, _pos, hunger, energy)) = agent_stats_query.iter_mut(world).find(|(e, _pos, _h, _en)| **e == agent_entity) {
-                    hunger.value += nutrition;
-                    energy.value += nutrition;
+                if let Some((_entity, _pos)) = agent_stats_query.iter_mut(world).find(|(e, _pos)| **e == agent_entity) {
                     event_log.log(format!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition));
                     log::info!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition);
                 }
@@ -666,92 +141,5 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
                 stats.active_interactions_history.pop_front();
             }
             stats.active_interactions_history.push_back(active_interactions);
-        })
-}
-
-// --- Food spawn collection as a regular function (not a system) ---
-// pub fn collect_food_spawn_positions(world: &legion::World, map: &crate::map::Map) -> Vec<(f32, f32)> {
-//     let mut rng = rand::thread_rng();
-//     let num_to_spawn = (map.width * map.height / 20000).max(2);
-//     let mut positions_to_spawn = Vec::new();
-//     for _ in 0..num_to_spawn {
-//         let x = rng.gen_range(0..map.width) as f32;
-//         let y = rng.gen_range(0..map.height) as f32;
-//         let ix = x as i32;
-//         let iy = y as i32;
-//         let found = <(&Position, &Food)>::query()
-//             .iter(world)
-//             .any(|(pos, _)| pos.x.round() as i32 == ix && pos.y.round() as i32 == iy);
-//         if !found {
-//             positions_to_spawn.push((x, y));
-//         }
-//     }
-//     positions_to_spawn
-// }
-
-// --- Food spawn collection as an ECS system ---
-pub fn collect_food_spawn_positions_system() -> impl legion::systems::Runnable {
-    use legion::*;
-    use rand::Rng;
-    SystemBuilder::new("CollectFoodSpawnPositionsSystem")
-        .write_resource::<crate::ecs_components::PendingFoodSpawns>()
-        .read_resource::<crate::map::Map>()
-        .build(|_, _world, (pending_food, map), _| {
-            let num_to_spawn = (map.width * map.height / 20000).max(2);
-            let mut rng = rand::thread_rng();
-            let mut positions_to_spawn = Vec::new();
-            for _ in 0..num_to_spawn {
-                let mut x;
-                let mut y;
-                let mut tries = 0;
-                loop {
-                    x = rng.gen_range(0..map.width) as f32;
-                    y = rng.gen_range(0..map.height) as f32;
-                    if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
-                        break;
-                    }
-                    tries += 1;
-                    if tries > 1000 {
-                        break;
-                    }
-                }
-                positions_to_spawn.push((x, y));
-            }
-            pending_food.0 = positions_to_spawn;
-        })
-}
-
-// --- Resource for pending food spawn positions ---
-pub struct PendingFoodSpawns(pub Vec<(f32, f32)>);
-
-// --- ECS Food Spawn Apply System (mutation only) ---
-pub fn food_spawn_apply_system() -> impl legion::systems::Runnable {
-    SystemBuilder::new("FoodSpawnApplySystem")
-        .write_resource::<PendingFoodSpawns>()
-        .build(|cmd, _world, pending, _| {
-            for (x, y) in pending.0.drain(..) {
-                cmd.push((
-                    Position { x, y },
-                    Food { nutrition: rand::thread_rng().gen_range(5.0..=10.0) },
-                    Renderable { icon: '*', color: "green".to_string() }
-                ));
-            }
-        })
-}
-
-// --- ECS Agent Death System ---
-pub fn agent_death_system() -> impl legion::systems::Runnable {
-    legion::SystemBuilder::new("AgentDeathSystem")
-        .with_query(<(legion::Entity, &Hunger, &Energy)>::query())
-        .build(|cmd, _world, _, query| {
-            let mut to_remove = Vec::new();
-            for (entity, hunger, energy) in query.iter(_world) {
-                if hunger.value <= 0.0 || energy.value <= 0.0 {
-                    to_remove.push(entity);
-                }
-            }
-            for entity in to_remove {
-                cmd.remove(*entity);
-            }
         })
 }

@@ -59,7 +59,6 @@ pub struct Map {
 
 impl Map {
     pub fn new(width: i32, height: i32) -> Self {
-        use rand::Rng;
         let mut rng = rand::thread_rng();
         let seed = rng.gen();
         let terrain_grid = generator::generate_terrain(

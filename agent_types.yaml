@@ -1,5 +1,6 @@
 # Example agent types YAML
-- type: "worker"
+- name: "Worker"
+  type: "worker"
   color: "#FF7043"   # Vibrant orange
   move_speed: 2.0
   strength: 5
@@ -9,7 +10,8 @@
   icon: "W"
   damping: 0.85
   move_probability: 1.0
-- type: "scout"
+- name: "Scout"
+  type: "scout"
   color: "#D81B60"   # Bright magenta
   move_speed: 4.0
   strength: 2
@@ -19,7 +21,8 @@
   icon: "S"
   damping: 0.85
   move_probability: 1.0
-- type: "soldier"
+- name: "Soldier"
+  type: "soldier"
   color: "#00B8D4"   # Cyan
   move_speed: 3.0
   strength: 8
@@ -29,7 +32,8 @@
   icon: "X"
   damping: 0.95
   move_probability: 0.7
-- type: "miner"
+- name: "Miner"
+  type: "miner"
   color: "#FFEB3B"   # Lemon yellow
   move_speed: 2.0
   strength: 7
@@ -39,7 +43,8 @@
   icon: "M"
   damping: 0.95
   move_probability: 0.5
-- type: "farmer"
+- name: "Farmer"
+  type: "farmer"
   color: "#8E24AA"   # Violet
   move_speed: 2.0
   strength: 3
@@ -49,7 +54,8 @@
   icon: "F"
   damping: 0.95
   move_probability: 0.5
-- type: "builder"
+- name: "Builder"
+  type: "builder"
   color: "#4CAF50"   # Green
   move_speed: 2.0
   strength: 6
@@ -59,7 +65,8 @@
   icon: "B"
   damping: 0.95
   move_probability: 0.5
-- type: "doctor"
+- name: "Doctor"
+  type: "doctor"
   color: "#9C27B0"   # Deep purple
   move_speed: 3.0
   strength: 2

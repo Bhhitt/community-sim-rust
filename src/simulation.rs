@@ -1,6 +1,6 @@
 //! Main simulation loop and logic
 
-use crate::{agent::AgentType, map::Map};
+use crate::{agent::AgentType, agent::systems::spawn_agent, map::Map};
 use serde::Deserialize;
 use std::fs;
 use std::fs::File;
@@ -8,10 +8,13 @@ use std::io::Write;
 use serde_yaml;
 use legion::IntoQuery;
 use rand::Rng;
-use crate::ecs_components::{spawn_agent, agent_movement_system, entity_interaction_system, food_spawn_apply_system, agent_death_system, PendingFoodSpawns, collect_food_spawn_positions_system};
+use crate::food::{PendingFoodSpawns, collect_food_spawn_positions_system, food_spawn_apply_system, Food};
 use legion::{World, Resources};
 use crate::ecs_simulation::{simulation_tick, render_simulation_ascii, build_simulation_schedule, simulation_tick_profiled};
 use log;
+use std::collections::VecDeque;
+use crate::agent::systems::{agent_movement_system, agent_death_system};
+use crate::ecs_components::{entity_interaction_system};
 
 fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) -> (f64, f64, f64) {
     log::info!("[TEST] Entered run_simulation");
@@ -21,11 +24,18 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     let map = Map::new(map_width, map_height);
     let mut rng = rand::thread_rng();
     // Convert agent_types from agent.rs::AgentType to ecs_components::AgentType directly
-    let ecs_agent_types: Vec<crate::ecs_components::AgentType> = agent_types.iter().map(|a| crate::ecs_components::AgentType {
-        name: a.r#type.clone(),
+    let ecs_agent_types: Vec<AgentType> = agent_types.iter().map(|a| AgentType {
+        name: a.name.clone(),
+        r#type: a.r#type.clone(),
+        color: a.color.clone(),
         move_speed: a.move_speed,
         move_probability: a.move_probability,
-        color: a.color.clone(),
+        strength: a.strength,
+        stamina: a.stamina,
+        vision: a.vision,
+        work_rate: a.work_rate,
+        icon: a.icon.clone(),
+        damping: a.damping,
     }).collect();
     let mut agent_count = 0;
     let mut attempts = 0;
@@ -52,6 +62,24 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
             attempts += tries;
         }
     }
+    // --- Spawn initial food entities (1 per 10 agents, minimum 1 if agents exist) ---
+    let food_count = if agent_count > 0 { std::cmp::max(1, agent_count / 10) } else { 0 };
+    for _ in 0..food_count {
+        let mut tries = 0;
+        let (mut x, mut y);
+        loop {
+            x = rng.gen_range(0..map_width) as f32;
+            y = rng.gen_range(0..map_height) as f32;
+            if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
+                break;
+            }
+            tries += 1;
+            if tries > 1000 {
+                panic!("Could not find passable tile for food after 1000 tries");
+            }
+        }
+        world.push((crate::ecs_components::Position { x, y }, Food { nutrition: rng.gen_range(5.0..=10.0) }));
+    }
     log::debug!("[DEBUG] Total spawn attempts: {} (avg {:.2} per agent)", attempts, attempts as f32 / agent_count as f32);
     let total_entities = world.len();
     log::debug!("[DEBUG] Total entities in world after spawning: {}", total_entities);
@@ -62,8 +90,8 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     let mut query = <(
         legion::Entity,
         &crate::ecs_components::Position,
-        Option<&crate::ecs_components::AgentType>,
-        Option<&crate::ecs_components::Food>
+        Option<&AgentType>,
+        Option<&crate::food::Food>
     )>::query();
     for (entity, _pos, agent_type, food) in query.iter(&world) {
         let mut comps = vec!["Position"];
@@ -74,9 +102,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     // --- Main simulation loop ---
     let mut resources = Resources::default();
     resources.insert(map.clone());
-    resources.insert(crate::ecs_components::InteractionStats::default());
-    resources.insert(crate::ecs_components::EventLog::new(200));
-    resources.insert(PendingFoodSpawns(Vec::new()));
+    resources.insert(PendingFoodSpawns(VecDeque::new()));
     resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
     // Build individual systems for profiling
     let mut agent_movement = agent_movement_system();
@@ -154,16 +180,15 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         }
         // --- Write simulation summary to map file ---
         use legion::IntoQuery;
-        use crate::ecs_components::InteractionStats;
         use std::collections::HashMap;
         // Count agent types at end
         let mut agent_type_counts: HashMap<String, usize> = HashMap::new();
-        let mut agent_query = <(&crate::ecs_components::AgentType,)>::query();
+        let mut agent_query = <(&AgentType,)>::query();
         for (agent_type,) in agent_query.iter(&world) {
-            *agent_type_counts.entry(agent_type.name.clone()).or_insert(0) += 1;
+            *agent_type_counts.entry(agent_type.name.clone().unwrap_or_else(|| agent_type.r#type.clone())).or_insert(0) += 1;
         }
         // Get interaction stats
-        let stats = resources.get::<InteractionStats>().expect("No InteractionStats resource");
+        let stats = resources.get::<crate::ecs_components::InteractionStats>().expect("No InteractionStats resource");
         let total_interactions = stats.agent_interactions;
         let avg_interactions_per_tick = if ticks > 0 { total_interactions as f64 / ticks as f64 } else { 0.0 };
         // Prepare summary string
