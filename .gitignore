@@ -3,6 +3,7 @@
 
 # Simulation outputs
 simulation_map_*.txt
+community_sim.log
 
 # OS-specific files
 .DS_Store
