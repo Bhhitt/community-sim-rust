@@ -101,9 +101,15 @@ You can also specify map size, agent count, and ticks directly:
 cargo run --release -- --map-size 40 --agents 20 --ticks 20
 ```
 
+What i run most of the time
+```sh
+cargo run --release -- --profile=med_run
+```
+
 ## Additional CLI Options
 
 - `--headless` : Run simulation without graphics (for benchmarking)
+- `--scale` : scaling benchmark (takes like 2 mins on my machine)
 - `--log-level <level>` : Set logging level (`error`, `warn`, `info`, `debug`, `trace`)
 
 For a full list of options, run:
