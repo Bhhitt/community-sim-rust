@@ -11,16 +11,38 @@ A scalable community simulation written in Rust, featuring agents that interact 
 - **Performance Metrics:** Reports timings for movement, interaction, and total simulation
 - **Testing:** Includes unit tests for agents and interactions
 
-## Usage
+## Installation & Setup
 
-### Build
+### Prerequisites
+- Rust (install from https://rustup.rs)
+- SDL2 (required for GUI)
+
+### Install SDL2
+#### macOS (Homebrew)
 ```sh
-cargo build
+brew install sdl2
+```
+#### Ubuntu/Debian (Apt)
+```sh
+sudo apt-get update
+sudo apt-get install libsdl2-dev
 ```
 
-### Run a Simulation
+### Build the Project
+```sh
+cargo build --release
+```
+
+## Usage
+
+### Run a Simulation (Headless)
 ```sh
 cargo run -- --headless --map-size 40 --agents 20 --ticks 20
+```
+
+### Run with Graphics (GUI)
+```sh
+cargo run --release -- --profile=med_run
 ```
 
 ### Run Scaling Benchmarks
@@ -45,6 +67,21 @@ cargo test
 - Add more terrain effects (altitude, slopes)
 - Visual rendering (SDL2 or similar)
 - More complex agent behaviors
+
+## Controls (GUI Mode)
+
+- **Arrow Keys:** Pan camera
+- **Mouse Wheel / +/-:** Zoom in/out
+- **A:** Add a single agent at a random location
+- **S:** Add 100 random agents
+- **Spacebar:** Pause/resume simulation
+- **Period (.):** Advance one tick (when paused)
+- **Esc:** Quit simulation
+
+## Selecting Entities
+
+- **Left Click:** Select agent/entity under cursor
+- **Right Click:** Deselect or issue move command (if supported)
 
 ## Running Tests
 
@@ -73,19 +110,6 @@ You can also specify map size, agent count, and ticks directly:
 ```sh
 cargo run --release -- --map-size 40 --agents 20 --ticks 20
 ```
-
-## Controls (GUI Mode)
-
-- **Arrow Keys / WASD:** Pan camera
-- **Mouse Wheel / +/-:** Zoom in/out
-- **Left Click:** Select agent/entity under cursor
-- **Right Click:** Deselect or issue move command (if supported)
-- **Spacebar:** Pause/resume simulation
-- **Esc:** Quit simulation
-
-## Selecting Entities
-
-Click on an agent or entity to select it. When selected, its properties and stats will be displayed in the sidebar or info panel. You can select multiple entities by holding Shift (if supported).
 
 ## Additional CLI Options
 
