@@ -370,6 +370,36 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                 canvas.fill_rect(rect).unwrap();
             }
         }
+        // --- Draw selected agent's path on the map ---
+        if let Some(sel) = selected_agent {
+            // Use Legion's entry_ref to directly fetch the selected agent's components in O(1)
+            if let Ok(entry) = world.entry_ref(sel) {
+                let pos = entry.get_component::<crate::ecs_components::Position>();
+                let path = entry.get_component::<crate::ecs_components::Path>();
+                if let (Ok(pos), Ok(path)) = (pos, path) {
+                    let waypoints: Vec<_> = path.waypoints.iter().collect();
+                    if waypoints.len() > 0 {
+                        canvas.set_draw_color(Color::RGB(0, 200, 255)); // Cyan for path
+                        let mut last = ((pos.x - camera.x) * CELL_SIZE as f32, (pos.y - camera.y) * CELL_SIZE as f32);
+                        for (wx, wy) in waypoints.iter() {
+                            let next = ((*wx - camera.x) * CELL_SIZE as f32, (*wy - camera.y) * CELL_SIZE as f32);
+                            let _ = canvas.draw_line((last.0 as i32, last.1 as i32), (next.0 as i32, next.1 as i32));
+                            last = next;
+                        }
+                        // Draw a dot at the end of the path
+                        if let Some((end_x, end_y)) = waypoints.last() {
+                            let dot_rect = Rect::new(
+                                ((*end_x - camera.x) * CELL_SIZE as f32) as i32 - 3,
+                                ((*end_y - camera.y) * CELL_SIZE as f32) as i32 - 3,
+                                7, 7
+                            );
+                            canvas.set_draw_color(Color::RGB(255, 0, 200)); // Magenta for destination dot
+                            let _ = canvas.fill_rect(dot_rect);
+                        }
+                    }
+                }
+            }
+        }
         // Draw ECS agents
         debug!("[DEBUG] About to query agents for rendering");
         for (entity, (pos, renderable)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::ecs_components::Renderable))>::query().iter(&world) {
@@ -439,7 +469,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
             use crate::ecs_components::AgentType;
             let agent_counts = {
                 let mut agent_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
-                for (_entity, agent_type) in <(Read<crate::ecs_components::Position>, Read<AgentType>)>::query().iter(&world) {
+                for agent_type in <&crate::ecs_components::AgentType>::query().iter(&world) {
                     *agent_counts.entry(agent_type.name.clone()).or_insert(0) += 1;
                 }
                 agent_counts
@@ -539,6 +569,19 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
                     if let Some(inter) = interaction_state {
                         if let Some(_partner) = inter.target {
                             status = "Interacting with another agent".to_string();
+                        }
+                    }
+                    // --- NEW: Render intended path as a line ---
+                    if let Some(path) = path {
+                        let waypoints: Vec<_> = path.waypoints.iter().collect();
+                        if waypoints.len() > 0 {
+                            stats_canvas.set_draw_color(Color::RGB(0, 200, 255)); // Cyan for path
+                            let mut last = (pos.x as i32, pos.y as i32);
+                            for (wx, wy) in waypoints {
+                                let next = (*wx as i32, *wy as i32);
+                                let _ = stats_canvas.draw_line(last, next);
+                                last = next;
+                            }
                         }
                     }
                     let text = format!("Selected Agent:\nPos: ({:.1}, {:.1})\nType: {}\nHunger: {:.1}\nEnergy: {:.1}\nStatus: {}", pos.x, pos.y, agent_type.name, hunger.value, energy.value, status);
