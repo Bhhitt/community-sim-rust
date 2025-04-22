@@ -18,6 +18,7 @@ use sdl2::keyboard::Keycode;
 use std::fs::File;
 use std::io::Write;
 use std::time::Duration;
+use crate::log_config::LogConfig;
 
 const CELL_SIZE: f32 = 6.0;
 const WINDOW_WIDTH: u32 = 1280;
@@ -35,6 +36,7 @@ pub fn run_sim_render(
     world: &mut World,
     resources: &mut Resources,
     schedule: &mut Schedule,
+    log_config: &LogConfig,
 ) {
     // --- ECS World Setup ---
     let map = crate::map::Map::new(_map_width, _map_height);
@@ -71,6 +73,7 @@ pub fn run_sim_render(
     resources.insert(crate::event_log::EventLog::new(200));
     resources.insert(PendingFoodSpawns(std::collections::VecDeque::new()));
     resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
+    resources.insert(log_config.clone());
     // --- Use PARALLEL schedule ---
     // Profiling support
     let mut csv_file = if profile_systems {
@@ -78,8 +81,14 @@ pub fn run_sim_render(
     } else {
         None
     };
-    if let Some(csv_file) = csv_file.as_mut() {
-        writeln!(csv_file, "tick,agent_movement,entity_interaction,agent_death,food_spawn_collect,food_spawn_apply").unwrap();
+    if log_config.stats {
+        log::info!("[CONFIG] Stats logging enabled");
+    }
+    if log_config.eat {
+        log::info!("[CONFIG] Eat logging enabled");
+    }
+    if log_config.interact {
+        log::info!("[CONFIG] Interact logging enabled");
     }
     let mut tick = 0;
     let mut agent_movement = agent_movement_system();
@@ -107,7 +116,9 @@ pub fn run_sim_render(
     let ttf_context = sdl2::ttf::init().unwrap();
     let font_path = "/System/Library/Fonts/Supplemental/Arial.ttf";
     let font = ttf_context.load_font(font_path, 18).unwrap();
-    log::info!("[FONT] Loaded font from {}", font_path);
+    if log_config.stats {
+        log::info!("[FONT] Loaded font from {}", font_path);
+    }
 
     // Try to create stats window canvas with software renderer for diagnostics
     let stats_window_canvas = match video_subsystem.window("Stats", 320, 700)
@@ -116,7 +127,9 @@ pub fn run_sim_render(
         .build() {
         Ok(window) => match window.into_canvas().software().build() {
             Ok(canvas) => {
-                log::info!("[STATS] Stats window canvas created with software renderer");
+                if log_config.stats {
+                    log::info!("[STATS] Stats window canvas created with software renderer");
+                }
                 canvas
             },
             Err(e) => {
@@ -180,7 +193,12 @@ pub fn run_sim_render(
         }
         // --- Render Event Log Window ---
         if let Some(event_log) = resources.get::<crate::event_log::EventLog>() {
-            draw_event_log_window(&mut log_canvas, &font, &event_log);
+            draw_event_log_window(
+                &mut log_canvas,
+                &font,
+                &event_log,
+                log_config.interact, // If interaction logging is disabled, treat as quiet mode
+            );
         }
         // Handle events
         for event in event_pump.poll_iter() {
@@ -342,11 +360,15 @@ pub fn run_sim_render(
         // --- Stats window rendering ---
         // Diagnostics for stats window rendering
         let (stats_w, stats_h) = stats_canvas.window().size();
-        log::info!("[STATS] Window size: {}x{}", stats_w, stats_h);
+        if log_config.stats {
+            log::info!("[STATS] Window size: {}x{}", stats_w, stats_h);
+        }
         if cached_agent_counts.is_empty() {
             log::warn!("[STATS] cached_agent_counts is empty!");
         } else {
-            log::info!("[STATS] cached_agent_counts: {:?}", cached_agent_counts);
+            if log_config.stats {
+                log::info!("[STATS] cached_agent_counts: {:?}", cached_agent_counts);
+            }
         }
         // Update cached_agent_counts once per second, but always render stats window every frame
         if last_stats_update.elapsed().as_secs_f32() >= 1.0 {
@@ -371,7 +393,15 @@ pub fn run_sim_render(
             cached_agent_counts = counts_vec;
             last_stats_update = std::time::Instant::now();
         }
-        draw_stats_window(&mut stats_canvas, &font, &cached_agent_counts, resources.get::<crate::ecs_components::InteractionStats>().as_deref(), selected_agent, world);
+        draw_stats_window(
+            &mut stats_canvas,
+            &font,
+            &cached_agent_counts,
+            resources.get::<crate::ecs_components::InteractionStats>().as_deref(),
+            selected_agent,
+            world,
+            log_config.stats,
+        );
         log::debug!("[DEBUG] About to present stats canvas");
         stats_canvas.present();
         ::std::thread::sleep(Duration::from_millis(16));

@@ -15,6 +15,7 @@ use log;
 use std::collections::VecDeque;
 use crate::agent::systems::{agent_movement_system, agent_death_system};
 use crate::ecs_components::{entity_interaction_system};
+use crate::log_config::LogConfig;
 
 fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) -> (f64, f64, f64) {
     log::info!("[TEST] Entered run_simulation");
@@ -238,7 +239,7 @@ pub fn run_profiles_from_yaml(path: &str, agent_types: &[AgentType], profile_sys
     }
 }
 
-pub fn run_profile_from_yaml(path: &str, profile_name: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) {
+pub fn run_profile_from_yaml(path: &str, profile_name: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str, log_config: &LogConfig) {
     log::info!("[TEST] Entered run_profile_from_yaml");
     let profiles = load_profiles_from_yaml(path);
     let profile = profiles.into_iter().find(|p| p.name == profile_name)
@@ -247,7 +248,7 @@ pub fn run_profile_from_yaml(path: &str, profile_name: &str, agent_types: &[Agen
     let height = profile.map_height.unwrap_or(profile.map_size.unwrap_or(20));
     log::info!("\n===== Simulation Profile: {} =====", profile.name);
     log::info!("Launching GUI with profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
-    crate::graphics::run_with_graphics_profile(width, height, profile.num_agents, agent_types, profile_systems, profile_csv);
+    crate::graphics::run_with_graphics_profile(width, height, profile.num_agents, agent_types, profile_systems, profile_csv, log_config);
 }
 
 pub fn run_gui_with_profile(_path: &str, _profile_name: &str, _agent_types: &[crate::agent::AgentType]) {

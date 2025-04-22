@@ -3,6 +3,7 @@ use community_sim::*;
 use chrono;
 use fern;
 use log;
+use log_config::LogConfig;
 
 pub mod terrain;
 pub mod sim_summary;
@@ -41,6 +42,15 @@ pub struct Args {
     /// Log level (error, warn, info, debug, trace)
     #[arg(long, default_value = "info")]
     log_level: String,
+    /// Enable stats logs
+    #[arg(long)]
+    log_stats: bool,
+    /// Enable eat logs
+    #[arg(long)]
+    log_eat: bool,
+    /// Enable interact logs
+    #[arg(long)]
+    log_interact: bool,
 }
 
 fn parse_log_level(level: &str) -> log::LevelFilter {
@@ -79,6 +89,11 @@ fn main() {
     let log_level = parse_log_level(&args.log_level);
     setup_logging(log_level);
     let agent_types = util::load_agent_types(&args.agent_types);
+    let log_config = LogConfig {
+        stats: args.log_stats,
+        eat: args.log_eat,
+        interact: args.log_interact,
+    };
     if args.headless {
         log::info!("Running in headless mode");
         if args.scale {
@@ -88,6 +103,6 @@ fn main() {
         }
     } else {
         log::info!("Running with graphics");
-        simulation::run_profile_from_yaml("sim_profiles.yaml", &args.profile, &agent_types, args.profile_systems, &args.profile_csv);
+        simulation::run_profile_from_yaml("sim_profiles.yaml", &args.profile, &agent_types, args.profile_systems, &args.profile_csv, &log_config);
     }
 }

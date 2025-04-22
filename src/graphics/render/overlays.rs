@@ -10,23 +10,40 @@ use crate::ecs_components::{InteractionStats};
 use legion::*;
 
 /// Draws the event log window
-pub fn draw_event_log_window(canvas: &mut Canvas<Window>, font: &Font, event_log: &EventLog) {
+pub fn draw_event_log_window(canvas: &mut Canvas<Window>, font: &Font, event_log: &EventLog, log_window_enabled: bool) {
     canvas.set_draw_color(Color::RGB(30, 30, 30));
     canvas.clear();
-    let mut y = 10;
-    let line_height = 20;
-    let max_lines = 22;
-    let events_vec = &event_log.events;
-    let events: Vec<_> = events_vec.iter().rev().take(max_lines).collect();
     let texture_creator = canvas.texture_creator();
-    for entry in events.iter().rev() {
-        let surface = font.render(entry)
-            .blended(Color::RGB(220, 220, 220)).unwrap();
+    if log_window_enabled {
+        let mut y = 10;
+        let line_height = 20;
+        let max_lines = 22;
+        let events_vec = &event_log.events;
+        let events: Vec<_> = events_vec.iter().rev().take(max_lines).collect();
+        for entry in events.iter().rev() {
+            let surface = font.render(entry)
+                .blended(Color::RGB(220, 220, 220)).unwrap();
+            let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
+            let sdl2::render::TextureQuery { width, height, .. } = texture.query();
+            let target = Rect::new(10, y, width, height);
+            canvas.copy(&texture, None, Some(target)).unwrap();
+            y += line_height;
+        }
+    } else {
+        // Draw "Quiet mode" in the center
+        let text = "Quiet mode";
+        let surface = font.render(text)
+            .blended(Color::RGB(180, 180, 180)).unwrap();
         let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
         let sdl2::render::TextureQuery { width, height, .. } = texture.query();
-        let target = Rect::new(10, y, width, height);
+        let (win_w, win_h) = canvas.window().size();
+        let target = Rect::new(
+            (win_w as i32 - width as i32) / 2,
+            (win_h as i32 - height as i32) / 2,
+            width,
+            height,
+        );
         canvas.copy(&texture, None, Some(target)).unwrap();
-        y += line_height;
     }
     canvas.present();
 }
@@ -51,9 +68,12 @@ pub fn draw_stats_window(
     interaction_stats: Option<&InteractionStats>,
     selected_agent: Option<legion::Entity>,
     world: &World,
+    log_stats: bool,
 ) {
     let (win_w, win_h) = canvas.window().size();
-    log::info!("[STATS][DRAW] stats window size: {}x{} (id: {})", win_w, win_h, canvas.window().id());
+    if log_stats {
+        log::info!("[STATS][DRAW] stats window size: {}x{} (id: {})", win_w, win_h, canvas.window().id());
+    }
     // Set a dark background for readability
     canvas.set_draw_color(Color::RGB(30, 30, 30));
     canvas.clear();
@@ -65,7 +85,9 @@ pub fn draw_stats_window(
     let mut y_offset = 10;
     let texture_creator = canvas.texture_creator();
     for (name, count) in cached_agent_counts {
-        log::info!("[STATS] Drawing stat: {}: {} at y_offset {}", name, count, y_offset);
+        if log_stats {
+            log::info!("[STATS] Drawing stat: {}: {} at y_offset {}", name, count, y_offset);
+        }
         let text = format!("{}: {}", name, count);
         match font.render(&text).blended(Color::RGB(220, 220, 220)) {
             Ok(surface) => {

@@ -36,3 +36,13 @@
   map_height: 500
   num_agents: 1000
   ticks: 1000
+  log_info_eat: true
+  log_info_interact: true
+- name: med_run_quiet
+  map_width: 700
+  map_height: 500
+  num_agents: 1000
+  ticks: 1000
+  stats: false
+  eat: false
+  interact: false

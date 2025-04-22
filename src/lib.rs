@@ -15,3 +15,4 @@ pub mod food;
 pub use food::{collect_food_positions_system, collect_food_spawn_positions_system, food_spawn_apply_system};
 pub mod sim_summary;
 pub mod event_log;
+pub mod log_config;
