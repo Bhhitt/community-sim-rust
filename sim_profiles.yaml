@@ -35,4 +35,4 @@
   map_width: 700
   map_height: 500
   num_agents: 1000
-  ticks: 10
+  ticks: 1000

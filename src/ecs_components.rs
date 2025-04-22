@@ -9,6 +9,7 @@ use rand::Rng;
 use std::ops::DerefMut;
 use std::sync::Mutex;
 use log;
+use std::convert::TryInto;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Position {
@@ -64,6 +65,7 @@ pub struct Target {
     pub x: f32,
     pub y: f32,
     pub stuck_ticks: u32, // Track how many ticks agent is stuck
+    pub path_ticks: Option<u32>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -124,11 +126,10 @@ pub fn spawn_agent(world: &mut legion::World, pos: Position, agent_type: AgentTy
     let color = agent_type.color.clone();
     let mut rng = rand::thread_rng();
     let (tx, ty) = random_passable_target(map, &agent_type, &mut rng);
-    world.push((pos, agent_type, Hunger { value: 100.0 }, Energy { value: 100.0 }, Renderable { icon: '@', color }, InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0 }, Target { x: tx, y: ty, stuck_ticks: 0 }, Path { waypoints: VecDeque::new() }))
+    world.push((pos, agent_type, Hunger { value: 100.0 }, Energy { value: 100.0 }, Renderable { icon: '@', color }, InteractionState { target: None, ticks: 0, last_partner: None, cooldown: 0 }, Target { x: tx, y: ty, stuck_ticks: 0, path_ticks: None }, Path { waypoints: VecDeque::new() }))
 }
 
 pub fn spawn_food(world: &mut legion::World, pos: Position) -> legion::Entity {
-    use rand::Rng;
     let nutrition = rand::thread_rng().gen_range(5.0..=10.0);
     world.push((pos, Food { nutrition }, Renderable { icon: '*', color: "green".to_string() }))
 }
@@ -140,10 +141,12 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentMovementSystem")
         .with_query(<(&mut Position, &AgentType, &mut Hunger, &mut Energy, Option<&mut Target>, Option<&mut Path>)>::query())
         .read_resource::<Map>()
+        .read_resource::<FoodPositions>()
         .write_resource::<crate::ecs_components::EventLog>()
-        .build(|_, world, (map, event_log), query| {
+        .build(|_, world, (map, food_positions, event_log), query| {
             let map = &*map;
             let event_log = event_log;
+            let food_positions = food_positions;
             query.par_for_each_mut(
                 world,
                 |(
@@ -153,13 +156,6 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     energy,
                     mut target,
                     mut path
-                ): (
-                    &mut Position,
-                    &AgentType,
-                    &mut Hunger,
-                    &mut Energy,
-                    Option<&mut Target>,
-                    Option<&mut Path>
                 )| {
                 // --- Movement probability logic ---
                 // let move_prob = agent_type.move_probability.unwrap_or(1.0);
@@ -169,8 +165,11 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                 // --- Pathfinding logic ---
                 let _map_w = map.width as f32;
                 let _map_h = map.height as f32;
+                let max_path_distance = 15;
+                let max_steps_on_path = 2 * max_path_distance;
                 let (target_x, target_y, _stuck_ticks) = if let Some(ref mut target) = target {
                     let mut stuck_ticks = target.stuck_ticks;
+                    let mut path_ticks = target.path_ticks.unwrap_or(0);
                     let progress = ((pos.x - target.x).abs() + (pos.y - target.y).abs()) > 0.1;
                     // Only recalc path if target changed or path is empty (not every time stuck)
                     let target_changed = (target.x - pos.x).abs() > 0.1 || (target.y - pos.y).abs() > 0.1;
@@ -179,8 +178,9 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     } else {
                         stuck_ticks = 0;
                     }
-                    if (pos.x - target.x).abs() < 0.1 && (pos.y - target.y).abs() < 0.1 || stuck_ticks > 10 {
-                        // Pick a new target within 10 squares
+                    path_ticks += 1;
+                    if (pos.x - target.x).abs() < 0.1 && (pos.y - target.y).abs() < 0.1 || stuck_ticks > 10 || path_ticks > max_steps_on_path {
+                        // Pick a new target within 15 squares
                         let mut tx = pos.x;
                         let mut ty = pos.y;
                         let mut tries = 0;
@@ -216,6 +216,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                                 event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a passable target after {} tries (local+global)", pos.x, pos.y, tries + global_tries));
                                 log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a passable target after {} tries (local+global)", pos.x, pos.y, tries + global_tries);
                                 target.stuck_ticks = stuck_ticks;
+                                target.path_ticks = Some(path_ticks);
                                 if let Some(ref mut path) = path {
                                     path.waypoints.clear();
                                 }
@@ -225,8 +226,9 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                         target.x = tx;
                         target.y = ty;
                         target.stuck_ticks = 0;
+                        target.path_ticks = Some(0);
                         if let Some(ref mut path) = path {
-                            if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (tx.round() as i32, ty.round() as i32), 10) {
+                            if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (tx.round() as i32, ty.round() as i32), max_path_distance.try_into().unwrap()) {
                                 path.waypoints = new_path.into();
                             } else {
                                 path.waypoints.clear();
@@ -237,10 +239,11 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                         (tx, ty, 0)
                     } else {
                         target.stuck_ticks = stuck_ticks;
+                        target.path_ticks = Some(path_ticks);
                         // Only recalc path if empty or target changed
                         if let Some(ref mut path) = path {
                             if path.waypoints.is_empty() || target_changed {
-                                if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (target.x.round() as i32, target.y.round() as i32), 10) {
+                                if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (target.x.round() as i32, target.y.round() as i32), max_path_distance.try_into().unwrap()) {
                                     path.waypoints = new_path.into();
                                 } else {
                                     path.waypoints.clear();
@@ -289,6 +292,73 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                         }
                     }
                 }
+                // --- Enhanced stuck logic: try to unstick if stuck for a while ---
+                if let Some(ref mut target) = target {
+                    if target.stuck_ticks > 10 {
+                        let mut rng = rand::thread_rng();
+                        // Try to pick the nearest food as a new target before random
+                        let mut nearest_food: Option<(f32, f32, f32)> = None; // (x, y, distance)
+                        for (fx, fy) in &food_positions.0 {
+                            let dist = ((pos.x - fx).powi(2) + (pos.y - fy).powi(2)).sqrt();
+                            if nearest_food.is_none() || dist < nearest_food.unwrap().2 {
+                                nearest_food = Some((*fx, *fy, dist));
+                            }
+                        }
+                        if let Some((fx, fy, _)) = nearest_food {
+                            event_log.log(format!("[UNSTUCK] Agent at ({:.1}, {:.1}) targets nearest food at ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, fx, fy, target.stuck_ticks));
+                            log::info!("[UNSTUCK] Agent at ({:.1}, {:.1}) targets nearest food at ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, fx, fy, target.stuck_ticks);
+                            target.x = fx;
+                            target.y = fy;
+                            target.stuck_ticks = 0;
+                            target.path_ticks = Some(0);
+                            if let Some(ref mut path) = path {
+                                if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (fx.round() as i32, fy.round() as i32), max_path_distance.try_into().unwrap()) {
+                                    path.waypoints = new_path.into();
+                                } else {
+                                    path.waypoints.clear();
+                                    event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to food ({:.1}, {:.1})", pos.x, pos.y, fx, fy));
+                                    log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to food ({:.1}, {:.1})", pos.x, pos.y, fx, fy);
+                                }
+                            }
+                        } else {
+                            // No food found, fallback to previous random unstuck logic
+                            let mut tries = 0;
+                            let mut found = false;
+                            let mut tx = pos.x;
+                            let mut ty = pos.y;
+                            while tries < 20 {
+                                let dx = rng.gen_range(-5..=5);
+                                let dy = rng.gen_range(-5..=5);
+                                let candidate_tx = (pos.x.round() as i32 + dx).clamp(0, map.width-1) as f32;
+                                let candidate_ty = (pos.y.round() as i32 + dy).clamp(0, map.height-1) as f32;
+                                if map.is_passable(candidate_tx as i32, candidate_ty as i32) {
+                                    tx = candidate_tx;
+                                    ty = candidate_ty;
+                                    found = true;
+                                    break;
+                                }
+                                tries += 1;
+                            }
+                            if found {
+                                event_log.log(format!("[UNSTUCK] Agent at ({:.1}, {:.1}) picked new target ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, tx, ty, target.stuck_ticks));
+                                log::info!("[UNSTUCK] Agent at ({:.1}, {:.1}) picked new target ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, tx, ty, target.stuck_ticks);
+                                target.x = tx;
+                                target.y = ty;
+                                target.stuck_ticks = 0;
+                                target.path_ticks = Some(0);
+                                if let Some(ref mut path) = path {
+                                    if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (tx.round() as i32, ty.round() as i32), max_path_distance.try_into().unwrap()) {
+                                        path.waypoints = new_path.into();
+                                    } else {
+                                        path.waypoints.clear();
+                                        event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new unstuck target ({:.1}, {:.1})", pos.x, pos.y, tx, ty));
+                                        log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new unstuck target ({:.1}, {:.1})", pos.x, pos.y, tx, ty);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 // --- Path following with a small stray/noise ---
                 let mut next_x = target_x;
                 let mut next_y = target_y;
@@ -302,6 +372,14 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                             next_x = wx;
                             next_y = wy;
                         }
+                    }
+                    // VERBOSE DEBUG LOGGING: Show path and movement when debug is enabled
+                    if log::log_enabled!(log::Level::Debug) {
+                        log::debug!(
+                            "[AGENT_MOVE] Pos=({:.2},{:.2}) Target=({:.2},{:.2}) Next=({:.2},{:.2}) Path=[{}]",
+                            pos.x, pos.y, target_x, target_y, next_x, next_y,
+                            path.waypoints.iter().map(|(x, y)| format!("({:.1},{:.1})", x, y)).collect::<Vec<_>>().join(", ")
+                        );
                     }
                 }
                 let mut rng = rand::thread_rng();
@@ -345,47 +423,25 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     energy.value -= distance * 0.1 * cost;
                 }
                 // else: impassable, do not move
-
-                // --- Enhanced stuck logic: try to unstick if stuck for a while ---
-                if let Some(ref mut target) = target {
-                    if target.stuck_ticks > 10 {
-                        // Try to pick a new random nearby target to unstick
-                        let mut tries = 0;
-                        let mut found = false;
-                        let mut tx = pos.x;
-                        let mut ty = pos.y;
-                        while tries < 20 {
-                            let dx = rng.gen_range(-5..=5);
-                            let dy = rng.gen_range(-5..=5);
-                            let candidate_tx = (pos.x.round() as i32 + dx).clamp(0, map.width-1) as f32;
-                            let candidate_ty = (pos.y.round() as i32 + dy).clamp(0, map.height-1) as f32;
-                            if map.is_passable(candidate_tx as i32, candidate_ty as i32) {
-                                tx = candidate_tx;
-                                ty = candidate_ty;
-                                found = true;
-                                break;
-                            }
-                            tries += 1;
-                        }
-                        if found {
-                            event_log.log(format!("[UNSTUCK] Agent at ({:.1}, {:.1}) picked new target ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, tx, ty, target.stuck_ticks));
-                            log::info!("[UNSTUCK] Agent at ({:.1}, {:.1}) picked new target ({:.1}, {:.1}) after being stuck {} ticks", pos.x, pos.y, tx, ty, target.stuck_ticks);
-                            target.x = tx;
-                            target.y = ty;
-                            target.stuck_ticks = 0;
-                            if let Some(ref mut path) = path {
-                                if let Some(new_path) = a_star_path(map, agent_type, (pos.x.round() as i32, pos.y.round() as i32), (tx.round() as i32, ty.round() as i32), 10) {
-                                    path.waypoints = new_path.into();
-                                } else {
-                                    path.waypoints.clear();
-                                    event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new unstuck target ({:.1}, {:.1})", pos.x, pos.y, tx, ty));
-                                    log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new unstuck target ({:.1}, {:.1})", pos.x, pos.y, tx, ty);
-                                }
-                            }
-                        }
-                    }
-                }
             });
+        })
+}
+
+// --- Resource for food positions (for agent movement system) ---
+pub struct FoodPositions(pub Vec<(f32, f32)>);
+
+// --- ECS System: Collect Food Positions ---
+pub fn collect_food_positions_system() -> impl legion::systems::Runnable {
+    use legion::*;
+    SystemBuilder::new("CollectFoodPositionsSystem")
+        .write_resource::<FoodPositions>()
+        .with_query(<(&Position, &Food)>::query())
+        .build(|_, world, food_positions, query| {
+            let mut positions = Vec::new();
+            for (pos, _food) in query.iter(world) {
+                positions.push((pos.x, pos.y));
+            }
+            food_positions.0 = positions;
         })
 }
 

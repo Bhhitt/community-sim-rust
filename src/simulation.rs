@@ -77,6 +77,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     resources.insert(crate::ecs_components::InteractionStats::default());
     resources.insert(crate::ecs_components::EventLog::new(200));
     resources.insert(PendingFoodSpawns(Vec::new()));
+    resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
     // Build individual systems for profiling
     let mut agent_movement = agent_movement_system();
     let mut entity_interaction = entity_interaction_system();

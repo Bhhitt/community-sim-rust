@@ -6,6 +6,8 @@ pub mod graphics;
 pub mod util;
 pub mod ecs_hello;
 pub mod ecs_components;
+pub use ecs_components::FoodPositions;
+pub use ecs_components::collect_food_positions_system;
 pub mod ecs_sim;
 pub mod ecs_simulation;
 pub mod terrain;

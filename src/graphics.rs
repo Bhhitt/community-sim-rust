@@ -100,6 +100,7 @@ pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents:
     resources.insert(crate::ecs_components::InteractionStats::default());
     resources.insert(crate::ecs_components::EventLog::new(200));
     resources.insert(PendingFoodSpawns(Vec::new()));
+    resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
     // --- Use PARALLEL schedule ---
     let mut schedule = crate::ecs_simulation::build_simulation_schedule_parallel();
     // DEBUG: Print number of entities matching agent_movement_system query
