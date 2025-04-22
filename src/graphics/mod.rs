@@ -1,5 +1,6 @@
 // Graphics module root
 pub mod camera;
+pub mod render;
 pub mod sim_render;
 pub mod terrain;
 pub mod utils;

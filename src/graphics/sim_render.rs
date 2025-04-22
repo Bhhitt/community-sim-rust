@@ -1,25 +1,23 @@
 // Main simulation rendering and event loop
 // Will contain the main SDL2 rendering logic and event loop
 
+use legion::*;
+use crate::agent::AgentType;
+use crate::agent::systems::{spawn_agent, agent_movement_system, agent_death_system};
+use crate::food::food_spawn_apply_system;
+use crate::food::PendingFoodSpawns;
+use rand::Rng;
+use crate::graphics::camera::Camera;
+use crate::graphics::render::terrain::draw_terrain;
+use crate::graphics::render::agent::{draw_agents, draw_selected_agent_path};
+use crate::graphics::render::overlays::{draw_event_log_window, draw_empty_cell_flash, draw_stats_window};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::render::TextureQuery;
-use std::time::Duration;
-use legion::*;
-use crate::agent::AgentType;
-use crate::agent::systems::spawn_agent;
-use crate::food::food_spawn_apply_system;
-use crate::navigation::Target;
-use crate::agent::systems::{agent_movement_system, agent_death_system};
-use crate::agent::components::InteractionState;
-use crate::graphics::camera::Camera;
-use crate::graphics::terrain::terrain_color;
-use crate::food::PendingFoodSpawns;
 use std::fs::File;
 use std::io::Write;
-use rand::Rng;
+use std::time::Duration;
 
 const CELL_SIZE: f32 = 6.0;
 const WINDOW_WIDTH: u32 = 1280;
@@ -70,7 +68,7 @@ pub fn run_sim_render(
     log::debug!("[DEBUG] Number of agents spawned: {}", agent_count_check);
     resources.insert(map.clone());
     resources.insert(crate::ecs_components::InteractionStats::default());
-    resources.insert(crate::ecs_components::EventLog::new(200));
+    resources.insert(crate::event_log::EventLog::new(200));
     resources.insert(PendingFoodSpawns(std::collections::VecDeque::new()));
     resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
     // --- Use PARALLEL schedule ---
@@ -107,12 +105,30 @@ pub fn run_sim_render(
     let _ascii_snapshots: Vec<String> = Vec::new();
 
     let ttf_context = sdl2::ttf::init().unwrap();
-    let font = ttf_context.load_font("/System/Library/Fonts/Supplemental/Arial.ttf", 18).unwrap();
-    let stats_window_canvas = video_subsystem.window("Stats", 320, 480)
+    let font_path = "/System/Library/Fonts/Supplemental/Arial.ttf";
+    let font = ttf_context.load_font(font_path, 18).unwrap();
+    log::info!("[FONT] Loaded font from {}", font_path);
+
+    // Try to create stats window canvas with software renderer for diagnostics
+    let stats_window_canvas = match video_subsystem.window("Stats", 320, 700)
         .position(0, 0)
         .resizable()
-        .build().unwrap()
-        .into_canvas().build().unwrap();
+        .build() {
+        Ok(window) => match window.into_canvas().software().build() {
+            Ok(canvas) => {
+                log::info!("[STATS] Stats window canvas created with software renderer");
+                canvas
+            },
+            Err(e) => {
+                log::error!("[STATS] Failed to create stats window canvas (software): {}", e);
+                panic!("Failed to create stats window canvas: {}", e);
+            }
+        },
+        Err(e) => {
+            log::error!("[STATS] Failed to create stats window: {}", e);
+            panic!("Failed to create stats window: {}", e);
+        }
+    };
     let mut stats_canvas = stats_window_canvas;
     let _stats_window_id = stats_canvas.window().id();
 
@@ -155,33 +171,16 @@ pub fn run_sim_render(
             advance_one = false;
         }
         // --- Print latest EventLog entry to console ---
-        if let Some(event_log) = resources.get::<crate::ecs_components::EventLog>() {
-            if !event_log.entries.is_empty() {
-                if let Some(last_event) = event_log.entries.back() {
+        if let Some(event_log) = resources.get::<crate::event_log::EventLog>() {
+            if !event_log.events.is_empty() {
+                if let Some(last_event) = event_log.events.back() {
                     log::debug!("{}", last_event);
                 }
             }
         }
         // --- Render Event Log Window ---
-        if let Some(event_log) = resources.get::<crate::ecs_components::EventLog>() {
-            log_canvas.set_draw_color(Color::RGB(30, 30, 30));
-            log_canvas.clear();
-            let mut y = 10;
-            let line_height = 20;
-            let max_lines = 22;
-            let events_vec = &event_log.entries;
-            let events: Vec<_> = events_vec.iter().rev().take(max_lines).collect();
-            let texture_creator = log_canvas.texture_creator();
-            for entry in events.iter().rev() {
-                let surface = font.render(entry)
-                    .blended(Color::RGB(220, 220, 220)).unwrap();
-                let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
-                let TextureQuery { width, height, .. } = texture.query();
-                let target = Rect::new(10, y, width, height);
-                log_canvas.copy(&texture, None, Some(target)).unwrap();
-                y += line_height;
-            }
-            log_canvas.present();
+        if let Some(event_log) = resources.get::<crate::event_log::EventLog>() {
+            draw_event_log_window(&mut log_canvas, &font, &event_log);
         }
         // Handle events
         for event in event_pump.poll_iter() {
@@ -267,7 +266,6 @@ pub fn run_sim_render(
                     }
                 },
                 Event::MouseButtonDown { x, y, window_id: evt_win_id, .. } => {
-                    log::debug!("[DEBUG] Mouse click at ({}, {}) in window {}", x, y, evt_win_id);
                     if evt_win_id == window_id {
                         let mouse_x = x;
                         let mouse_y = y;
@@ -309,99 +307,31 @@ pub fn run_sim_render(
                             let map_y = (y as f32 / CELL_SIZE as f32 + camera.y).floor();
                             empty_cell_flash = Some((map_x as i32, map_y as i32, std::time::Instant::now()));
                         }
+                    } else {
+                        // For stats/log windows: just log and discard
+                        log::debug!("[DEBUG] Mouse click in non-main window (id {})", evt_win_id);
                     }
                 },
-                _ => {}
+                _ => {
+                    // Poll and discard all other events for ALL windows, including stats/log windows.
+                    // This keeps all SDL2 windows alive and responsive.
+                }
             }
         }
         // Draw terrain
         log::debug!("[DEBUG] About to render terrain");
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
-        for y in 0..render_map.height as usize {
-            for x in 0..render_map.width as usize {
-                let rect = Rect::new(
-                    ((x as f32 - camera.x) * CELL_SIZE as f32) as i32,
-                    ((y as f32 - camera.y) * CELL_SIZE as f32) as i32,
-                    CELL_SIZE as u32,
-                    CELL_SIZE as u32,
-                );
-                canvas.set_draw_color(terrain_color(&render_map.tiles[y][x]));
-                canvas.fill_rect(rect).unwrap();
-            }
-        }
+        draw_terrain(&mut canvas, &render_map, camera.x, camera.y, CELL_SIZE);
         // --- Draw selected agent's path on the map ---
-        if let Some(sel) = selected_agent {
-            if let Ok(entry) = world.entry_ref(sel) {
-                let pos = entry.get_component::<crate::ecs_components::Position>();
-                let path = entry.get_component::<crate::navigation::Path>();
-                if let (Ok(pos), Ok(path)) = (pos, path) {
-                    let waypoints: Vec<_> = path.waypoints.iter().collect();
-                    if waypoints.len() > 0 {
-                        canvas.set_draw_color(Color::RGB(0, 200, 255));
-                        let mut last = ((pos.x - camera.x) * CELL_SIZE as f32, (pos.y - camera.y) * CELL_SIZE as f32);
-                        for (wx, wy) in waypoints.iter() {
-                            let next = ((*wx - camera.x) * CELL_SIZE as f32, (*wy - camera.y) * CELL_SIZE as f32);
-                            let _ = canvas.draw_line((last.0 as i32, last.1 as i32), (next.0 as i32, next.1 as i32));
-                            last = next;
-                        }
-                        if let Some((end_x, end_y)) = waypoints.last() {
-                            let dot_rect = Rect::new(
-                                ((*end_x - camera.x) * CELL_SIZE as f32) as i32 - 3,
-                                ((*end_y - camera.y) * CELL_SIZE as f32) as i32 - 3,
-                                7, 7
-                            );
-                            canvas.set_draw_color(Color::RGB(255, 0, 200));
-                            let _ = canvas.fill_rect(dot_rect);
-                        }
-                    }
-                }
-            }
-        }
+        draw_selected_agent_path(&mut canvas, world, selected_agent, camera.x, camera.y, CELL_SIZE);
         // Draw ECS agents and food
         log::debug!("[DEBUG] About to query agents for rendering");
-        for (_entity, (pos, agent_type_opt)) in <(legion::Entity, (&crate::ecs_components::Position, Option<&crate::agent::AgentType>))>::query().iter(world) {
-            let rect = Rect::new(
-                ((pos.x - camera.x) * CELL_SIZE as f32) as i32,
-                ((pos.y - camera.y) * CELL_SIZE as f32) as i32,
-                CELL_SIZE as u32,
-                CELL_SIZE as u32,
-            );
-            if let Some(agent_type) = agent_type_opt {
-                let color_str = agent_type.color.trim();
-                if let Some(stripped) = color_str.strip_prefix('#') {
-                    if stripped.len() == 6 {
-                        if let (Ok(r), Ok(g), Ok(b)) = (
-                            u8::from_str_radix(&stripped[0..2], 16),
-                            u8::from_str_radix(&stripped[2..4], 16),
-                            u8::from_str_radix(&stripped[4..6], 16),
-                        ) {
-                            canvas.set_draw_color(Color::RGB(r, g, b));
-                        } else {
-                            canvas.set_draw_color(Color::RGB(255, 255, 255));
-                        }
-                    } else {
-                        canvas.set_draw_color(Color::RGB(255, 255, 255));
-                    }
-                } else {
-                    canvas.set_draw_color(Color::RGB(255, 255, 255));
-                }
-            } else {
-                canvas.set_draw_color(Color::RGB(0, 220, 0));
-            }
-            canvas.fill_rect(rect).ok();
-        }
+        draw_agents(&mut canvas, world, camera.x, camera.y, CELL_SIZE);
         // --- Flash highlight for empty cell click ---
         if let Some((fx, fy, t)) = empty_cell_flash {
             if t.elapsed().as_millis() < 200 {
-                let rect = Rect::new(
-                    ((fx as f32 - camera.x) * CELL_SIZE as f32) as i32,
-                    ((fy as f32 - camera.y) * CELL_SIZE as f32) as i32,
-                    CELL_SIZE as u32,
-                    CELL_SIZE as u32,
-                );
-                canvas.set_draw_color(Color::RGB(255, 255, 0));
-                canvas.draw_rect(rect).ok();
+                draw_empty_cell_flash(&mut canvas, fx, fy, camera.x, camera.y, CELL_SIZE);
             } else {
                 empty_cell_flash = None;
             }
@@ -410,6 +340,15 @@ pub fn run_sim_render(
         canvas.present();
 
         // --- Stats window rendering ---
+        // Diagnostics for stats window rendering
+        let (stats_w, stats_h) = stats_canvas.window().size();
+        log::info!("[STATS] Window size: {}x{}", stats_w, stats_h);
+        if cached_agent_counts.is_empty() {
+            log::warn!("[STATS] cached_agent_counts is empty!");
+        } else {
+            log::info!("[STATS] cached_agent_counts: {:?}", cached_agent_counts);
+        }
+        // Update cached_agent_counts once per second, but always render stats window every frame
         if last_stats_update.elapsed().as_secs_f32() >= 1.0 {
             let agent_counts = {
                 let mut agent_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
@@ -432,149 +371,18 @@ pub fn run_sim_render(
             cached_agent_counts = counts_vec;
             last_stats_update = std::time::Instant::now();
         }
-        let (_stats_window_width, _stats_window_height) = stats_canvas.window().size();
-        stats_canvas.set_draw_color(Color::RGB(30, 30, 30));
-        stats_canvas.clear();
-        let mut y_offset = 10;
-        for (name, count) in &cached_agent_counts {
-            let text = format!("{}: {}", name, count);
-            let surface = font.render(&text)
-                .blended(Color::RGB(220, 220, 220)).unwrap();
-            let texture_creator = stats_canvas.texture_creator();
-            let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
-            let TextureQuery { width, height, .. } = texture.query();
-            let target = Rect::new(10, y_offset, width, height);
-            stats_canvas.copy(&texture, None, Some(target)).unwrap();
-            y_offset += height as i32 + 8;
-        }
-        let active_interactions = resources.get::<crate::ecs_components::InteractionStats>().map_or(0, |stats| stats.active_interactions);
-        let text = format!("active interactions: {}", active_interactions);
-        let surface = font.render(&text)
-            .blended(Color::RGB(120, 200, 255)).unwrap();
-        let texture_creator = stats_canvas.texture_creator();
-        let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
-        let TextureQuery { width, height, .. } = texture.query();
-        let target = Rect::new(10, y_offset, width, height);
-        stats_canvas.copy(&texture, None, Some(target)).unwrap();
-        y_offset += height as i32 + 12;
-        if let Some(stats) = resources.get::<crate::ecs_components::InteractionStats>() {
-            let history = &stats.active_interactions_history;
-            if !history.is_empty() {
-                let graph_left = 10;
-                let graph_top = y_offset + 10;
-                let graph_width = 280;
-                let graph_height = 60;
-                stats_canvas.set_draw_color(Color::RGB(80, 80, 80));
-                let _ = stats_canvas.draw_rect(Rect::new(graph_left, graph_top, graph_width, graph_height));
-                let max_val = *history.iter().max().unwrap_or(&1) as f32;
-                let min_val = *history.iter().min().unwrap_or(&0) as f32;
-                let range = (max_val - min_val).max(1.0);
-                let n = history.len().min(graph_width as usize);
-                let x_step = graph_width as f32 / (n.max(2) - 1) as f32;
-                let mut last_x = graph_left as f32;
-                let mut last_y = graph_top as f32 + graph_height as f32 - ((history[0] as f32 - min_val) / range * graph_height as f32);
-                stats_canvas.set_draw_color(Color::RGB(120, 200, 255));
-                for (i, &val) in history.iter().rev().take(n).collect::<Vec<_>>().into_iter().rev().enumerate() {
-                    let x = graph_left as f32 + i as f32 * x_step;
-                    let y = graph_top as f32 + graph_height as f32 - ((val as f32 - min_val) / range * graph_height as f32);
-                    if i > 0 {
-                        let _ = stats_canvas.draw_line((last_x as i32, last_y as i32), (x as i32, y as i32));
-                    }
-                    last_x = x;
-                    last_y = y;
-                }
-            }
-            y_offset += 80;
-        }
-        if let Some(sel) = selected_agent {
-            let mut shown = false;
-            log::debug!("[DEBUG] About to query agent stats");
-            for (_entity, (pos, agent_type, hunger, energy, target, path, interaction_state)) in <(legion::Entity, (&crate::ecs_components::Position, &AgentType, &crate::agent::Hunger, &crate::agent::Energy, Option<&Target>, Option<&crate::navigation::Path>, Option<&InteractionState>))>::query().iter(world) {
-                if *_entity == sel {
-                    let mut status = String::new();
-                    if let Some(target) = target {
-                        let dist = ((pos.x - target.x).powi(2) + (pos.y - target.y).powi(2)).sqrt();
-                        if dist > 0.2 {
-                            status = format!("Moving to ({:.1}, {:.1})", target.x, target.y);
-                        } else {
-                            status = "Idle (at target)".to_string();
-                        }
-                    }
-                    if let Some(inter) = interaction_state {
-                        if let Some(_partner) = inter.target {
-                            status = "Interacting with another agent".to_string();
-                        }
-                    }
-                    if let Some(path) = path {
-                        let waypoints: Vec<_> = path.waypoints.iter().collect();
-                        if waypoints.len() > 0 {
-                            stats_canvas.set_draw_color(Color::RGB(0, 200, 255));
-                            let mut last = (pos.x as i32, pos.y as i32);
-                            for (wx, wy) in waypoints.iter() {
-                                let next = (*wx as i32, *wy as i32);
-                                let _ = stats_canvas.draw_line(last, next);
-                                last = next;
-                            }
-                        }
-                    }
-                    let text = format!("Selected Agent:\nPos: ({:.1}, {:.1})\nType: {}\nHunger: {:.1}\nEnergy: {:.1}\nStatus: {}", pos.x, pos.y, agent_type.r#type, hunger.value, energy.value, status);
-                    for (i, line) in text.lines().enumerate() {
-                        let surface = font.render(line).blended(Color::RGB(255, 200, 50)).unwrap();
-                        let texture_creator = stats_canvas.texture_creator();
-                        let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
-                        let TextureQuery { width, height, .. } = texture.query();
-                        let target = Rect::new(10, y_offset + (i as i32) * (height as i32 + 2), width, height);
-                        stats_canvas.copy(&texture, None, Some(target)).unwrap();
-                    }
-                    shown = true;
-                    break;
-                }
-            }
-            if !shown {
-                log::debug!("[DEBUG] About to query food stats");
-                for (_entity, (pos, food)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::food::Food))>::query().iter(world) {
-                    if *_entity == sel {
-                        let text = format!("Selected Food:\nPos: ({:.1}, {:.1})\nNutrition: {:.1}", pos.x, pos.y, food.nutrition);
-                        for (i, line) in text.lines().enumerate() {
-                            let surface = font.render(line).blended(Color::RGB(200, 255, 50)).unwrap();
-                            let texture_creator = stats_canvas.texture_creator();
-                            let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
-                            let TextureQuery { width, height, .. } = texture.query();
-                            let target = Rect::new(10, y_offset + (i as i32) * (height as i32 + 2), width, height);
-                            stats_canvas.copy(&texture, None, Some(target)).unwrap();
-                        }
-                        break;
-                    }
-                }
-            }
-        }
+        draw_stats_window(&mut stats_canvas, &font, &cached_agent_counts, resources.get::<crate::ecs_components::InteractionStats>().as_deref(), selected_agent, world);
         log::debug!("[DEBUG] About to present stats canvas");
         stats_canvas.present();
         ::std::thread::sleep(Duration::from_millis(16));
     }
     // --- At end of simulation, write summary to simulation_ascii.txt ---
-    use legion::IntoQuery;
-    use std::collections::HashMap;
-    let mut agent_type_counts: HashMap<String, usize> = HashMap::new();
-    let mut agent_query = <(&AgentType,)>::query();
-    for (agent_type,) in agent_query.iter(world) {
-        *agent_type_counts.entry(agent_type.r#type.clone()).or_insert(0) += 1;
-    }
-    let stats = resources.get::<crate::ecs_components::InteractionStats>().expect("No InteractionStats resource");
-    let total_interactions = stats.agent_interactions;
-    let avg_interactions_per_tick = if tick > 0 { total_interactions as f64 / tick as f64 } else { 0.0 };
-    let mut summary = String::new();
-    summary.push_str(&format!("# Simulation Summary\n"));
-    summary.push_str(&format!("Total interactions: {}\n", total_interactions));
-    summary.push_str(&format!("Average interactions per tick: {:.2}\n", avg_interactions_per_tick));
-    summary.push_str("Agent counts at end:\n");
-    for (name, count) in agent_type_counts.iter() {
-        summary.push_str(&format!("  {}: {}\n", name, count));
-    }
-    summary.push_str("\n");
-    let ascii_snapshot = crate::ecs_simulation::render_simulation_ascii(world, &render_map);
-    let mut file = std::fs::File::create("simulation_ascii.txt").expect("Unable to create ascii output file");
-    file.write_all(summary.as_bytes()).expect("Unable to write summary");
-    file.write_all(ascii_snapshot.as_bytes()).expect("Unable to write ascii output");
-    log::info!("[INFO] Simulation summary and final ASCII snapshot written to simulation_ascii.txt");
+    use crate::sim_summary::write_simulation_summary_and_ascii;
+    write_simulation_summary_and_ascii(
+        world,
+        resources,
+        &render_map,
+        tick,
+        "simulation_ascii.txt",
+    );
 }

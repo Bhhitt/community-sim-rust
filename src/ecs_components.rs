@@ -35,24 +35,6 @@ impl Default for InteractionStats {
     }
 }
 
-pub struct EventLog {
-    pub entries: std::collections::VecDeque<String>,
-    pub capacity: usize,
-}
-
-impl EventLog {
-    pub fn new(capacity: usize) -> Self {
-        Self { entries: std::collections::VecDeque::with_capacity(capacity), capacity }
-    }
-
-    pub fn log(&mut self, entry: String) {
-        if self.entries.len() >= self.capacity {
-            self.entries.pop_front();
-        }
-        self.entries.push_back(entry);
-    }
-}
-
 // --- Entity Spawning Functions ---
 pub fn spawn_food(world: &mut legion::World, pos: Position) -> legion::Entity {
     let nutrition = rand::thread_rng().gen_range(5.0..=10.0);
@@ -82,7 +64,7 @@ pub fn agent_interaction_system() -> impl legion::systems::Runnable {
 pub fn entity_interaction_system() -> impl legion::systems::Runnable {
     SystemBuilder::new("EntityInteractionSystem")
         .write_resource::<InteractionStats>()
-        .write_resource::<EventLog>()
+        .write_resource::<crate::event_log::EventLog>()
         .with_query(<(legion::Entity, &Position, &InteractionState)>::query()) // agents
         .with_query(<(legion::Entity, &Position, &Food)>::query()) // food
         .with_query(<(legion::Entity, &mut Position)>::query())
@@ -90,7 +72,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
             let event_log = event_log;
             let agent_count = agent_query.iter(world).count();
             let food_count = food_query.iter(world).count();
-            event_log.log(format!("[TICK] Agents: {}, Food: {}", agent_count, food_count));
+            event_log.push(format!("[TICK] Agents: {}, Food: {}", agent_count, food_count));
             let mut interactions_this_tick = 0;
             let mut active_interactions = 0;
             let agents: Vec<_> = agent_query.iter(world).map(|(entity, pos, _)| (*entity, pos.x, pos.y)).collect();
@@ -110,7 +92,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
                             active_interactions += 1;
                             interacted[i] = true;
                             interacted[j] = true;
-                            event_log.log(format!("[INTERACT] Agent {:?} interacted with Agent {:?}", agent_entity, other_entity));
+                            event_log.push(format!("[INTERACT] Agent {:?} interacted with Agent {:?}", agent_entity, other_entity));
                             log::info!("[INTERACT] Agent {:?} interacted with Agent {:?}", agent_entity, other_entity);
                             break;
                         }
@@ -130,7 +112,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
             // Second pass: apply food eaten mutations
             for (agent_entity, food_e, nutrition) in food_eaten {
                 if let Some((_entity, _pos)) = agent_stats_query.iter_mut(world).find(|(e, _pos)| **e == agent_entity) {
-                    event_log.log(format!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition));
+                    event_log.push(format!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition));
                     log::info!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition);
                 }
                 cmd.remove(food_e);
@@ -143,3 +125,5 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
             stats.active_interactions_history.push_back(active_interactions);
         })
 }
+
+// --- EventLog moved to event_log.rs ---

@@ -2,7 +2,8 @@
 
 use crate::agent::components::{AgentType, Hunger, Energy, InteractionState};
 use crate::navigation::{Target, Path};
-use crate::ecs_components::{Position, FoodPositions, EventLog};
+use crate::ecs_components::{Position, FoodPositions};
+use crate::event_log::EventLog;
 use crate::map::Map;
 use legion::*;
 use rand::Rng;
@@ -46,15 +47,31 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                         pos.y += dy / dist * step;
                         hunger.value -= 0.01 * step;
                         energy.value -= 0.01 * step;
-                        event_log.log(format!("[MOVE] Agent moved to ({:.2}, {:.2})", pos.x, pos.y));
+                        event_log.push(format!("[MOVE] Agent moved to ({:.2}, {:.2})", pos.x, pos.y));
                     } else {
                         arrived = true;
                     }
                 }
+                // Handle idle: if cooldown > 0, wander in place and decrement
+                if let Some(ref mut interaction) = maybe_interaction {
+                    if interaction.cooldown > 0 {
+                        // Take a small random step (±1 or ±2)
+                        let dx = rng.gen_range(-2.0..=2.0);
+                        let dy = rng.gen_range(-2.0..=2.0);
+                        let map_w = map.width as f32;
+                        let map_h = map.height as f32;
+                        pos.x = (pos.x + dx).clamp(0.0, map_w - 1.0);
+                        pos.y = (pos.y + dy).clamp(0.0, map_h - 1.0);
+                        interaction.cooldown -= 1;
+                        event_log.push(format!("[IDLE-WANDER] Agent at ({:.2}, {:.2}) wanders while idling ({} steps left)", pos.x, pos.y, interaction.cooldown));
+                        // Skip the rest of the logic for this tick
+                        continue;
+                    }
+                }
+
                 // If arrived, pick next action based on hunger, avoid recent partners
                 if arrived {
                     use rand::seq::SliceRandom;
-                    let mut picked_new_target = false;
                     let mut possible_actions = Vec::new();
                     let food_positions = &food_positions.0;
                     // Option 1: Seek food if hungry and food exists, and food is at least 10 away
@@ -86,10 +103,9 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                     let map_w = map.width as f32;
                     let map_h = map.height as f32;
                     possible_actions.push("wander");
-                    // Option 4: Idle (do nothing for a tick or two)
+                    // Option 4: Idle (do nothing for 2-75 steps)
                     possible_actions.push("idle");
                     // Randomly pick an action (excluding repeating the last one if possible)
-                    let mut rng = &mut rng;
                     let action = possible_actions.choose(&mut rng).unwrap_or(&"wander");
                     match *action {
                         "seek_food" => {
@@ -100,8 +116,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                                 if let Some(ref mut target) = maybe_target {
                                     target.x = *fx;
                                     target.y = *fy;
-                                    event_log.log(format!("[TARGET] Hungry agent at ({:.2}, {:.2}) seeks food at ({:.2}, {:.2})", pos.x, pos.y, fx, fy));
-                                    picked_new_target = true;
+                                    event_log.push(format!("[TARGET] Hungry agent at ({:.2}, {:.2}) seeks food at ({:.2}, {:.2})", pos.x, pos.y, fx, fy));
                                 }
                             }
                         },
@@ -110,8 +125,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                                 if let Some(ref mut target) = maybe_target {
                                     target.x = *ax;
                                     target.y = *ay;
-                                    event_log.log(format!("[TARGET] Agent at ({:.2}, {:.2}) seeks to interact at ({:.2}, {:.2})", pos.x, pos.y, ax, ay));
-                                    picked_new_target = true;
+                                    event_log.push(format!("[TARGET] Agent at ({:.2}, {:.2}) seeks to interact at ({:.2}, {:.2})", pos.x, pos.y, ax, ay));
                                     // Add to recent interaction list for this agent
                                     if let Some(ref mut interaction) = maybe_interaction {
                                         interaction.add_partner(*other_entity, rng.gen_range(5..=8));
@@ -123,7 +137,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                                     let repel_dist = (repel_dx * repel_dx + repel_dy * repel_dy).sqrt().max(0.01);
                                     pos.x += repel_dx / repel_dist * repel_strength;
                                     pos.y += repel_dy / repel_dist * repel_strength;
-                                    event_log.log(format!("[REPEL] Agent at ({:.2}, {:.2}) repelled from ({:.2}, {:.2})", pos.x, pos.y, ax, ay));
+                                    event_log.push(format!("[REPEL] Agent at ({:.2}, {:.2}) repelled from ({:.2}, {:.2})", pos.x, pos.y, ax, ay));
                                 }
                             }
                         },
@@ -141,17 +155,15 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                             if let Some(ref mut target) = maybe_target {
                                 target.x = rx;
                                 target.y = ry;
-                                event_log.log(format!("[TARGET] Agent at ({:.2}, {:.2}) wanders to ({:.2}, {:.2})", pos.x, pos.y, rx, ry));
-                                picked_new_target = true;
+                                event_log.push(format!("[TARGET] Agent at ({:.2}, {:.2}) wanders to ({:.2}, {:.2})", pos.x, pos.y, rx, ry));
                             }
                         },
                         "idle" => {
-                            // Set cooldown to idle for 1-2 ticks
+                            // Set cooldown to idle for 2-75 ticks
                             if let Some(ref mut interaction) = maybe_interaction {
-                                interaction.cooldown = rng.gen_range(1..=2);
-                                event_log.log(format!("[IDLE] Agent at ({:.2}, {:.2}) idles for {} ticks", pos.x, pos.y, interaction.cooldown));
+                                interaction.cooldown = rng.gen_range(2..=75);
+                                event_log.push(format!("[IDLE] Agent at ({:.2}, {:.2}) idles for {} ticks", pos.x, pos.y, interaction.cooldown));
                             }
-                            picked_new_target = true;
                         },
                         _ => {}
                     }
@@ -161,7 +173,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                             interaction.cooldown = 10;
                         }
                         interaction.ticks += 1;
-                        event_log.log(format!("[ARRIVE] Agent at ({:.2}, {:.2}) triggered interaction/state change", pos.x, pos.y));
+                        event_log.push(format!("[ARRIVE] Agent at ({:.2}, {:.2}) triggered interaction/state change", pos.x, pos.y));
                     }
                 }
             }

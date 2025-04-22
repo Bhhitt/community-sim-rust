@@ -5,6 +5,8 @@ use fern;
 use log;
 
 pub mod terrain;
+pub mod sim_summary;
+pub mod event_log;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
