@@ -36,10 +36,24 @@ pub struct Args {
     /// CSV file for system profiling output
     #[arg(long, default_value = "system_profile.csv")]
     profile_csv: String,
+    /// Log level (error, warn, info, debug, trace)
+    #[arg(long, default_value = "info")]
+    log_level: String,
+}
+
+fn parse_log_level(level: &str) -> log::LevelFilter {
+    match level.to_lowercase().as_str() {
+        "error" => log::LevelFilter::Error,
+        "warn" => log::LevelFilter::Warn,
+        "info" => log::LevelFilter::Info,
+        "debug" => log::LevelFilter::Debug,
+        "trace" => log::LevelFilter::Trace,
+        _ => log::LevelFilter::Info,
+    }
 }
 
 // Logging setup with fern
-fn setup_logging() {
+fn setup_logging(log_level: log::LevelFilter) {
     let log_file = "community_sim.log";
     fern::Dispatch::new()
         .format(|out, message, record| {
@@ -50,8 +64,8 @@ fn setup_logging() {
                 message
             ))
         })
-        .level(log::LevelFilter::Info)
-        .level_for("community_sim", log::LevelFilter::Debug)
+        .level(log_level)
+        .level_for("community_sim", log_level)
         .chain(std::io::stdout())
         .chain(fern::log_file(log_file).unwrap())
         .apply()
@@ -59,8 +73,9 @@ fn setup_logging() {
 }
 
 fn main() {
-    setup_logging();
     let args = Args::parse();
+    let log_level = parse_log_level(&args.log_level);
+    setup_logging(log_level);
     let agent_types = util::load_agent_types(&args.agent_types);
     if args.headless {
         log::info!("Running in headless mode");

@@ -8,6 +8,7 @@ use rand::rngs::SmallRng;
 use rand::Rng;
 use std::ops::DerefMut;
 use std::sync::Mutex;
+use log;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Position {
@@ -214,6 +215,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                             }
                             if !found {
                                 event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a passable target after {} tries (local+global)", pos.x, pos.y, tries + global_tries));
+                                log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a passable target after {} tries (local+global)", pos.x, pos.y, tries + global_tries);
                                 target.stuck_ticks = stuck_ticks;
                                 if let Some(ref mut path) = path {
                                     path.waypoints.clear();
@@ -230,6 +232,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                             } else {
                                 path.waypoints.clear();
                                 event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new target ({:.1}, {:.1})", pos.x, pos.y, tx, ty));
+                                log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to new target ({:.1}, {:.1})", pos.x, pos.y, tx, ty);
                             }
                         }
                         (tx, ty, 0)
@@ -243,6 +246,7 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                                 } else {
                                     path.waypoints.clear();
                                     event_log.log(format!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to target ({:.1}, {:.1})", pos.x, pos.y, target.x, target.y));
+                                    log::info!("[STUCK] Agent at ({:.1}, {:.1}) could not find a path to target ({:.1}, {:.1})", pos.x, pos.y, target.x, target.y);
                                 }
                             }
                         }
@@ -460,6 +464,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
                             interacted[i] = true;
                             interacted[j] = true;
                             event_log.log(format!("[INTERACT] Agent {:?} interacted with Agent {:?}", agent_entity, other_entity));
+                            log::info!("[INTERACT] Agent {:?} interacted with Agent {:?}", agent_entity, other_entity);
                             break;
                         }
                     }
@@ -481,6 +486,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
                     hunger.value += nutrition;
                     energy.value += nutrition;
                     event_log.log(format!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition));
+                    log::info!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition);
                 }
                 cmd.remove(food_e);
             }
