@@ -45,10 +45,6 @@ cargo run -- --headless --map-size 40 --agents 20 --ticks 20
 cargo run --release -- --profile=med_run
 ```
 
-### Run Scaling Benchmarks
-```sh
-cargo run -- --headless --scale
-```
 
 ### Run Tests
 ```sh
@@ -63,15 +59,10 @@ cargo test
 - `src/graphics.rs` — (Stub) for future graphical rendering
 - `tests/` — Unit and integration tests
 
-## Roadmap
-- Add more terrain effects (altitude, slopes)
-- Visual rendering (SDL2 or similar)
-- More complex agent behaviors
 
 ## Controls (GUI Mode)
 
 - **Arrow Keys:** Pan camera
-- **Mouse Wheel / +/-:** Zoom in/out
 - **A:** Add a single agent at a random location
 - **S:** Add 100 random agents
 - **Spacebar:** Pause/resume simulation
@@ -81,7 +72,6 @@ cargo test
 ## Selecting Entities
 
 - **Left Click:** Select agent/entity under cursor
-- **Right Click:** Deselect or issue move command (if supported)
 
 ## Running Tests
 
@@ -114,9 +104,6 @@ cargo run --release -- --map-size 40 --agents 20 --ticks 20
 ## Additional CLI Options
 
 - `--headless` : Run simulation without graphics (for benchmarking)
-- `--scale` : Run scaling benchmarks
-- `--profile-system` : Enable ECS system profiling (outputs CSV)
-- `--profile-csv <file>` : Set CSV output file for profiling
 - `--log-level <level>` : Set logging level (`error`, `warn`, `info`, `debug`, `trace`)
 
 For a full list of options, run:
