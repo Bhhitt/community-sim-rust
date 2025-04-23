@@ -88,8 +88,8 @@ pub fn run_sim_render(
             log_config,
         );
 
-    let mut paused = false;
-    let mut advance_one = false;
+    let mut _paused = false;
+    let mut _advance_one = false;
     let _ascii_snapshots: Vec<String> = Vec::new();
     let mut sim_ui_state = SimUIState {
         world,
@@ -102,6 +102,7 @@ pub fn run_sim_render(
         selected_agent: None,
         empty_cell_flash: None,
         tick: 0,
+        input_queue: crate::graphics::input_intent::InputQueue::default(),
     };
 
     // --- MAIN SIMULATION LOOP ---
@@ -124,18 +125,18 @@ pub fn run_sim_render(
         WINDOW_HEIGHT,
     );
 
-    use crate::graphics::input::handle_events;
-    handle_events(
-        &mut event_pump,
-        window_id,
-        &mut sim_ui_state,
-        agent_types,
-        &render_map,
-        CELL_SIZE,
-        log_config,
-        &mut paused,
-        &mut advance_one,
-    );
+//     use crate::graphics::input::handle_events;
+//     handle_events(
+//         &mut event_pump,
+//         window_id,
+//         &mut sim_ui_state,
+//         agent_types,
+//         &render_map,
+//         CELL_SIZE,
+//         log_config,
+//         &mut paused,
+//         &mut advance_one,
+//     );
 
     // --- At end of simulation, write summary to simulation_ascii.txt ---
     // Drop sim_ui_state to release mutable borrows before summary

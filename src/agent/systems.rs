@@ -34,7 +34,7 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
         .with_query(<(Entity, &mut Position, &AgentType, &mut Hunger, &mut Energy, Option<&mut Target>, Option<&mut Path>, &mut AgentState)>::query())
         .read_resource::<Map>()
         .write_resource::<EventLog>()
-        .build(|_, world, (map, event_log), query| {
+        .build(|_, world, (_map, event_log), query| {
             for (entity, pos, agent_type, hunger, _energy, maybe_target, mut maybe_path, agent_state) in query.iter_mut(world) {
                 match *agent_state {
                     AgentState::Moving => {
@@ -85,7 +85,7 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
         .read_resource::<Map>()
         .read_resource::<FoodPositions>()
         .write_resource::<EventLog>()
-        .build(|_, world, (map, food_positions, event_log), query| {
+        .build(|_, world, (_map, food_positions, event_log), query| {
             let mut rng = rand::thread_rng();
             let hunger_threshold = 50.0;
             let agent_infos: Vec<(Entity, f32, f32)> = query.iter_mut(world)
@@ -128,7 +128,7 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                                     target.y = *fy;
                                     event_log.push(format!("[TARGET] Agent {:?} seeks food at ({:.2}, {:.2})", entity, fx, fy));
                                     if let Some(ref mut path) = maybe_path {
-                                        if let Some(astar_path) = a_star_path(map, agent_type, (pos.x as i32, pos.y as i32), (*fx as i32, *fy as i32), 120) {
+                                        if let Some(astar_path) = a_star_path(_map, agent_type, (pos.x as i32, pos.y as i32), (*fx as i32, *fy as i32), 120) {
                                             path.waypoints = astar_path.into_iter().collect();
                                             event_log.push(format!("[PATHFIND] Path assigned: {} waypoints", path.waypoints.len()));
                                             *agent_state = AgentState::Moving;
@@ -148,7 +148,7 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                                     target.y = *ay;
                                     event_log.push(format!("[TARGET] Agent {:?} seeks to interact at ({:.2}, {:.2})", entity, ax, ay));
                                     if let Some(ref mut path) = maybe_path {
-                                        if let Some(astar_path) = a_star_path(map, agent_type, (pos.x as i32, pos.y as i32), (*ax as i32, *ay as i32), 120) {
+                                        if let Some(astar_path) = a_star_path(_map, agent_type, (pos.x as i32, pos.y as i32), (*ax as i32, *ay as i32), 120) {
                                             path.waypoints = astar_path.into_iter().collect();
                                             event_log.push(format!("[PATHFIND] Path assigned: {} waypoints", path.waypoints.len()));
                                             *agent_state = AgentState::Moving;
@@ -164,14 +164,14 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                         },
                         "wander" => {
                             let (rx, ry) = crate::navigation::random_passable_target(
-                                map, agent_type, &mut rng, Some((pos.x, pos.y))
+                                _map, agent_type, &mut rng, Some((pos.x, pos.y))
                             );
                             if let Some(ref mut target) = maybe_target {
                                 target.x = rx;
                                 target.y = ry;
                                 event_log.push(format!("[TARGET] Agent {:?} wanders to ({:.2}, {:.2}) [local 120 units]", entity, rx, ry));
                                 if let Some(ref mut path) = maybe_path {
-                                    if let Some(astar_path) = a_star_path(map, agent_type, (pos.x as i32, pos.y as i32), (rx as i32, ry as i32), 120) {
+                                    if let Some(astar_path) = a_star_path(_map, agent_type, (pos.x as i32, pos.y as i32), (rx as i32, ry as i32), 120) {
                                         path.waypoints = astar_path.into_iter().collect();
                                         event_log.push(format!("[PATHFIND] Path assigned: {} waypoints", path.waypoints.len()));
                                         *agent_state = AgentState::Moving;

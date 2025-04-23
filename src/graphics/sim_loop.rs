@@ -14,10 +14,11 @@ use crate::graphics::render::food_system::food_render;
 use crate::graphics::render::agent_system::agent_render;
 use crate::graphics::render::selected_agent_path_system::selected_agent_path_render;
 use crate::graphics::render::stats_system::stats_window_render;
-use crate::graphics::render::overlays::draw_stats_window;
-use crate::graphics::sim_state::SimUIState;
 use crate::graphics::render::event_log_system::event_log_window_render;
-use legion::systems::Runnable;
+use crate::graphics::sim_state::SimUIState;
+use crate::graphics::render::overlays::draw_empty_cell_flash;
+// use crate::graphics::render::overlays::draw_stats_window;
+// use legion::systems::Runnable;
 
 pub fn init_sdl2(
     map_width: i32,
@@ -147,8 +148,8 @@ pub fn main_sim_loop(
                 log_config.interact,
             );
         }
-        // Handle events
-        crate::graphics::input::handle_events(
+        // Handle events (refactored: collect input events into InputQueue)
+        crate::graphics::input::collect_input_events(
             event_pump,
             window_id,
             sim_ui_state,
@@ -156,6 +157,14 @@ pub fn main_sim_loop(
             render_map,
             cell_size,
             log_config,
+            paused,
+        );
+        // Process input intents (ECS-friendly event handling)
+        crate::graphics::input_systems::process_input_intents(
+            sim_ui_state,
+            agent_types,
+            render_map,
+            cell_size,
             &mut paused,
             &mut advance_one,
         );

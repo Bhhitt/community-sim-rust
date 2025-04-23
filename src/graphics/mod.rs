@@ -1,6 +1,8 @@
 // Graphics module root
 pub mod camera;
 pub mod input;
+pub mod input_intent;
+pub mod input_systems;
 pub mod render;
 pub mod sim_render;
 pub mod sim_loop;
