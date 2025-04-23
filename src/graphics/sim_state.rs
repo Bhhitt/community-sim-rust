@@ -11,7 +11,7 @@ pub struct SimUIState<'a> {
     pub schedule: &'a mut Schedule,
     pub camera: &'a mut Camera,
     pub font: &'a Font<'static, 'static>,
-    pub cached_agent_counts: Vec<(String, usize)>,
+    pub cached_stats: CachedStats,
     pub last_stats_update: std::time::Instant,
     pub selected_agent: Option<legion::Entity>,
     pub empty_cell_flash: Option<(i32, i32, std::time::Instant)>,
@@ -22,8 +22,21 @@ pub struct SimUIState<'a> {
     // Add other fields as needed
 }
 
-/// Updates the cached agent counts in SimUIState by querying the ECS world.
-pub fn update_cached_agent_counts(world: &World, cached_agent_counts: &mut Vec<(String, usize)>) {
+// Struct to cache all stats for the stats window
+#[derive(Clone, Default)]
+pub struct CachedStats {
+    pub agent_counts: Vec<(String, usize)>,
+    pub food_count: usize,
+    pub food_spawned_per_tick: usize,
+    pub food_collected_per_tick: usize,
+    pub agent_interactions: usize,
+    pub active_interactions: usize,
+    pub active_interactions_history: std::collections::VecDeque<usize>,
+}
+
+/// Updates the cached stats in SimUIState by querying the ECS world and resources.
+pub fn update_cached_stats(world: &World, resources: &Resources, cached: &mut CachedStats) {
+    // Agent counts
     use legion::IntoQuery;
     use crate::agent::AgentType;
     let mut agent_type_counts = std::collections::HashMap::<String, usize>::new();
@@ -31,9 +44,28 @@ pub fn update_cached_agent_counts(world: &World, cached_agent_counts: &mut Vec<(
     for (agent_type,) in query.iter(world) {
         *agent_type_counts.entry(agent_type.r#type.clone()).or_insert(0) += 1;
     }
-    // Overwrite the vector with new counts, sorted by name for stable display
     let mut counts_vec: Vec<_> = agent_type_counts.into_iter().collect();
     counts_vec.sort_by(|a, b| a.0.cmp(&b.0));
-    cached_agent_counts.clear();
-    cached_agent_counts.extend(counts_vec);
+    cached.agent_counts = counts_vec;
+
+    // Food count
+    cached.food_count = <(&crate::ecs_components::Position, &crate::food::Food)>::query().iter(world).count();
+    // Food stats
+    if let Some(food_stats) = resources.get::<crate::ecs_components::FoodStats>() {
+        cached.food_spawned_per_tick = food_stats.spawned_per_tick;
+        cached.food_collected_per_tick = food_stats.collected_per_tick;
+    } else {
+        cached.food_spawned_per_tick = 0;
+        cached.food_collected_per_tick = 0;
+    }
+    // Interaction stats
+    if let Some(stats) = resources.get::<crate::ecs_components::InteractionStats>() {
+        cached.agent_interactions = stats.agent_interactions;
+        cached.active_interactions = stats.active_interactions;
+        cached.active_interactions_history = stats.active_interactions_history.clone();
+    } else {
+        cached.agent_interactions = 0;
+        cached.active_interactions = 0;
+        cached.active_interactions_history.clear();
+    }
 }

@@ -103,7 +103,7 @@ pub fn run_sim_render(
         schedule,
         camera: &mut camera,
         font: &font,
-        cached_agent_counts: Vec::new(),
+        cached_stats: crate::graphics::sim_state::CachedStats::default(),
         last_stats_update: std::time::Instant::now(),
         selected_agent: None,
         empty_cell_flash: None,

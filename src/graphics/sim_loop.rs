@@ -105,6 +105,13 @@ pub fn main_sim_loop(
     use std::io::Write;
     let mut paused = false;
     let mut advance_one = false;
+    let mut last_stats_update = std::time::Instant::now();
+    // Initialize cached_stats for the first time
+    crate::graphics::sim_state::update_cached_stats(
+        &*sim_ui_state.world,
+        &*sim_ui_state.resources,
+        &mut sim_ui_state.cached_stats,
+    );
     loop {
         // --- Run ECS systems ---
         if !paused || advance_one {
@@ -135,13 +142,6 @@ pub fn main_sim_loop(
         }
         // --- Render Event Log Window ---
         if let Some(event_log) = sim_ui_state.resources.get::<crate::event_log::EventLog>() {
-            // crate::graphics::overlays::draw_event_log_window(
-            //     log_canvas,
-            //     sim_ui_state.font,
-            //     &event_log,
-            //     log_config.interact,
-            // );
-            // --- ECS event log window rendering (plain function) ---
             event_log_window_render(
                 &event_log,
                 log_canvas,
@@ -169,11 +169,15 @@ pub fn main_sim_loop(
             &mut paused,
             &mut advance_one,
         );
-        // --- Update cached agent counts BEFORE destructuring sim_ui_state or passing any fields ---
-        crate::graphics::sim_state::update_cached_agent_counts(
-            &*sim_ui_state.world,
-            &mut sim_ui_state.cached_agent_counts,
-        );
+        // --- Update cached stats ONCE PER SECOND ---
+        if last_stats_update.elapsed().as_secs_f32() >= 1.0 {
+            crate::graphics::sim_state::update_cached_stats(
+                &*sim_ui_state.world,
+                &*sim_ui_state.resources,
+                &mut sim_ui_state.cached_stats,
+            );
+            last_stats_update = std::time::Instant::now();
+        }
         // Now destructure sim_ui_state for rendering
         let SimUIState {
             world,
@@ -181,7 +185,7 @@ pub fn main_sim_loop(
             // schedule,
             camera,
             font,
-            cached_agent_counts,
+            cached_stats,
             selected_agent,
             empty_cell_flash,
             // tick,
@@ -213,24 +217,12 @@ pub fn main_sim_loop(
         if log_config.stats {
             log::info!("[STATS] Window size: {}x{}", stats_w, stats_h);
         }
-        let interaction_stats = resources.get::<crate::ecs_components::InteractionStats>();
-        // draw_stats_window(
-        //     stats_canvas,
-        //     font,
-        //     &cached_agent_counts[..],
-        //     interaction_stats.as_ref().map(|v| &**v),
-        //     *selected_agent,
-        //     world,
-        //     log_config.stats,
-        // );
-        // --- ECS stats window rendering (plain function) ---
         stats_window_render(
             world,
             resources,
             stats_canvas,
             font,
-            &cached_agent_counts[..],
-            interaction_stats.as_ref().map(|v| &**v),
+            cached_stats,
             *selected_agent,
             log_config.stats,
         );
