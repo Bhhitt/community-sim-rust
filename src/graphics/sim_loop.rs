@@ -166,6 +166,7 @@ pub fn main_sim_loop(
         canvas.clear();
         draw_terrain(canvas, render_map, camera.x, camera.y, cell_size);
         draw_food(canvas, world, camera.x, camera.y, cell_size, *selected_agent);
+        log::debug!("[DEBUG] sim_loop: selected_agent = {:?}", selected_agent);
         draw_selected_agent_path(canvas, world, *selected_agent, camera.x, camera.y, cell_size);
         draw_agents(canvas, world, camera.x, camera.y, cell_size);
         if let Some((fx, fy, t)) = *empty_cell_flash {

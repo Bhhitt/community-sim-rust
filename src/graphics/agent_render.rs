@@ -16,10 +16,39 @@ pub fn draw_selected_agent_path(
     camera_y: f32,
     cell_size: f32,
 ) {
+    log::debug!("[DEBUG] Entered draw_selected_agent_path: selected_agent = {:?}", selected_agent);
     if let Some(sel) = selected_agent {
         if let Ok(entry) = world.entry_ref(sel) {
             let pos = entry.get_component::<crate::ecs_components::Position>();
             let path = entry.get_component::<crate::navigation::Path>();
+            let movement_history = entry.get_component::<crate::agent::components::MovementHistory>();
+            // --- DEBUG LOGGING ---
+            match (&pos, &path) {
+                (Ok(pos), Ok(path)) => {
+                    log::debug!("[DEBUG] Selected agent {:?} position: ({}, {})", sel, pos.x, pos.y);
+                    log::debug!("[DEBUG] Path waypoints length: {}", path.waypoints.len());
+                    log::debug!("[DEBUG] Path waypoints: {:?}", path.waypoints);
+                },
+                (Err(_), _) => {
+                    log::debug!("[DEBUG] Selected agent {:?} has no Position component", sel);
+                },
+                (_, Err(_)) => {
+                    log::debug!("[DEBUG] Selected agent {:?} has no Path component", sel);
+                },
+            }
+            if let Ok(mh) = &movement_history {
+                if mh.positions.len() > 1 {
+                    canvas.set_draw_color(Color::RGB(220, 220, 80)); // faded yellow
+                    let mut last = mh.positions[0];
+                    for &(x, y) in mh.positions.iter().skip(1) {
+                        let start = ((last.0 - camera_x) * cell_size, (last.1 - camera_y) * cell_size);
+                        let end = ((x - camera_x) * cell_size, (y - camera_y) * cell_size);
+                        let _ = canvas.draw_line((start.0 as i32, start.1 as i32), (end.0 as i32, end.1 as i32));
+                        last = (x, y);
+                    }
+                }
+            }
+            // --- END DEBUG LOGGING ---
             if let (Ok(pos), Ok(path)) = (pos, path) {
                 let waypoints: Vec<_> = path.waypoints.iter().collect();
                 if waypoints.len() > 0 {

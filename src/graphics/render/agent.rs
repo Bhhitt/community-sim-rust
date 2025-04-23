@@ -6,6 +6,7 @@ use sdl2::video::Window;
 use sdl2::pixels::Color;
 use legion::*;
 use crate::agent::AgentType;
+use log;
 
 /// Draws the selected agent's path if selected_agent is Some
 pub fn draw_selected_agent_path(
@@ -16,10 +17,24 @@ pub fn draw_selected_agent_path(
     camera_y: f32,
     cell_size: f32,
 ) {
+    log::debug!("[DEBUG] Entered draw_selected_agent_path: selected_agent = {:?}", selected_agent);
     if let Some(sel) = selected_agent {
         if let Ok(entry) = world.entry_ref(sel) {
             let pos = entry.get_component::<crate::ecs_components::Position>();
             let path = entry.get_component::<crate::navigation::Path>();
+            match (&pos, &path) {
+                (Ok(pos), Ok(path)) => {
+                    log::debug!("[DEBUG] Selected agent {:?} position: ({}, {})", sel, pos.x, pos.y);
+                    log::debug!("[DEBUG] Path waypoints length: {}", path.waypoints.len());
+                    log::debug!("[DEBUG] Path waypoints: {:?}", path.waypoints);
+                },
+                (Err(_), _) => {
+                    log::debug!("[DEBUG] Selected agent {:?} has no Position component", sel);
+                },
+                (_, Err(_)) => {
+                    log::debug!("[DEBUG] Selected agent {:?} has no Path component", sel);
+                },
+            }
             if let (Ok(pos), Ok(path)) = (pos, path) {
                 let waypoints: Vec<_> = path.waypoints.iter().collect();
                 if waypoints.len() > 0 {

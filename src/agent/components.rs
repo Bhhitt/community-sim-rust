@@ -4,6 +4,9 @@ use std::collections::VecDeque;
 use std::collections::HashMap;
 use crate::terrain::types::TerrainType;
 
+pub mod agent_state;
+pub use agent_state::AgentState;
+
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MovementEffect {
     Normal,
@@ -79,5 +82,26 @@ impl InteractionState {
     }
     pub fn has_recently_interacted(&self, partner: Entity) -> bool {
         self.recent_partners.iter().any(|ri| ri.partner == partner && ri.ticks_left > 0)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MovementHistory {
+    pub positions: VecDeque<(f32, f32)>,
+    pub max_len: usize,
+}
+
+impl MovementHistory {
+    pub fn new(max_len: usize) -> Self {
+        Self {
+            positions: VecDeque::with_capacity(max_len),
+            max_len,
+        }
+    }
+    pub fn push(&mut self, pos: (f32, f32)) {
+        if self.positions.len() == self.max_len {
+            self.positions.pop_front();
+        }
+        self.positions.push_back(pos);
     }
 }

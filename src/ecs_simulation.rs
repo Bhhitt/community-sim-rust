@@ -3,7 +3,7 @@ use legion::*;
 use crate::ecs_components::*;
 use legion::Schedule;
 use crate::food::{collect_food_positions_system, collect_food_spawn_positions_system, food_spawn_apply_system};
-use crate::agent::{agent_movement_system, agent_death_system};
+use crate::agent::{path_following_system, action_selection_system, agent_movement_history_system, agent_death_system};
 
 /// All unused imports removed for a clean build
 
@@ -54,7 +54,9 @@ impl SystemProfile {
 pub fn build_simulation_schedule() -> Schedule {
     Schedule::builder()
         .add_system(collect_food_positions_system())
-        .add_system(agent_movement_system())
+        .add_system(path_following_system())
+        .add_system(action_selection_system())
+        .add_system(agent_movement_history_system())
         .add_system(entity_interaction_system())
         .add_system(agent_death_system())
         .add_system(collect_food_spawn_positions_system())
@@ -67,7 +69,9 @@ pub fn build_simulation_schedule() -> Schedule {
 pub fn build_simulation_schedule_parallel() -> Schedule {
     Schedule::builder()
         .add_system(collect_food_positions_system())
-        .add_system(agent_movement_system())
+        .add_system(path_following_system())
+        .add_system(action_selection_system())
+        .add_system(agent_movement_history_system())
         .add_system(entity_interaction_system())
         .add_system(agent_death_system())
         .add_system(collect_food_spawn_positions_system())
