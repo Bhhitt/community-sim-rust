@@ -11,6 +11,10 @@ fn test_yaml_file_load() {
   vision: 5
   work_rate: 1
   icon: "E"
+  movement_profile: { terrain_effects: {} }
+  damping: ~
+  move_probability: ~
+  name: ~
   x: 1.0
   y: 2.0
 "#;

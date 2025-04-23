@@ -11,6 +11,10 @@ fn test_agent_type_deserialize() {
   work_rate: 1
   strength: 5
   icon: "W"
+  movement_profile: { terrain_effects: {} }
+  damping: ~
+  move_probability: ~
+  name: ~
 - type: "scout"
   color: "green"
   move_speed: 4.0
@@ -19,6 +23,10 @@ fn test_agent_type_deserialize() {
   work_rate: 1
   strength: 2
   icon: "S"
+  movement_profile: { terrain_effects: {} }
+  damping: ~
+  move_probability: ~
+  name: ~
 "#;
     let agent_types: Vec<AgentType> = serde_yaml::from_str(yaml).expect("YAML parse failed");
     assert_eq!(agent_types.len(), 2);
