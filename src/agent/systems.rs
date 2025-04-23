@@ -1,6 +1,7 @@
 // Agent-related ECS systems will be moved here next.
 
-use crate::agent::components::{AgentType, Hunger, Energy, AgentState};
+use crate::agent::components::{AgentType, Hunger, Energy, AgentState, DecisionEngineConfig};
+use crate::agent::mlp::{MLP, MLPConfig};
 use crate::navigation::{Target, Path, pathfinding::a_star_path};
 use crate::ecs_components::{Position, FoodPositions};
 use crate::event_log::EventLog;
@@ -116,7 +117,20 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                     }
                     possible_actions.push("wander");
                     possible_actions.push("idle");
-                    let action = possible_actions.choose(&mut rng).unwrap_or(&"wander");
+
+                    // --- MLP Integration ---
+                    let action = if let Some(DecisionEngineConfig::MLP(ref mlp_config)) = agent_type.decision_engine {
+                        // Prepare input vector (minimal: hunger, pos.x, pos.y)
+                        let input = vec![hunger.value / 100.0, pos.x / 100.0, pos.y / 100.0];
+                        let mlp = MLP::from_config(mlp_config);
+                        let output = mlp.forward(input);
+                        // Choose the action with the highest output
+                        let max_idx = output.iter().enumerate().max_by(|a, b| a.1.partial_cmp(b.1).unwrap()).map(|(i,_)| i).unwrap_or(0);
+                        possible_actions.get(max_idx).unwrap_or(&"wander")
+                    } else {
+                        possible_actions.choose(&mut rng).unwrap_or(&"wander")
+                    };
+
                     match *action {
                         "seek_food" => {
                             let far_food: Vec<_> = food_positions.iter()
@@ -126,7 +140,7 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                                 if let Some(ref mut target) = maybe_target {
                                     target.x = *fx;
                                     target.y = *fy;
-                                    event_log.push(format!("[TARGET] Agent {:?} seeks food at ({:.2}, {:.2})", entity, fx, fy));
+                                    event_log.push(format!("[TARGET][MLP] Agent {:?} seeks food at ({:.2}, {:.2})", entity, fx, fy));
                                     if let Some(ref mut path) = maybe_path {
                                         if let Some(astar_path) = a_star_path(_map, agent_type, (pos.x as i32, pos.y as i32), (*fx as i32, *fy as i32), 120) {
                                             path.waypoints = astar_path.into_iter().collect();
@@ -146,7 +160,7 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                                 if let Some(ref mut target) = maybe_target {
                                     target.x = *ax;
                                     target.y = *ay;
-                                    event_log.push(format!("[TARGET] Agent {:?} seeks to interact at ({:.2}, {:.2})", entity, ax, ay));
+                                    event_log.push(format!("[TARGET][MLP] Agent {:?} seeks to interact at ({:.2}, {:.2})", entity, ax, ay));
                                     if let Some(ref mut path) = maybe_path {
                                         if let Some(astar_path) = a_star_path(_map, agent_type, (pos.x as i32, pos.y as i32), (*ax as i32, *ay as i32), 120) {
                                             path.waypoints = astar_path.into_iter().collect();
@@ -159,10 +173,10 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                                         }
                                     }
                                 }
-                                // Skipping interaction.add_partner and repel logic for now
                             }
                         },
                         "wander" => {
+                            // Existing wander logic
                             let (rx, ry) = crate::navigation::random_passable_target(
                                 _map, agent_type, &mut rng, Some((pos.x, pos.y))
                             );

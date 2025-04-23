@@ -33,6 +33,7 @@ fn test_ecs_agent_interaction_system_runs() {
         move_probability: None,
         movement_profile,
         name: Some("worker".to_string()),
+        decision_engine: None,
     };
     let map = Map::new(32, 32);
     // Spawn two agents adjacent to each other

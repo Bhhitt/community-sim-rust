@@ -61,6 +61,7 @@ pub fn load_agent_types(path: &str) -> Vec<AgentType> {
             move_probability,
             movement_profile,
             name,
+            decision_engine: None,
         }
     }).collect()
 }

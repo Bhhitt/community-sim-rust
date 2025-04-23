@@ -26,6 +26,7 @@ pub fn run_ecs_sim() {
             damping: None,
             name: Some("worker".to_string()),
             movement_profile: MovementProfile { terrain_effects: HashMap::new() },
+            decision_engine: None,
         },
         AgentType {
             r#type: "scout".to_string(),
@@ -40,6 +41,7 @@ pub fn run_ecs_sim() {
             damping: None,
             name: Some("scout".to_string()),
             movement_profile: MovementProfile { terrain_effects: HashMap::new() },
+            decision_engine: None,
         },
     ];
     for i in 0..5 {

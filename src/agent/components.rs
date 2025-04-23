@@ -3,6 +3,7 @@ use legion::Entity;
 use std::collections::VecDeque;
 use std::collections::HashMap;
 use crate::terrain::types::TerrainType;
+use crate::agent::mlp::MLPConfig;
 
 pub mod agent_state;
 pub use agent_state::AgentState;
@@ -26,6 +27,12 @@ impl MovementProfile {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DecisionEngineConfig {
+    RuleBased,
+    MLP(MLPConfig),
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentType {
     pub r#type: String,
     pub color: String,
@@ -39,6 +46,7 @@ pub struct AgentType {
     pub move_probability: Option<f32>, // Probability to move each tick (0.0-1.0)
     pub movement_profile: MovementProfile,
     pub name: Option<String>,
+    pub decision_engine: Option<DecisionEngineConfig>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

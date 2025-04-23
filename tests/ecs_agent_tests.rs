@@ -27,6 +27,7 @@ fn test_ecs_agent_spawn_and_query() {
         move_probability: None,
         movement_profile,
         name: Some("worker".to_string()),
+        decision_engine: None,
     };
     let pos = Position { x: 10.0, y: 20.0 };
     let map = Map::new(32, 32);

@@ -36,6 +36,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         icon: a.icon.clone(),
         damping: a.damping,
         movement_profile: a.movement_profile.clone(),
+        decision_engine: a.decision_engine.clone(),
     }).collect();
     let mut agent_count = 0;
     let mut attempts = 0;
@@ -104,6 +105,10 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     resources.insert(map.clone());
     resources.insert(PendingFoodSpawns(VecDeque::new()));
     resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
+    resources.insert(crate::ecs_components::FoodStats::default());
+    resources.insert(crate::ecs_components::InteractionStats::default());
+    resources.insert(crate::event_log::EventLog::new(200));
+    // Insert other resources as needed for ECS systems
     if profile_systems {
         let mut csv_file = File::create(profile_csv).expect("Failed to create csv file");
         writeln!(csv_file, "tick,agent_movement,entity_interaction,agent_death,food_spawn_collect,food_spawn_apply").unwrap();
@@ -119,6 +124,11 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 &mut schedule,
             );
             writeln!(csv_file, "{}{}{}", tick, if tick == 0 { "," } else { "," }, profile.to_csv_row()).unwrap();
+            // Optionally render ASCII after ECS update
+            if profile_systems {
+                let ascii = crate::ecs_simulation::render_simulation_ascii(&world, &map);
+                println!("ASCII after tick {}:\n{}", tick, ascii);
+            }
             log::debug!("[PROFILE] agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
                 profile.agent_movement, profile.entity_interaction, profile.agent_death, profile.food_spawn_collect, profile.food_spawn_apply);
             sum_profile.add(&profile);
