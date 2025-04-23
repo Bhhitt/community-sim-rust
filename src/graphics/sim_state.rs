@@ -21,3 +21,19 @@ pub struct SimUIState<'a> {
     // All ECS systems are added to the Legion Schedule; no need to store boxed systems here.
     // Add other fields as needed
 }
+
+/// Updates the cached agent counts in SimUIState by querying the ECS world.
+pub fn update_cached_agent_counts(world: &World, cached_agent_counts: &mut Vec<(String, usize)>) {
+    use legion::IntoQuery;
+    use crate::agent::AgentType;
+    let mut agent_type_counts = std::collections::HashMap::<String, usize>::new();
+    let mut query = <(&AgentType,)>::query();
+    for (agent_type,) in query.iter(world) {
+        *agent_type_counts.entry(agent_type.r#type.clone()).or_insert(0) += 1;
+    }
+    // Overwrite the vector with new counts, sorted by name for stable display
+    let mut counts_vec: Vec<_> = agent_type_counts.into_iter().collect();
+    counts_vec.sort_by(|a, b| a.0.cmp(&b.0));
+    cached_agent_counts.clear();
+    cached_agent_counts.extend(counts_vec);
+}

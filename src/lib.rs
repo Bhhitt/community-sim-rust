@@ -17,3 +17,4 @@ pub mod sim_summary;
 pub mod event_log;
 pub mod log_config;
 pub mod render_ascii;
+pub mod config;

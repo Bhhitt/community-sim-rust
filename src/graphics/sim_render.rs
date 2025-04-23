@@ -8,12 +8,9 @@ use crate::food::PendingFoodSpawns;
 use rand::Rng;
 use crate::log_config::LogConfig;
 use std::fs::File;
+use crate::graphics::sim_state::SimUIState;
 
 const CELL_SIZE: f32 = 6.0;
-const WINDOW_WIDTH: u32 = 1280;
-const WINDOW_HEIGHT: u32 = 800;
-
-use crate::graphics::sim_state::SimUIState;
 
 // All unused imports removed for a clean build
 
@@ -78,13 +75,22 @@ pub fn run_sim_render(
     };
 
     // --- SDL2 CONTEXT AND WINDOW SETUP ---
+    // Compute window size based on map size and cell size, but do not exceed defaults
+    let map_pixel_width = (_map_width as f32 * CELL_SIZE).ceil() as u32;
+    let map_pixel_height = (_map_height as f32 * CELL_SIZE).ceil() as u32;
+    // Set minimum window size (for large maps, keep current default; for small, fit map)
+    let default_window_width: u32 = 1280;
+    let default_window_height: u32 = 800;
+    let window_width = map_pixel_width.max(320).min(default_window_width);
+    let window_height = map_pixel_height.max(240).min(default_window_height);
+
     let (mut canvas, mut stats_canvas, mut log_canvas, mut event_pump, window_id, _stats_window_id, _log_window_id, mut camera, font) =
         crate::graphics::sim_loop::init_sdl2(
             _map_width,
             _map_height,
             CELL_SIZE,
-            WINDOW_WIDTH,
-            WINDOW_HEIGHT,
+            window_width,
+            window_height,
             log_config,
         );
 
@@ -121,8 +127,8 @@ pub fn run_sim_render(
         _map_width,
         _map_height,
         CELL_SIZE,
-        WINDOW_WIDTH,
-        WINDOW_HEIGHT,
+        window_width,
+        window_height,
     );
 
 //     use crate::graphics::input::handle_events;

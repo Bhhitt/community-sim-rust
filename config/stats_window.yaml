@@ -1,0 +1,12 @@
+# List of stats components to display in the stats window.
+# Valid keys: agent_counts, food_counts, interaction_stats, selected_agent, graphs, etc.
+# Example:
+# components:
+#   - agent_counts
+#   - food_counts
+#   - interaction_stats
+components:
+  - agent_counts
+  - food_counts
+  - interaction_stats
+  - selected_agent

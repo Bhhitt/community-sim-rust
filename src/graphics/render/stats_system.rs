@@ -7,6 +7,7 @@ use crate::ecs_components::InteractionStats;
 /// ECS-style stats window rendering as a plain function
 pub fn stats_window_render(
     world: &World,
+    resources: &Resources,
     canvas: &mut Canvas<Window>,
     font: &Font,
     cached_agent_counts: &[(String, usize)],
@@ -22,6 +23,7 @@ pub fn stats_window_render(
         interaction_stats,
         selected_agent,
         world,
+        resources,
         log_stats,
     );
 }

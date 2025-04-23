@@ -33,6 +33,7 @@ pub fn init_sdl2(
     let window = video_subsystem
         .window("Community Simulator", window_width, window_height)
         .position_centered()
+        .resizable()
         .build()
         .unwrap();
     let canvas = window.into_canvas().build().unwrap();
@@ -168,6 +169,11 @@ pub fn main_sim_loop(
             &mut paused,
             &mut advance_one,
         );
+        // --- Update cached agent counts BEFORE destructuring sim_ui_state or passing any fields ---
+        crate::graphics::sim_state::update_cached_agent_counts(
+            &*sim_ui_state.world,
+            &mut sim_ui_state.cached_agent_counts,
+        );
         // Now destructure sim_ui_state for rendering
         let SimUIState {
             world,
@@ -220,6 +226,7 @@ pub fn main_sim_loop(
         // --- ECS stats window rendering (plain function) ---
         stats_window_render(
             world,
+            resources,
             stats_canvas,
             font,
             &cached_agent_counts[..],
