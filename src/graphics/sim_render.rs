@@ -9,6 +9,8 @@ use rand::Rng;
 use crate::log_config::LogConfig;
 use std::fs::File;
 use crate::graphics::sim_state::SimUIState;
+use crate::ecs_simulation::{build_simulation_schedule};
+use std::sync::{Arc, Mutex};
 
 const CELL_SIZE: f32 = 6.0;
 
@@ -25,8 +27,7 @@ pub fn run_sim_render(
     profile_csv: &str,
     world: &mut World,
     resources: &mut Resources,
-    schedule: &mut Schedule,
-    log_config: &LogConfig,
+    event_log: std::sync::Arc<std::sync::Mutex<crate::event_log::EventLog>>,
 ) {
     // --- ECS World Setup ---
     let map = crate::map::Map::new(_map_width, _map_height);
@@ -63,8 +64,11 @@ pub fn run_sim_render(
     resources.insert(crate::event_log::EventLog::new(200));
     resources.insert(PendingFoodSpawns(std::collections::VecDeque::new()));
     resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
-    resources.insert(log_config.clone());
     resources.insert(crate::ecs_components::FoodStats { spawned_per_tick: 0, collected_per_tick: 0 });
+
+    // Instead of borrowing LogConfig from resources while resources is mutably borrowed,
+    // get LogConfig at the start and pass as a plain reference to downstream functions.
+    let log_config = resources.get::<LogConfig>().unwrap().clone();
 
     // --- Use PARALLEL schedule ---
     // Profiling support
@@ -91,7 +95,7 @@ pub fn run_sim_render(
             CELL_SIZE,
             window_width,
             window_height,
-            log_config,
+            &log_config,
         );
 
     let mut _paused = false;
@@ -100,7 +104,7 @@ pub fn run_sim_render(
     let mut sim_ui_state = SimUIState {
         world,
         resources,
-        schedule,
+        schedule: &mut build_simulation_schedule(),
         camera: &mut camera,
         font: &font,
         cached_stats: crate::graphics::sim_state::CachedStats::default(),
@@ -112,6 +116,7 @@ pub fn run_sim_render(
     };
 
     // --- MAIN SIMULATION LOOP ---
+    // Remove the extra event_log.clone() argument to match main_sim_loop signature
     crate::graphics::sim_loop::main_sim_loop(
         &mut sim_ui_state,
         &mut canvas,
@@ -121,7 +126,7 @@ pub fn run_sim_render(
         window_id,
         agent_types,
         &render_map,
-        log_config,
+        &log_config,
         profile_systems,
         &mut csv_file,
         _map_width,
@@ -139,7 +144,7 @@ pub fn run_sim_render(
 //         agent_types,
 //         &render_map,
 //         CELL_SIZE,
-//         log_config,
+//         &resources.get::<LogConfig>().unwrap(),
 //         &mut paused,
 //         &mut advance_one,
 //     );

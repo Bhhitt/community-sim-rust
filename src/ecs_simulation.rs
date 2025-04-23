@@ -64,8 +64,8 @@ pub fn build_simulation_schedule() -> Schedule {
         .build()
 }
 
-/// Builds a Legion Schedule containing all ECS systems in the correct order.
-/// Legion will automatically parallelize systems that do not have conflicting data access.
+/// Legacy non-log-config version for compatibility (deprecated)
+#[deprecated(note = "Use build_simulation_schedule() instead")]
 pub fn build_simulation_schedule_parallel() -> Schedule {
     Schedule::builder()
         .add_system(collect_food_positions_system())
@@ -157,6 +157,20 @@ pub fn simulation_tick_parallel(world: &mut World, resources: &mut Resources, sc
     schedule.execute(world, resources);
     profile.agent_movement = t.elapsed().as_secs_f64();
     profile
+}
+
+/// Builds a Legion Schedule containing all ECS systems in the correct order.
+pub fn build_simulation_schedule_with_log() -> Schedule {
+    Schedule::builder()
+        .add_system(collect_food_positions_system())
+        .add_system(path_following_system())
+        .add_system(action_selection_system())
+        .add_system(agent_movement_history_system())
+        .add_system(entity_interaction_system())
+        .add_system(agent_death_system())
+        .add_system(collect_food_spawn_positions_system())
+        .add_system(food_spawn_apply_system())
+        .build()
 }
 
 pub use crate::render_ascii::render_simulation_ascii;

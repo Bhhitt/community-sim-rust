@@ -1,9 +1,12 @@
+mod log_config;
+mod simulation;
+mod util;
+
 use clap::Parser;
-use community_sim::*;
 use chrono;
 use fern;
 use log;
-use log_config::LogConfig;
+use std::sync::{Arc, Mutex};
 
 pub mod terrain;
 pub mod sim_summary;
@@ -51,6 +54,9 @@ pub struct Args {
     /// Enable interact logs
     #[arg(long)]
     log_interact: bool,
+    /// Enable quiet logs
+    #[arg(long)]
+    log_quiet: bool,
 }
 
 fn parse_log_level(level: &str) -> log::LevelFilter {
@@ -89,11 +95,18 @@ fn main() {
     let log_level = parse_log_level(&args.log_level);
     setup_logging(log_level);
     let agent_types = util::load_agent_types(&args.agent_types);
-    let log_config = LogConfig {
+    let log_config = log_config::LogConfig {
+        quiet: args.log_quiet,
         stats: args.log_stats,
         eat: args.log_eat,
         interact: args.log_interact,
     };
+    // --- EventLog for piping logs to window ---
+    let event_log = Arc::new(Mutex::new(event_log::EventLog::new(200)));
+    // Register the custom logger (will pipe info logs to EventLog)
+    let _ = event_log::EventLogLogger::init(event_log.clone(), log_level);
+    // Insert event_log into ECS resources (if needed elsewhere)
+    // ...
     if args.headless {
         log::info!("Running in headless mode");
         if args.scale {
@@ -103,6 +116,14 @@ fn main() {
         }
     } else {
         log::info!("Running with graphics");
-        simulation::run_profile_from_yaml("config/sim_profiles.yaml", &args.profile, &agent_types, args.profile_systems, &args.profile_csv, &log_config);
+        simulation::run_profile_from_yaml(
+            "config/sim_profiles.yaml",
+            &args.profile,
+            &agent_types,
+            args.profile_systems,
+            &args.profile_csv,
+            &log_config,
+            event_log.clone(), // Pass event_log down
+        );
     }
 }

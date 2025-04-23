@@ -1,16 +1,16 @@
 use legion::World;
 use legion::IntoQuery;
-use crate::agent::AgentType;
+use agent::AgentType;
 use legion::Resources;
 use std::collections::HashMap;
 use std::io::Write;
-use crate::render_ascii;
+use render_ascii;
 
 /// Writes a simulation summary and ASCII snapshot to the given file path.
 pub fn write_simulation_summary_and_ascii(
     world: &World,
     resources: &Resources,
-    map: &crate::map::Map,
+    map: &map::Map,
     tick: usize,
     output_path: &str,
 ) {
@@ -19,7 +19,7 @@ pub fn write_simulation_summary_and_ascii(
     for (agent_type,) in agent_query.iter(world) {
         *agent_type_counts.entry(agent_type.r#type.clone()).or_insert(0) += 1;
     }
-    let stats = resources.get::<crate::ecs_components::InteractionStats>().expect("No InteractionStats resource");
+    let stats = resources.get::<ecs_components::InteractionStats>().expect("No InteractionStats resource");
     // EventLog is now in crate::event_log
     let total_interactions = stats.agent_interactions;
     let avg_interactions_per_tick = if tick > 0 { total_interactions as f64 / tick as f64 } else { 0.0 };

@@ -1,6 +1,10 @@
 //! Main simulation loop and logic
 
-use crate::{agent::AgentType, agent::systems::spawn_agent, map::Map};
+use agent::AgentType;
+use agent::systems::spawn_agent;
+use map::Map;
+use graphics::run_with_graphics_profile;
+use ecs_components::InteractionStats;
 use serde::Deserialize;
 use std::fs;
 use std::fs::File;
@@ -8,13 +12,14 @@ use std::io::Write;
 use serde_yaml;
 use legion::IntoQuery;
 use rand::Rng;
-use crate::food::{PendingFoodSpawns, Food};
+use food::{PendingFoodSpawns, Food};
 use legion::{World, Resources};
-use crate::ecs_simulation::{simulation_tick, build_simulation_schedule_profiled};
+use ecs_simulation::{simulation_tick, build_simulation_schedule_profiled};
 use log;
 use std::collections::VecDeque;
-use crate::log_config::LogConfig;
-use crate::render_ascii::render_simulation_ascii;
+use log_config::LogConfig;
+use render_ascii::render_simulation_ascii;
+use std::sync::{Arc, Mutex};
 
 fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) -> (f64, f64, f64) {
     log::info!("[TEST] Entered run_simulation");
@@ -50,7 +55,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
             loop {
                 x = rng.gen_range(0..map_width) as f32;
                 y = rng.gen_range(0..map_height) as f32;
-                if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
+                if map.tiles[y as usize][x as usize] == map::Terrain::Grass || map.tiles[y as usize][x as usize] == map::Terrain::Forest {
                     break;
                 }
                 tries += 1;
@@ -59,7 +64,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 }
             }
             let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
-            spawn_agent(&mut world, crate::ecs_components::Position { x, y }, agent_type, &map);
+            spawn_agent(&mut world, ecs_components::Position { x, y }, agent_type, &map);
             agent_count += 1;
             attempts += tries;
         }
@@ -72,7 +77,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         loop {
             x = rng.gen_range(0..map_width) as f32;
             y = rng.gen_range(0..map_height) as f32;
-            if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
+            if map.tiles[y as usize][x as usize] == map::Terrain::Grass || map.tiles[y as usize][x as usize] == map::Terrain::Forest {
                 break;
             }
             tries += 1;
@@ -80,7 +85,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 panic!("Could not find passable tile for food after 1000 tries");
             }
         }
-        world.push((crate::ecs_components::Position { x, y }, Food { nutrition: rng.gen_range(5.0..=10.0) }));
+        world.push((ecs_components::Position { x, y }, Food { nutrition: rng.gen_range(5.0..=10.0) }));
     }
     log::debug!("[DEBUG] Total spawn attempts: {} (avg {:.2} per agent)", attempts, attempts as f32 / agent_count as f32);
     let total_entities = world.len();
@@ -91,9 +96,9 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     log::debug!("[DEBUG] Entities with Position and their component types before tick loop:");
     let mut query = <(
         legion::Entity,
-        &crate::ecs_components::Position,
+        &ecs_components::Position,
         Option<&AgentType>,
-        Option<&crate::food::Food>
+        Option<&food::Food>
     )>::query();
     for (entity, _pos, agent_type, food) in query.iter(&world) {
         let mut comps = vec!["Position"];
@@ -105,17 +110,17 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     let mut resources = Resources::default();
     resources.insert(map.clone());
     resources.insert(PendingFoodSpawns(VecDeque::new()));
-    resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
-    resources.insert(crate::ecs_components::FoodStats::default());
-    resources.insert(crate::ecs_components::InteractionStats::default());
-    resources.insert(crate::event_log::EventLog::new(200));
+    resources.insert(ecs_components::FoodPositions(Vec::new()));
+    resources.insert(ecs_components::FoodStats::default());
+    resources.insert(ecs_components::InteractionStats::default());
+    resources.insert(event_log::EventLog::new(200));
     // Insert other resources as needed for ECS systems
     if profile_systems {
         let mut csv_file = File::create(profile_csv).expect("Failed to create csv file");
         writeln!(csv_file, "tick,agent_movement,entity_interaction,agent_death,food_spawn_collect,food_spawn_apply").unwrap();
-        let mut sum_profile = crate::ecs_simulation::SystemProfile::new();
-        let mut min_profile: Option<crate::ecs_simulation::SystemProfile> = None;
-        let mut max_profile: Option<crate::ecs_simulation::SystemProfile> = None;
+        let mut sum_profile = ecs_simulation::SystemProfile::new();
+        let mut min_profile: Option<ecs_simulation::SystemProfile> = None;
+        let mut max_profile: Option<ecs_simulation::SystemProfile> = None;
         let mut schedule = build_simulation_schedule_profiled();
         for tick in 0..ticks {
             log::debug!("Tick {}", tick);
@@ -127,7 +132,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
             writeln!(csv_file, "{}{}{}", tick, if tick == 0 { "," } else { "," }, profile.to_csv_row()).unwrap();
             // Optionally render ASCII after ECS update
             if profile_systems {
-                let ascii = render_simulation_ascii(&world, &map);
+                let ascii = render_ascii::render_simulation_ascii(&world, &map);
                 println!("ASCII after tick {}:\n{}", tick, ascii);
             }
             log::debug!("[PROFILE] agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
@@ -181,7 +186,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 &mut schedule,
             );
             // Generate ASCII snapshot at each tick (optional, but we'll save the last)
-            last_ascii = render_simulation_ascii(&world, &map);
+            last_ascii = render_ascii::render_simulation_ascii(&world, &map);
             // Optionally print: println!("{}", last_ascii);
         }
         // --- Write simulation summary to map file ---
@@ -194,7 +199,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
             *agent_type_counts.entry(agent_type.name.clone().unwrap_or_else(|| agent_type.r#type.clone())).or_insert(0) += 1;
         }
         // Get interaction stats
-        let stats = resources.get::<crate::ecs_components::InteractionStats>().expect("No InteractionStats resource");
+        let stats = resources.get::<ecs_components::InteractionStats>().expect("No InteractionStats resource");
         let total_interactions = stats.agent_interactions;
         let avg_interactions_per_tick = if ticks > 0 { total_interactions as f64 / ticks as f64 } else { 0.0 };
         // Prepare summary string
@@ -244,7 +249,15 @@ pub fn run_profiles_from_yaml(path: &str, agent_types: &[AgentType], profile_sys
     }
 }
 
-pub fn run_profile_from_yaml(path: &str, profile_name: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str, log_config: &LogConfig) {
+pub fn run_profile_from_yaml(
+    path: &str,
+    profile_name: &str,
+    agent_types: &[AgentType],
+    profile_systems: bool,
+    profile_csv: &str,
+    log_config: &LogConfig,
+    event_log: std::sync::Arc<std::sync::Mutex<event_log::EventLog>>,
+) {
     log::info!("[TEST] Entered run_profile_from_yaml");
     let profiles = load_profiles_from_yaml(path);
     let profile = profiles.into_iter().find(|p| p.name == profile_name)
@@ -253,10 +266,19 @@ pub fn run_profile_from_yaml(path: &str, profile_name: &str, agent_types: &[Agen
     let height = profile.map_height.unwrap_or(profile.map_size.unwrap_or(20));
     log::info!("\n===== Simulation Profile: {} =====", profile.name);
     log::info!("Launching GUI with profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
-    crate::graphics::run_with_graphics_profile(width, height, profile.num_agents, agent_types, profile_systems, profile_csv, log_config);
+    graphics::run_with_graphics_profile(
+        width,
+        height,
+        profile.num_agents,
+        agent_types,
+        profile_systems,
+        profile_csv,
+        log_config,
+        event_log,
+    );
 }
 
-pub fn run_gui_with_profile(_path: &str, _profile_name: &str, _agent_types: &[crate::agent::AgentType]) {
+pub fn run_gui_with_profile(_path: &str, _profile_name: &str, _agent_types: &[agent::AgentType]) {
     log::warn!("[WARNING] run_gui_with_profile is a stub. Use run_with_graphics_profile instead.");
 }
 

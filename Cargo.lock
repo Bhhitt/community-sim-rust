@@ -201,6 +201,7 @@ dependencies = [
  "legion",
  "log",
  "noise",
+ "once_cell",
  "rand 0.8.5",
  "rayon",
  "sdl2",

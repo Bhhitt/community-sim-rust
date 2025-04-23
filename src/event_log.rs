@@ -1,4 +1,6 @@
 use std::collections::VecDeque;
+use log::{Record, Level, Metadata, SetLoggerError, LevelFilter};
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
 pub struct EventLog {
@@ -27,5 +29,38 @@ impl EventLog {
 
     pub fn iter(&self) -> impl Iterator<Item = &String> {
         self.events.iter()
+    }
+}
+
+// --- Custom logger for piping log::info! to EventLog ---
+pub struct EventLogLogger {
+    pub event_log: Arc<Mutex<EventLog>>,
+    pub level: LevelFilter,
+}
+
+impl log::Log for EventLogLogger {
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        metadata.level() <= self.level
+    }
+
+    fn log(&self, record: &Record) {
+        if self.enabled(record.metadata()) {
+            // Only pipe info and above (customize if needed)
+            if record.level() <= Level::Info {
+                let msg = format!("{}", record.args());
+                if let Ok(mut log) = self.event_log.lock() {
+                    log.push(msg);
+                }
+            }
+        }
+    }
+
+    fn flush(&self) {}
+}
+
+impl EventLogLogger {
+    pub fn init(event_log: Arc<Mutex<EventLog>>, level: LevelFilter) -> Result<(), SetLoggerError> {
+        let logger = Box::leak(Box::new(EventLogLogger { event_log, level }));
+        log::set_logger(logger).map(|()| log::set_max_level(level))
     }
 }

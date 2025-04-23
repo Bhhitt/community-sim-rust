@@ -1,13 +1,23 @@
-// Contains the main simulation loop logic (without rendering)
-
 use sdl2::pixels::Color;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::ttf::Font;
 use sdl2::EventPump;
 use std::time::Duration;
+use std::sync::{Arc, Mutex};
+use std::collections::VecDeque;
+use std::{fs, io};
+
+use legion::{World, Resources, IntoQuery};
+use rand::Rng;
+use serde::{Deserialize, Serialize};
+use serde_yaml;
+use log;
+
 use crate::graphics::camera::Camera;
 use crate::agent::AgentType;
+use crate::agent::systems::spawn_agent;
+use crate::map::Map;
 use crate::log_config::LogConfig;
 use crate::graphics::render::terrain::draw_terrain;
 use crate::graphics::render::food_system::food_render;
@@ -17,8 +27,9 @@ use crate::graphics::render::stats_system::stats_window_render;
 use crate::graphics::render::event_log_system::event_log_window_render;
 use crate::graphics::sim_state::SimUIState;
 use crate::graphics::render::overlays::draw_empty_cell_flash;
-// use crate::graphics::render::overlays::draw_stats_window;
-// use legion::systems::Runnable;
+use crate::ecs_simulation::{simulation_tick, build_simulation_schedule_profiled};
+use crate::ecs_components::InteractionStats;
+use crate::food::{PendingFoodSpawns, Food};
 
 pub fn init_sdl2(
     map_width: i32,
