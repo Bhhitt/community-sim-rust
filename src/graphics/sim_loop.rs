@@ -10,10 +10,12 @@ use crate::graphics::camera::Camera;
 use crate::agent::AgentType;
 use crate::log_config::LogConfig;
 use crate::graphics::render::terrain::draw_terrain;
-use crate::graphics::render::food::draw_food;
-use crate::graphics::agent_render::{draw_agents, draw_selected_agent_path};
+use crate::graphics::render::food_system::food_render;
+use crate::graphics::render::agent_system::agent_render;
+use crate::graphics::render::selected_agent_path_system::selected_agent_path_render;
 use crate::graphics::render::overlays::draw_stats_window;
 use crate::graphics::sim_state::SimUIState;
+use legion::systems::Runnable;
 
 pub fn init_sdl2(
     map_width: i32,
@@ -165,10 +167,15 @@ pub fn main_sim_loop(
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
         draw_terrain(canvas, render_map, camera.x, camera.y, cell_size);
-        draw_food(canvas, world, camera.x, camera.y, cell_size, *selected_agent);
+        // draw_food(canvas, world, camera.x, camera.y, cell_size, *selected_agent);
+        // --- ECS food rendering (plain function) ---
+        food_render(world, canvas, camera.x, camera.y, cell_size, *selected_agent);
         log::debug!("[DEBUG] sim_loop: selected_agent = {:?}", selected_agent);
-        draw_selected_agent_path(canvas, world, *selected_agent, camera.x, camera.y, cell_size);
-        draw_agents(canvas, world, camera.x, camera.y, cell_size);
+        // draw_selected_agent_path(canvas, world, *selected_agent, camera.x, camera.y, cell_size);
+        // --- ECS selected agent path rendering (plain function) ---
+        selected_agent_path_render(world, canvas, *selected_agent, camera.x, camera.y, cell_size);
+        // --- ECS agent rendering (plain function) ---
+        agent_render(world, canvas, camera.x, camera.y, cell_size);
         if let Some((fx, fy, t)) = *empty_cell_flash {
             if t.elapsed().as_millis() < 200 {
                 crate::graphics::overlays::draw_empty_cell_flash(canvas, fx, fy, camera.x, camera.y, cell_size);
