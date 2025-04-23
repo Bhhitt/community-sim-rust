@@ -1,0 +1,44 @@
+Function,Count
+ ,2
+li..,2
+comm..,2
+community_sim`community_sim::gr..,2
+community_sim`std::rt::lang_sta..,2
+Flame Graph,1
+Reset Zoom,1
+Search,1
+lib..,1
+AGXM..,1
+AGXMet..,1
+libSDL2-2.0.0.dylib..,1
+libSDL2-2.0.0.dylib`Fl..,1
+libSDL2-2.0.0.dylib`SDL..,1
+community_sim`community_sim::g..,1
+community_sim`community_sim::si..,1
+dyld`start,1
+community_sim`main,1
+community_sim`std::sys::backtra..,1
+community_sim`community_sim::ma..,1
+community_..,1
+community_sim..,1
+c..,1
+community..,1
+communit..,1
+community_sim`hashbrown::..,1
+"community_sim`hashbrown::map::HashMap<K,V,S,A>::in..",1
+community_sim`community_sim::navigation::pathfinding::a_star_path,1
+commun..,1
+"community_sim`<legion::internals::systems::system::System<R,Q,F> as legion::internals::systems::schedule::Runnable>::run_unsafe",1
+"community_sim`<F as legion::internals::systems::system::SystemFn<R,Q>>::run",1
+community_sim`<rayon::iter::for_each::ForEachConsumer<F> as rayon::iter::plumbing::Folder<T>>::consume,1
+community_sim`<rayon::iter::plumbing::bridge::Callback<C> as rayon::iter::plumbing::ProducerCallback<I>>::callback,1
+community_sim`core::ops::function::impls::_<impl core::ops::function::FnMut<A> for &F>::call_mut,1
+"community_sim`<rayon_core::job::StackJob<L,F,R> as rayon_core::job::Job>::execute",1
+community_sim`rayon::iter::plumbing::bridge_producer_consumer::helper,1
+libsystem_pthread.dylib`thread_start,1
+libsystem_pthread.dylib`_pthread_start,1
+community_sim`std::sys::pal::unix::thread::Thread::new::thread_start,1
+community_sim`core::ops::function::FnOnce::call_once{{vtable.shim}},1
+community_sim`std::sys::backtrace::__rust_begin_short_backtrace,1
+community_sim`rayon_core::registry::ThreadBuilder::run,1
+community_sim`rayon_core::registry::WorkerThread::wait_until_cold,1

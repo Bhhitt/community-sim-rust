@@ -5,10 +5,10 @@ use std::io::Read;
 use std::collections::HashMap;
 
 pub fn load_agent_types(path: &str) -> Vec<AgentType> {
-    let mut file = File::open(path).expect("Failed to open agent_types.yaml");
+    let mut file = File::open(path).expect("Failed to open config/agent_types.yaml");
     let mut contents = String::new();
-    file.read_to_string(&mut contents).expect("Failed to read agent_types.yaml");
-    let raw_types: Vec<serde_yaml::Value> = serde_yaml::from_str(&contents).expect("Failed to parse agent_types.yaml");
+    file.read_to_string(&mut contents).expect("Failed to read config/agent_types.yaml");
+    let raw_types: Vec<serde_yaml::Value> = serde_yaml::from_str(&contents).expect("Failed to parse config/agent_types.yaml");
     raw_types.into_iter().map(|raw| {
         let r#type = raw["type"].as_str().unwrap_or("").to_string();
         let color = raw["color"].as_str().unwrap_or("white").to_string();

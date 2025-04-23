@@ -28,9 +28,9 @@ pub struct Args {
     #[arg(long)]
     scale: bool,
     /// YAML file for agent types
-    #[arg(long, default_value = "agent_types.yaml")]
+    #[arg(long, default_value = "config/agent_types.yaml")]
     agent_types: String,
-    /// Simulation profile name (from sim_profiles.yaml)
+    /// Simulation profile name (from config/sim_profiles.yaml)
     #[arg(long, default_value = "small")]
     profile: String,
     /// Enable ECS system profiling (timings, CSV output)
@@ -99,10 +99,10 @@ fn main() {
         if args.scale {
             simulation::run_scaling_benchmarks(&agent_types);
         } else {
-            simulation::run_profiles_from_yaml("sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
+            simulation::run_profiles_from_yaml("config/sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
         }
     } else {
         log::info!("Running with graphics");
-        simulation::run_profile_from_yaml("sim_profiles.yaml", &args.profile, &agent_types, args.profile_systems, &args.profile_csv, &log_config);
+        simulation::run_profile_from_yaml("config/sim_profiles.yaml", &args.profile, &agent_types, args.profile_systems, &args.profile_csv, &log_config);
     }
 }

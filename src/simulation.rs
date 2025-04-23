@@ -228,8 +228,8 @@ pub struct SimProfile {
 }
 
 pub fn load_profiles_from_yaml(path: &str) -> Vec<SimProfile> {
-    let yaml = fs::read_to_string(path).expect("Failed to read sim_profiles.yaml");
-    serde_yaml::from_str(&yaml).expect("Failed to parse sim_profiles.yaml")
+    let yaml = fs::read_to_string(path).expect("Failed to read config/sim_profiles.yaml");
+    serde_yaml::from_str(&yaml).expect("Failed to parse config/sim_profiles.yaml")
 }
 
 pub fn run_profiles_from_yaml(path: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) {
@@ -262,7 +262,7 @@ pub fn run_gui_with_profile(_path: &str, _profile_name: &str, _agent_types: &[cr
 
 pub fn run_profiles(agent_types: &[AgentType]) {
     log::info!("\n===== Simulation Profiles =====");
-    for profile in load_profiles_from_yaml("sim_profiles.yaml") {
+    for profile in load_profiles_from_yaml("config/sim_profiles.yaml") {
         let width = profile.map_width.unwrap_or(profile.map_size.unwrap_or(20));
         let height = profile.map_height.unwrap_or(profile.map_size.unwrap_or(20));
         log::info!("Running profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
