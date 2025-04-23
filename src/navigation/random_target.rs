@@ -19,7 +19,7 @@ fn random_passable_target_within_radius<R: Rng>(
         let dy = rng.gen_range(-(radius as i32)..=(radius as i32));
         let nx = (cx as i32 + dx).clamp(0, map.width - 1);
         let ny = (cy as i32 + dy).clamp(0, map.height - 1);
-        let dist_sq = ((nx as f32 - cx).powi(2) + (ny as f32 - cy).powi(2));
+        let dist_sq = (nx as f32 - cx).powi(2) + (ny as f32 - cy).powi(2);
         if dist_sq > radius_sq {
             tries += 1;
             if tries > 1000 { break; }

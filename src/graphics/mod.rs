@@ -1,9 +1,15 @@
 // Graphics module root
 pub mod camera;
+pub mod input;
 pub mod render;
 pub mod sim_render;
+pub mod sim_loop;
 pub mod terrain;
 pub mod utils;
+pub mod agent_render;
+pub mod overlays;
+pub mod stats;
+pub mod sim_state;
 // Add further submodules as the migration proceeds
 
 use crate::agent::AgentType;

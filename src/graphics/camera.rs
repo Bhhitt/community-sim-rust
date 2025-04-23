@@ -1,5 +1,4 @@
 // Camera module for graphics
-use sdl2::pixels::Color;
 
 pub struct Camera {
     pub x: f32,

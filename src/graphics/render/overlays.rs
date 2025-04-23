@@ -148,8 +148,8 @@ pub fn draw_stats_window(
     }
     // Selected agent details
     if let Some(sel) = selected_agent {
-        let mut shown = false;
-        for (_entity, (pos, agent_type, hunger, energy, target, path, interaction_state)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::agent::AgentType, &crate::agent::Hunger, &crate::agent::Energy, Option<&crate::navigation::Target>, Option<&crate::navigation::Path>, Option<&crate::agent::components::InteractionState>))>::query().iter(world) {
+        let mut _shown = false;
+        for (_entity, (pos, agent_type, hunger, energy, target, _path, interaction_state)) in <(legion::Entity, (&crate::ecs_components::Position, &crate::agent::AgentType, &crate::agent::Hunger, &crate::agent::Energy, Option<&crate::navigation::Target>, Option<&crate::navigation::Path>, Option<&crate::agent::components::InteractionState>))>::query().iter(world) {
             if *_entity == sel {
                 let mut status = String::new();
                 if let Some(target) = target {
@@ -173,7 +173,7 @@ pub fn draw_stats_window(
                     let target = Rect::new(10, y_offset + i as i32 * (height as i32 + 2), width, height);
                     canvas.copy(&texture, None, Some(target)).unwrap();
                 }
-                shown = true;
+                _shown = true;
                 break;
             }
         }
