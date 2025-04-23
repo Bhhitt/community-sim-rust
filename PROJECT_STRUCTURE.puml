@@ -1,0 +1,88 @@
+@startuml
+' High-level structure for community-sim-rst
+
+package main {
+  class Main {
+    +main()
+  }
+}
+
+package lib {
+  class Lib
+}
+
+Main --> Lib
+
+package agent {
+  class AgentComponents
+  class AgentMLP
+  class AgentSystems
+}
+Lib --> agent
+AgentComponents <.. AgentSystems
+AgentMLP <.. AgentSystems
+
+package food {
+  class FoodComponents
+  class FoodSystems
+}
+Lib --> food
+FoodComponents <.. FoodSystems
+
+package navigation {
+  class NavComponents
+  class Pathfinding
+  class RandomTarget
+}
+Lib --> navigation
+NavComponents <.. Pathfinding
+NavComponents <.. RandomTarget
+
+package graphics {
+  class Render
+  class Input
+  class Overlays
+  class SimLoop
+  class SimRender
+  class Stats
+}
+Lib --> graphics
+Render <.. SimLoop
+Input <.. SimLoop
+Overlays <.. SimLoop
+SimRender <.. SimLoop
+Stats <.. SimLoop
+
+package ecs_simulation {
+  class ECSSimulation
+}
+Lib --> ecs_simulation
+ECSSimulation --> AgentSystems
+ECSSimulation --> FoodSystems
+ECSSimulation --> Pathfinding
+ECSSimulation --> SimLoop
+
+package terrain {
+  class TerrainGenerator
+  class TerrainTypes
+}
+Lib --> terrain
+
+package other {
+  class Map
+  class Interaction
+  class Util
+  class ECSHello
+  class ECSComponents
+  class ECSSim
+  class SimSummary
+  class EventLog
+  class LogConfig
+  class RenderAscii
+}
+Lib --> other
+
+' Logging and summary
+ECSSimulation --> EventLog
+ECSSimulation --> SimSummary
+@enduml
