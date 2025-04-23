@@ -6,6 +6,7 @@ use crate::agent::{AgentType, MovementProfile};
 use crate::agent::systems::spawn_agent;
 use log::debug;
 use std::collections::HashMap;
+use rand::Rng;
 
 pub fn run_ecs_sim() {
     let mut world = World::default();
@@ -51,7 +52,9 @@ pub fn run_ecs_sim() {
     // Spawn some food
     for i in 0..3 {
         let pos = Position { x: i as f32, y: 2.0 };
-        spawn_food(&mut world, pos);
+        // Use ECS world directly (not CommandBuffer) for this minimal example
+        let nutrition = rand::thread_rng().gen_range(5.0..=10.0);
+        world.push((pos, crate::food::Food { nutrition }));
     }
     // --- Example system: Print all entities and their positions ---
     let mut schedule = Schedule::builder()

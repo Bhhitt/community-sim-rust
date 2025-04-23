@@ -1,12 +1,11 @@
 //! Shared ECS simulation tick for both headless and GUI modes, with profiling support.
 use legion::*;
 use crate::ecs_components::*;
-use legion::systems::Runnable;
-use crate::food::{collect_food_positions_system, collect_food_spawn_positions_system, food_spawn_apply_system};
 use legion::Schedule;
-use log;
-use crate::agent::{agent_movement_system, agent_death_system, AgentType, Hunger, Energy};
-use crate::navigation::{Target, Path};
+use crate::food::{collect_food_positions_system, collect_food_spawn_positions_system, food_spawn_apply_system};
+use crate::agent::{agent_movement_system, agent_death_system};
+
+/// All unused imports removed for a clean build
 
 #[derive(Debug, Clone, Default)]
 pub struct SystemProfile {
@@ -92,50 +91,6 @@ pub fn simulation_tick_parallel(world: &mut World, resources: &mut Resources, sc
     let t = std::time::Instant::now();
     schedule.execute(world, resources);
     profile.agent_movement = t.elapsed().as_secs_f64();
-    profile
-}
-
-pub fn simulation_tick_profiled(
-    world: &mut legion::World,
-    resources: &mut legion::Resources,
-    agent_movement: &mut dyn Runnable,
-    entity_interaction: &mut dyn Runnable,
-    agent_death: &mut dyn Runnable,
-    food_spawn_collect: &mut dyn Runnable,
-    food_spawn_apply: &mut dyn Runnable,
-) -> SystemProfile {
-    use std::time::Instant;
-    let mut profile = SystemProfile::new();
-
-    log::debug!("[DEBUG] Running agent_movement");
-    // DEBUG: Check if Map resource is present
-    let has_map = resources.get::<crate::map::Map>().is_some();
-    log::debug!("[DEBUG] Map resource present before agent_movement: {}", has_map);
-    println!("[PROFILE] About to run agent_movement (count: {})", <(&mut crate::ecs_components::Position, &AgentType, &mut Hunger, &mut Energy, Option<&mut Target>, Option<&mut Path>)>::query().iter_mut(world).count());
-    let t = Instant::now();
-    agent_movement.run(world, resources);
-    profile.agent_movement = t.elapsed().as_secs_f64();
-
-    println!("[PROFILE] About to run entity_interaction (count: {})", <(legion::Entity, &crate::ecs_components::Position, &AgentType)>::query().iter(world).count());
-    let t = Instant::now();
-    entity_interaction.run(world, resources);
-    profile.entity_interaction = t.elapsed().as_secs_f64();
-
-    println!("[PROFILE] About to run agent_death (count: {})", <(legion::Entity, &Hunger, &Energy)>::query().iter(world).count());
-    let t = Instant::now();
-    agent_death.run(world, resources);
-    profile.agent_death = t.elapsed().as_secs_f64();
-
-    println!("[PROFILE] About to run food_spawn_collect (count: N/A)");
-    let t = Instant::now();
-    food_spawn_collect.run(world, resources);
-    profile.food_spawn_collect = t.elapsed().as_secs_f64();
-
-    println!("[PROFILE] About to run food_spawn_apply (count: N/A)");
-    let t = Instant::now();
-    food_spawn_apply.run(world, resources);
-    profile.food_spawn_apply = t.elapsed().as_secs_f64();
-
     profile
 }
 

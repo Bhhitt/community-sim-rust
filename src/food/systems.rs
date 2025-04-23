@@ -1,6 +1,6 @@
 use legion::*;
 use crate::food::components::*;
-use crate::ecs_components::{Position};
+use crate::ecs_components::{Position, FoodStats};
 use rand::Rng;
 
 pub fn collect_food_positions_system() -> impl systems::Runnable {
@@ -48,12 +48,13 @@ pub fn collect_food_spawn_positions_system() -> impl systems::Runnable {
 pub fn food_spawn_apply_system() -> impl systems::Runnable {
     SystemBuilder::new("FoodSpawnApplySystem")
         .write_resource::<PendingFoodSpawns>()
-        .build(|cmd, _world, pending, _| {
+        .write_resource::<FoodStats>()
+        .build(|cmd, _world, (pending, food_stats), _| {
             for (x, y) in pending.0.drain(..) {
-                cmd.push((
-                    Position { x, y },
-                    Food { nutrition: rand::thread_rng().gen_range(5.0..=10.0) }
-                ));
+                let pos = Position { x, y };
+                // food_stats is already a mutable reference to AtomicRefMut<FoodStats>
+                let stats_opt = Some(&mut **food_stats);
+                crate::ecs_components::spawn_food(cmd, pos, stats_opt);
             }
         })
 }

@@ -18,7 +18,7 @@ fn terrain_to_terrain_type(terrain: Terrain) -> TerrainType {
 struct Node {
     pub x: i32,
     pub y: i32,
-    pub cost: f32,
+    pub cost: f32, // Note: 'cost' is currently unused but kept for future extensions.
     pub est_total: f32,
 }
 

@@ -7,6 +7,7 @@ use crate::event_log::EventLog;
 use crate::map::Map;
 use legion::*;
 use rand::Rng;
+use rand::seq::SliceRandom;
 use std::collections::VecDeque;
 
 pub fn spawn_agent(world: &mut legion::World, pos: crate::ecs_components::Position, agent_type: crate::agent::components::AgentType, map: &crate::map::Map) -> legion::Entity {
@@ -24,7 +25,6 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
         .read_resource::<FoodPositions>()
         .write_resource::<EventLog>()
         .build(|_, world, (map, food_positions, event_log), query| {
-            use rand::seq::SliceRandom;
             let mut rng = rand::thread_rng();
             let hunger_threshold = 50.0; // Below this, agents seek food
             // Collect agent positions and entities for interaction targeting
@@ -58,10 +58,8 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                         // Take a small random step (±1 or ±2)
                         let dx = rng.gen_range(-2.0..=2.0);
                         let dy = rng.gen_range(-2.0..=2.0);
-                        let map_w = map.width as f32;
-                        let map_h = map.height as f32;
-                        pos.x = (pos.x + dx).clamp(0.0, map_w - 1.0);
-                        pos.y = (pos.y + dy).clamp(0.0, map_h - 1.0);
+                        pos.x = (pos.x + dx).clamp(0.0, map.width as f32 - 1.0);
+                        pos.y = (pos.y + dy).clamp(0.0, map.height as f32 - 1.0);
                         interaction.cooldown -= 1;
                         event_log.push(format!("[IDLE-WANDER] Agent at ({:.2}, {:.2}) wanders while idling ({} steps left)", pos.x, pos.y, interaction.cooldown));
                         // Skip the rest of the logic for this tick
@@ -71,7 +69,6 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
 
                 // If arrived, pick next action based on hunger, avoid recent partners
                 if arrived {
-                    use rand::seq::SliceRandom;
                     let mut possible_actions = Vec::new();
                     let food_positions = &food_positions.0;
                     // Option 1: Seek food if hungry and food exists, and food is at least 10 away
@@ -100,8 +97,6 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
                         possible_actions.push("seek_agent");
                     }
                     // Option 3: Wander (random point at least 10 away)
-                    let map_w = map.width as f32;
-                    let map_h = map.height as f32;
                     possible_actions.push("wander");
                     // Option 4: Idle (do nothing for 2-75 steps)
                     possible_actions.push("idle");

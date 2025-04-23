@@ -8,13 +8,11 @@ use std::io::Write;
 use serde_yaml;
 use legion::IntoQuery;
 use rand::Rng;
-use crate::food::{PendingFoodSpawns, collect_food_spawn_positions_system, food_spawn_apply_system, Food};
+use crate::food::{PendingFoodSpawns, Food};
 use legion::{World, Resources};
-use crate::ecs_simulation::{simulation_tick, render_simulation_ascii, build_simulation_schedule, simulation_tick_profiled};
+use crate::ecs_simulation::{simulation_tick, render_simulation_ascii, build_simulation_schedule};
 use log;
 use std::collections::VecDeque;
-use crate::agent::systems::{agent_movement_system, agent_death_system};
-use crate::ecs_components::{entity_interaction_system};
 use crate::log_config::LogConfig;
 
 fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) -> (f64, f64, f64) {
@@ -106,28 +104,19 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     resources.insert(map.clone());
     resources.insert(PendingFoodSpawns(VecDeque::new()));
     resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
-    // Build individual systems for profiling
-    let mut agent_movement = agent_movement_system();
-    let mut entity_interaction = entity_interaction_system();
-    let mut agent_death = agent_death_system();
-    let mut food_spawn_collect = collect_food_spawn_positions_system();
-    let mut food_spawn_apply = food_spawn_apply_system();
     if profile_systems {
         let mut csv_file = File::create(profile_csv).expect("Failed to create csv file");
         writeln!(csv_file, "tick,agent_movement,entity_interaction,agent_death,food_spawn_collect,food_spawn_apply").unwrap();
         let mut sum_profile = crate::ecs_simulation::SystemProfile::new();
         let mut min_profile: Option<crate::ecs_simulation::SystemProfile> = None;
         let mut max_profile: Option<crate::ecs_simulation::SystemProfile> = None;
+        let mut schedule = build_simulation_schedule();
         for tick in 0..ticks {
             log::debug!("Tick {}", tick);
-            let profile = simulation_tick_profiled(
+            let profile = simulation_tick(
                 &mut world,
                 &mut resources,
-                &mut agent_movement,
-                &mut entity_interaction,
-                &mut agent_death,
-                &mut food_spawn_collect,
-                &mut food_spawn_apply,
+                &mut schedule,
             );
             writeln!(csv_file, "{}{}{}", tick, if tick == 0 { "," } else { "," }, profile.to_csv_row()).unwrap();
             log::debug!("[PROFILE] agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
