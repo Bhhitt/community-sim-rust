@@ -10,7 +10,7 @@ use legion::IntoQuery;
 use rand::Rng;
 use crate::food::{PendingFoodSpawns, Food};
 use legion::{World, Resources};
-use crate::ecs_simulation::{simulation_tick, build_simulation_schedule};
+use crate::ecs_simulation::{simulation_tick, build_simulation_schedule_profiled};
 use log;
 use std::collections::VecDeque;
 use crate::log_config::LogConfig;
@@ -116,7 +116,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         let mut sum_profile = crate::ecs_simulation::SystemProfile::new();
         let mut min_profile: Option<crate::ecs_simulation::SystemProfile> = None;
         let mut max_profile: Option<crate::ecs_simulation::SystemProfile> = None;
-        let mut schedule = build_simulation_schedule();
+        let mut schedule = build_simulation_schedule_profiled();
         for tick in 0..ticks {
             log::debug!("Tick {}", tick);
             let profile = simulation_tick(
@@ -171,11 +171,15 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 max.agent_movement, max.entity_interaction, max.agent_death, max.food_spawn_collect, max.food_spawn_apply);
         }
     } else {
-        let mut schedule = build_simulation_schedule();
+        let mut schedule = build_simulation_schedule_profiled();
         let mut last_ascii = String::new();
         for tick in 0..ticks {
             log::debug!("Tick {}", tick);
-            simulation_tick(&mut world, &mut resources, &mut schedule);
+            simulation_tick(
+                &mut world,
+                &mut resources,
+                &mut schedule,
+            );
             // Generate ASCII snapshot at each tick (optional, but we'll save the last)
             last_ascii = render_simulation_ascii(&world, &map);
             // Optionally print: println!("{}", last_ascii);

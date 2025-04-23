@@ -14,17 +14,17 @@
   map_size: 400
   num_agents: 1000
   ticks: 10
-- name: 500x
-  map_size: 2000
-  num_agents: 10000
-  ticks: 10
-- name: big_run
-  map_size: 4000
-  num_agents: 20000
-  ticks: 10
+#- name: 500x
+#  map_size: 2000
+#  num_agents: 10000
+#  ticks: 10
+#- name: big_run
+#  map_size: 4000
+#  num_agents: 20000
+#  ticks: 10
 - name: extra_run
-  map_size: 1333
-  num_agents: 6667
+  map_size: 666
+  num_agents: 3333
   ticks: 10
 - name: base_run
   map_width: 1200

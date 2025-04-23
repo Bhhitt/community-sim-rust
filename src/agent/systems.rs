@@ -9,6 +9,7 @@ use crate::map::Map;
 use legion::*;
 use rand::seq::SliceRandom;
 use std::collections::VecDeque;
+use std::time::Instant;
 
 pub fn spawn_agent(world: &mut legion::World, pos: crate::ecs_components::Position, agent_type: crate::agent::components::AgentType, map: &crate::map::Map) -> legion::Entity {
     let _color = agent_type.color.clone();
@@ -36,11 +37,18 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
         .read_resource::<Map>()
         .write_resource::<EventLog>()
         .build(|_, world, (_map, event_log), query| {
+            use std::time::Instant;
+            let total_start = Instant::now();
+            let mut move_time = 0.0;
+            let mut waypoint_time = 0.0;
+            let mut snap_time = 0.0;
             for (entity, pos, agent_type, hunger, _energy, maybe_target, mut maybe_path, agent_state) in query.iter_mut(world) {
+                let move_start = Instant::now();
                 match *agent_state {
                     AgentState::Moving => {
                         if let (Some(target), Some(path)) = (maybe_target.as_ref(), maybe_path.as_mut()) {
                             if let Some(next_wp) = path.waypoints.front() {
+                                let wp_start = Instant::now();
                                 let dx = next_wp.0 - pos.x;
                                 let dy = next_wp.1 - pos.y;
                                 let dist = (dx * dx + dy * dy).sqrt();
@@ -59,7 +67,9 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
                                     hunger.value -= 0.01 * step;
                                     event_log.push(format!("[MOVE] Agent {:?} moved to ({:.2}, {:.2}) via path", entity, pos.x, pos.y));
                                 }
+                                waypoint_time += wp_start.elapsed().as_secs_f64();
                             } else {
+                                let snap_start = Instant::now();
                                 // No waypoints left, snap to target if close
                                 let dx = target.x - pos.x;
                                 let dy = target.y - pos.y;
@@ -70,12 +80,16 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
                                     *agent_state = AgentState::Arrived;
                                     event_log.push(format!("[ARRIVE] Agent {:?} arrived at ({:.2}, {:.2}) [no waypoints]", entity, pos.x, pos.y));
                                 }
+                                snap_time += snap_start.elapsed().as_secs_f64();
                             }
                         }
                     }
                     _ => {}
                 }
+                move_time += move_start.elapsed().as_secs_f64();
             }
+            let total_elapsed = total_start.elapsed().as_secs_f64();
+            log::info!("[PROFILE][PATH_FOLLOW] total: {:.6} move: {:.6} waypoints: {:.6} snap: {:.6}", total_elapsed, move_time, waypoint_time, snap_time);
         })
 }
 

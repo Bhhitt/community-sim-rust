@@ -81,11 +81,72 @@ pub fn build_simulation_schedule_parallel() -> Schedule {
 
 /// Advances the simulation by one tick, running all ECS systems in order and profiling their execution time.
 pub fn simulation_tick(world: &mut World, resources: &mut Resources, schedule: &mut Schedule) -> SystemProfile {
-    let mut profile = SystemProfile::new();
-    let t = std::time::Instant::now();
+    // Insert a new SystemProfile resource for this tick
+    resources.insert(SystemProfile::new());
     schedule.execute(world, resources);
-    profile.agent_movement = t.elapsed().as_secs_f64();
-    profile
+    // Extract the profile after all systems have run
+    resources.remove::<SystemProfile>().unwrap_or_default()
+}
+
+/// Builds a Legion Schedule containing all ECS systems in the correct order, with per-system profiling.
+pub fn build_simulation_schedule_profiled() -> Schedule {
+    Schedule::builder()
+        .add_system(SystemBuilder::new("CollectFoodPositionsProfiled")
+            .write_resource::<SystemProfile>()
+            .write_resource::<crate::ecs_components::FoodPositions>()
+            .with_query(<(&crate::ecs_components::Position, &crate::food::Food)>::query())
+            .build(|_, world, (profile, food_positions), query| {
+                let t = std::time::Instant::now();
+                let mut positions = Vec::new();
+                for (pos, _food) in query.iter(world) {
+                    positions.push((pos.x, pos.y));
+                }
+                food_positions.0 = positions;
+                profile.food_spawn_collect = t.elapsed().as_secs_f64();
+            })
+        )
+        .add_system(SystemBuilder::new("PathFollowingProfiled")
+            .write_resource::<SystemProfile>()
+            .read_resource::<crate::map::Map>()
+            .write_resource::<crate::event_log::EventLog>()
+            .with_query(<(Entity, &mut crate::ecs_components::Position, &crate::agent::components::AgentType, &mut crate::agent::components::Hunger, &mut crate::agent::components::Energy, Option<&mut crate::navigation::Target>, Option<&mut crate::navigation::Path>, &mut crate::agent::components::AgentState)>::query())
+            .build(|_, world, (profile, map, event_log), query| {
+                let t = std::time::Instant::now();
+                // Inline path_following_system logic here (or call a helper)
+                for (entity, pos, agent_type, hunger, _energy, maybe_target, mut maybe_path, agent_state) in query.iter_mut(world) {
+                    match *agent_state {
+                        crate::agent::components::AgentState::Moving => {
+                            if let (Some(target), Some(path)) = (maybe_target.as_ref(), maybe_path.as_mut()) {
+                                if let Some(next_wp) = path.waypoints.front() {
+                                    let dx = next_wp.0 - pos.x;
+                                    let dy = next_wp.1 - pos.y;
+                                    let dist = (dx * dx + dy * dy).sqrt();
+                                    let step = agent_type.move_speed.min(dist);
+                                    if dist < 0.2 {
+                                        path.waypoints.pop_front();
+                                        if path.waypoints.is_empty() {
+                                            pos.x = target.x;
+                                            pos.y = target.y;
+                                            *agent_state = crate::agent::components::AgentState::Arrived;
+                                            event_log.push(format!("[ARRIVE] Agent {:?} arrived at ({:.2}, {:.2})", entity, pos.x, pos.y));
+                                        }
+                                    } else {
+                                        pos.x += dx / dist * step;
+                                        pos.y += dy / dist * step;
+                                        hunger.value -= 0.01 * step;
+                                        event_log.push(format!("[MOVE] Agent {:?} moved to ({:.2}, {:.2}) via path", entity, pos.x, pos.y));
+                                    }
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                profile.agent_movement = t.elapsed().as_secs_f64();
+            })
+        )
+        // Repeat for other systems, inlining or calling their logic and timing as above
+        .build()
 }
 
 /// Advances the simulation by one tick, running all ECS systems in parallel where possible.
