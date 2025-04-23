@@ -13,8 +13,10 @@ use crate::graphics::render::terrain::draw_terrain;
 use crate::graphics::render::food_system::food_render;
 use crate::graphics::render::agent_system::agent_render;
 use crate::graphics::render::selected_agent_path_system::selected_agent_path_render;
+use crate::graphics::render::stats_system::stats_window_render;
 use crate::graphics::render::overlays::draw_stats_window;
 use crate::graphics::sim_state::SimUIState;
+use crate::graphics::render::event_log_system::event_log_window_render;
 use legion::systems::Runnable;
 
 pub fn init_sdl2(
@@ -131,10 +133,17 @@ pub fn main_sim_loop(
         }
         // --- Render Event Log Window ---
         if let Some(event_log) = sim_ui_state.resources.get::<crate::event_log::EventLog>() {
-            crate::graphics::overlays::draw_event_log_window(
+            // crate::graphics::overlays::draw_event_log_window(
+            //     log_canvas,
+            //     sim_ui_state.font,
+            //     &event_log,
+            //     log_config.interact,
+            // );
+            // --- ECS event log window rendering (plain function) ---
+            event_log_window_render(
+                &event_log,
                 log_canvas,
                 sim_ui_state.font,
-                &event_log,
                 log_config.interact,
             );
         }
@@ -190,13 +199,23 @@ pub fn main_sim_loop(
             log::info!("[STATS] Window size: {}x{}", stats_w, stats_h);
         }
         let interaction_stats = resources.get::<crate::ecs_components::InteractionStats>();
-        draw_stats_window(
+        // draw_stats_window(
+        //     stats_canvas,
+        //     font,
+        //     &cached_agent_counts[..],
+        //     interaction_stats.as_ref().map(|v| &**v),
+        //     *selected_agent,
+        //     world,
+        //     log_config.stats,
+        // );
+        // --- ECS stats window rendering (plain function) ---
+        stats_window_render(
+            world,
             stats_canvas,
             font,
             &cached_agent_counts[..],
             interaction_stats.as_ref().map(|v| &**v),
             *selected_agent,
-            world,
             log_config.stats,
         );
         log::debug!("[DEBUG] About to present stats canvas");
