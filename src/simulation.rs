@@ -10,10 +10,11 @@ use legion::IntoQuery;
 use rand::Rng;
 use crate::food::{PendingFoodSpawns, Food};
 use legion::{World, Resources};
-use crate::ecs_simulation::{simulation_tick, render_simulation_ascii, build_simulation_schedule};
+use crate::ecs_simulation::{simulation_tick, build_simulation_schedule};
 use log;
 use std::collections::VecDeque;
 use crate::log_config::LogConfig;
+use crate::render_ascii::render_simulation_ascii;
 
 fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) -> (f64, f64, f64) {
     log::info!("[TEST] Entered run_simulation");
@@ -126,7 +127,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
             writeln!(csv_file, "{}{}{}", tick, if tick == 0 { "," } else { "," }, profile.to_csv_row()).unwrap();
             // Optionally render ASCII after ECS update
             if profile_systems {
-                let ascii = crate::ecs_simulation::render_simulation_ascii(&world, &map);
+                let ascii = render_simulation_ascii(&world, &map);
                 println!("ASCII after tick {}:\n{}", tick, ascii);
             }
             log::debug!("[PROFILE] agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 

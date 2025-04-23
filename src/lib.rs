@@ -16,3 +16,4 @@ pub use food::{collect_food_positions_system, collect_food_spawn_positions_syste
 pub mod sim_summary;
 pub mod event_log;
 pub mod log_config;
+pub mod render_ascii;

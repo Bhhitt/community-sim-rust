@@ -4,6 +4,7 @@ use crate::agent::AgentType;
 use legion::Resources;
 use std::collections::HashMap;
 use std::io::Write;
+use crate::render_ascii;
 
 /// Writes a simulation summary and ASCII snapshot to the given file path.
 pub fn write_simulation_summary_and_ascii(
@@ -31,7 +32,7 @@ pub fn write_simulation_summary_and_ascii(
         summary.push_str(&format!("  {}: {}\n", name, count));
     }
     summary.push_str("\n");
-    let ascii_snapshot = crate::ecs_simulation::render_simulation_ascii(world, map);
+    let ascii_snapshot = render_ascii::render_simulation_ascii(world, map);
     let mut file = std::fs::File::create(output_path).expect("Unable to create ascii output file");
     file.write_all(summary.as_bytes()).expect("Unable to write summary");
     file.write_all(ascii_snapshot.as_bytes()).expect("Unable to write ascii output");
