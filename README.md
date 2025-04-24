@@ -81,6 +81,15 @@ cargo test
 ```
 Tests are located in the `tests/` directory and within modules using Rust's `#[cfg(test)]` attribute. These cover core agent logic, ECS systems, and simulation behaviors.
 
+## Continuous Integration (CI) and Testing
+
+- The test suite includes a **smoke test for the benchmarking script** (`tests/benchmark_smoke_test.rs`). This test runs `benchmark/run_benchmarks.sh --benchmark-profiles` and verifies that a results CSV is generated.
+- To avoid file conflicts, run tests with a single thread:
+  ```sh
+  cargo test -- --test-threads=1
+  ```
+- Ensure your environment has permissions to execute shell scripts and write to the `benchmark/results/` directory.
+
 ## Running with Different Profiles
 
 Simulation profiles allow you to quickly launch scenarios with different map sizes, agent counts, and tick counts. Profiles are defined in `config/sim_profiles.yaml`.
@@ -117,6 +126,7 @@ The `benchmark/` directory contains scripts and tools for running simulation ben
     ./benchmark/run_benchmarks.sh --benchmark-profiles
     ```
   - Results are saved to `benchmark/results/benchmark_profiles.csv`.
+  - A smoke test in the test suite verifies this script runs and produces a results file.
 
 - **Scaling benchmarks:**
   - Run with:
