@@ -1,4 +1,5 @@
 use crate::agent::{AgentType, MovementProfile, MovementEffect, DecisionEngineConfig};
+use crate::agent::mlp::MLPConfig;
 use std::fs::File;
 use std::io::Read;
 
@@ -43,11 +44,31 @@ pub fn load_agent_types(path: &str) -> Vec<AgentType> {
             _ => MovementEffect::None,
         };
         let movement_profile = MovementProfile { speed, effect };
+        // --- DecisionEngineConfig: parse from YAML ---
+        let decision_engine = if let Some(decision_engine_val) = raw.get("decision_engine") {
+            if decision_engine_val.is_null() {
+                DecisionEngineConfig::Simple
+            } else if let Some(s) = decision_engine_val.as_str() {
+                match s {
+                    "Simple" => DecisionEngineConfig::Simple,
+                    _ => DecisionEngineConfig::Simple,
+                }
+            } else if decision_engine_val.is_mapping() {
+                // Try to parse as MLPConfig (tagged or tagless)
+                serde_yaml::from_value::<MLPConfig>(decision_engine_val.clone())
+                    .map(DecisionEngineConfig::MLP)
+                    .unwrap_or(DecisionEngineConfig::Simple)
+            } else {
+                DecisionEngineConfig::Simple
+            }
+        } else {
+            DecisionEngineConfig::Simple
+        };
         AgentType {
             name,
             color,
             movement_profile,
-            decision_engine: DecisionEngineConfig::Simple, 
+            decision_engine,
         }
     }).collect()
 }

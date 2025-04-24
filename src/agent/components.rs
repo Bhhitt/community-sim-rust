@@ -4,6 +4,12 @@ use std::collections::VecDeque;
 use crate::agent::mlp::MLPConfig;
 
 pub mod agent_state;
+/// Represents the state of an agent in the simulation.
+///
+/// - `Idle`: Agent is idle and not moving.
+/// - `Moving`: Agent is moving on land.
+/// - `Arrived`: Agent has reached its destination.
+/// - `Swimming`: Agent is in water and can move through water tiles. Only agents in this state can traverse water.
 pub use agent_state::AgentState;
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]

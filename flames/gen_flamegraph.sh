@@ -15,7 +15,8 @@ mkdir -p "$OUTDIR"
 
 # Run the simulation under perf, collapse stacks, and generate SVG with inferno
 perf record -F 99 -g -- cargo run --release -- --profile "$PROFILE_NAME" $EXTRA_ARGS
-perf script | inferno-collapse-perf > "$FOLDED_OUT"
+# Filter out Rayon and Tokio runtime frames
+perf script | inferno-collapse-perf --filter 'rayon|tokio|tokio_runtime|rayon_core' > "$FOLDED_OUT"
 inferno-flamegraph "$FOLDED_OUT" > "$SVG_OUT"
 
 if [ $? -eq 0 ]; then

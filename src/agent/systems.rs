@@ -118,6 +118,19 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                             possible_actions.push(("seek_food", *fx, *fy));
                         }
                     }
+                    // --- Swimming logic: allow swimming if idle and adjacent to water ---
+                    let map = &resources.0;
+                    let adj = [(-1,0),(1,0),(0,-1),(0,1)];
+                    for (dx, dy) in adj.iter() {
+                        let nx = pos.x as i32 + dx;
+                        let ny = pos.y as i32 + dy;
+                        if nx >= 0 && ny >= 0 && nx < map.width && ny < map.height {
+                            if let crate::map::Terrain::Water = map.tiles[ny as usize][nx as usize] {
+                                possible_actions.push(("swim", nx as f32, ny as f32));
+                                break;
+                            }
+                        }
+                    }
                     if let Some((action, ax, ay)) = possible_actions.choose(&mut rng) {
                         match *action {
                             "seek_food" => {
@@ -128,7 +141,7 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                                         resources.2.push(format!("[TARGET][MLP] Agent {:?} seeks food at ({:.2}, {:.2})", entity, ax, ay));
                                     }
                                     if let Some(ref mut path) = maybe_path.as_mut() {
-                                        if let Some(astar_path) = pathfinding::a_star_path(&resources.0, agent_type, (pos.x as i32, pos.y as i32), (*ax as i32, *ay as i32), 120) {
+                                        if let Some(astar_path) = pathfinding::a_star_path(&resources.0, agent_type, agent_state, (pos.x as i32, pos.y as i32), (*ax as i32, *ay as i32), 120) {
                                             path.waypoints = astar_path.into_iter().collect();
                                             if !log_config.quiet {
                                                 resources.2.push(format!("[PATHFIND] Path assigned: {} waypoints", path.waypoints.len()));
@@ -143,6 +156,15 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                                     }
                                 }
                             }
+                            "swim" => {
+                                // Set state to Swimming and move agent into water
+                                pos.x = *ax;
+                                pos.y = *ay;
+                                *agent_state = crate::agent::AgentState::Swimming;
+                                if !log_config.quiet {
+                                    resources.2.push(format!("[SWIM] Agent {:?} starts swimming at ({:.2}, {:.2})", entity, ax, ay));
+                                }
+                            }
                             _ => {}
                         }
                     } else {
@@ -155,7 +177,7 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                                 resources.2.push(format!("[TARGET] Agent {:?} wanders to ({:.2}, {:.2}) [local 120 units]", entity, rx, ry));
                             }
                             if let Some(ref mut path) = maybe_path.as_mut() {
-                                if let Some(astar_path) = pathfinding::a_star_path(&resources.0, agent_type, (pos.x as i32, pos.y as i32), (rx as i32, ry as i32), 120) {
+                                if let Some(astar_path) = pathfinding::a_star_path(&resources.0, agent_type, agent_state, (pos.x as i32, pos.y as i32), (rx as i32, ry as i32), 120) {
                                     path.waypoints = astar_path.into_iter().collect();
                                     if !log_config.quiet {
                                         resources.2.push(format!("[PATHFIND] Path assigned: {} waypoints", path.waypoints.len()));

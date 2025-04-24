@@ -89,13 +89,82 @@ impl Map {
         ascii
     }
 
-    pub fn is_passable(&self, x: i32, y: i32) -> bool {
+    /// Checks if a tile at (x, y) is passable for an agent, taking into account the agent's state.
+    ///
+    /// - Water tiles are only passable if the agent is in the `Swimming` state.
+    /// - Mountain tiles are never passable.
+    /// - All other tiles are passable for any agent state.
+    ///
+    /// # Arguments
+    /// * `x` - X coordinate of the tile.
+    /// * `y` - Y coordinate of the tile.
+    /// * `agent_state` - Optional reference to the agent's state.
+    ///
+    /// # Returns
+    /// * `true` if the tile is passable for the agent, `false` otherwise.
+    ///
+    /// # Example
+    /// ```
+    /// use community_sim::map::{Map, Terrain};
+    /// use community_sim::agent::components::AgentState;
+    /// let map = Map { width: 1, height: 1, tiles: vec![vec![Terrain::Water]] };
+    /// assert_eq!(map.is_passable(0, 0, Some(&AgentState::Swimming)), true);
+    /// assert_eq!(map.is_passable(0, 0, Some(&AgentState::Idle)), false);
+    /// ```
+    pub fn is_passable(&self, x: i32, y: i32, agent_state: Option<&crate::agent::components::AgentState>) -> bool {
         if x < 0 || y < 0 || x >= self.width || y >= self.height {
             return false;
         }
         match self.tiles[y as usize][x as usize] {
-            Terrain::Water | Terrain::Mountain => false,
+            Terrain::Water => {
+                if let Some(crate::agent::components::AgentState::Swimming) = agent_state {
+                    true // Water is passable if agent is swimming
+                } else {
+                    false // Otherwise, water is impassable
+                }
+            },
+            Terrain::Mountain => false,
             _ => true,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::agent::components::AgentState;
+
+    #[test]
+    fn test_water_passable_only_when_swimming() {
+        let map = Map {
+            width: 3,
+            height: 3,
+            tiles: vec![
+                vec![Terrain::Grass, Terrain::Water, Terrain::Grass],
+                vec![Terrain::Grass, Terrain::Water, Terrain::Grass],
+                vec![Terrain::Grass, Terrain::Water, Terrain::Grass],
+            ],
+        };
+        // Water tile at (1, 1)
+        // Passable for Swimming
+        assert_eq!(map.is_passable(1, 1, Some(&AgentState::Swimming)), true);
+        // Not passable for Idle
+        assert_eq!(map.is_passable(1, 1, Some(&AgentState::Idle)), false);
+        // Not passable for Moving
+        assert_eq!(map.is_passable(1, 1, Some(&AgentState::Moving)), false);
+        // Not passable for Arrived
+        assert_eq!(map.is_passable(1, 1, Some(&AgentState::Arrived)), false);
+        // Not passable for None
+        assert_eq!(map.is_passable(1, 1, None), false);
+        // Grass always passable
+        assert_eq!(map.is_passable(0, 0, Some(&AgentState::Idle)), true);
+        assert_eq!(map.is_passable(0, 0, Some(&AgentState::Swimming)), true);
+        // Mountain never passable
+        let map2 = Map {
+            width: 1,
+            height: 1,
+            tiles: vec![vec![Terrain::Mountain]],
+        };
+        assert_eq!(map2.is_passable(0, 0, Some(&AgentState::Swimming)), false);
     }
 }

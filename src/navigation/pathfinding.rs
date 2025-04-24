@@ -1,4 +1,4 @@
-use crate::agent::{AgentType, MovementEffect};
+use crate::agent::{AgentType, MovementEffect, AgentState};
 use crate::map::{Map, Terrain};
 use crate::terrain::types::TerrainType;
 use std::collections::{BinaryHeap, HashMap};
@@ -42,7 +42,14 @@ impl Ord for Node {
     }
 }
 
-pub fn a_star_path(map: &Map, agent_type: &AgentType, start: (i32, i32), goal: (i32, i32), max_distance: i32) -> Option<Vec<(f32, f32)>> {
+pub fn a_star_path(
+    map: &Map,
+    agent_type: &AgentType,
+    agent_state: &AgentState,
+    start: (i32, i32),
+    goal: (i32, i32),
+    max_distance: i32
+) -> Option<Vec<(f32, f32)>> {
     let mut open = BinaryHeap::new();
     let mut came_from: HashMap<(i32, i32), (i32, i32)> = HashMap::new();
     let mut g_score: HashMap<(i32, i32), f32> = HashMap::new();
@@ -71,6 +78,10 @@ pub fn a_star_path(map: &Map, agent_type: &AgentType, start: (i32, i32), goal: (
             let nx = x + dx;
             let ny = y + dy;
             if nx < 0 || ny < 0 || nx >= map.width || ny >= map.height {
+                continue;
+            }
+            // Use is_passable with agent_state
+            if !map.is_passable(nx, ny, Some(agent_state)) {
                 continue;
             }
             let terrain = map.tiles[ny as usize][nx as usize];

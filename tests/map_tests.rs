@@ -1,4 +1,5 @@
 use community_sim::map::{Map, Terrain};
+use community_sim::agent::components::AgentState;
 
 #[test]
 fn test_map_creation() {
@@ -15,7 +16,7 @@ fn test_map_is_passable() {
     for y in 0..5 {
         for x in 0..5 {
             // Should not panic, all tiles are valid
-            let _ = map.is_passable(x, y);
+            let _ = map.is_passable(x, y, Some(&AgentState::Idle));
         }
     }
 }
