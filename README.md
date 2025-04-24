@@ -7,8 +7,9 @@ A scalable community simulation written in Rust, featuring agents that interact 
 - **Agents:** Move across the map, interact with each other, and respect terrain passability
 - **ASCII Rendering:** Visualize the map and agent positions in the terminal or as text files
 - **Parallel Simulation:** Uses Rayon for efficient agent updates and interactions
-- **Configurable:** Map size, agent count, and ticks are all settable via CLI
+- **Configurable:** Map size, agent count, and ticks are all settable via CLI or YAML profiles
 - **Performance Metrics:** Reports timings for movement, interaction, and total simulation
+- **Benchmarking:** Flexible benchmarking system driven by YAML profiles (see `benchmark/` directory)
 - **Testing:** Includes unit tests for agents and interactions
 
 ## Installation & Setup
@@ -45,7 +46,6 @@ cargo run -- --headless --map-size 40 --agents 20 --ticks 20
 cargo run --release -- --profile=med_run
 ```
 
-
 ### Run Tests
 ```sh
 cargo test
@@ -58,7 +58,7 @@ cargo test
 - `src/simulation.rs` — Simulation loop and scaling
 - `src/graphics.rs` — (Stub) for future graphical rendering
 - `tests/` — Unit and integration tests
-
+- `benchmark/` — Scripts and tools for benchmarking (see below)
 
 ## Controls (GUI Mode)
 
@@ -83,7 +83,7 @@ Tests are located in the `tests/` directory and within modules using Rust's `#[c
 
 ## Running with Different Profiles
 
-Simulation profiles allow you to quickly launch scenarios with different map sizes, agent counts, and tick counts. Profiles are defined in `sim_profiles.yaml`.
+Simulation profiles allow you to quickly launch scenarios with different map sizes, agent counts, and tick counts. Profiles are defined in `config/sim_profiles.yaml`.
 
 To run with a specific profile (with graphics):
 ```sh
@@ -93,7 +93,7 @@ Replace `<profile_name>` with the name of your desired profile (e.g., `small`, `
 
 To run all profiles in headless mode:
 ```sh
-cargo run --release -- --headless --profile-system
+cargo run --release -- --headless --profile-systems
 ```
 
 You can also specify map size, agent count, and ticks directly:
@@ -101,15 +101,37 @@ You can also specify map size, agent count, and ticks directly:
 cargo run --release -- --map-size 40 --agents 20 --ticks 20
 ```
 
-What i run most of the time
+What I run most of the time:
 ```sh
 cargo run --release -- --profile=med_run
 ```
+
+## Benchmarking (YAML-driven and Scaling Benchmarks)
+
+The `benchmark/` directory contains scripts and tools for running simulation benchmarks.
+
+- **YAML-driven benchmarks:**
+  - Mark any profile in `config/sim_profiles.yaml` with `benchmark: true`.
+  - Run all such profiles with:
+    ```sh
+    ./benchmark/run_benchmarks.sh --benchmark-profiles
+    ```
+  - Results are saved to `benchmark/results/benchmark_profiles.csv`.
+
+- **Scaling benchmarks:**
+  - Run with:
+    ```sh
+    ./benchmark/run_benchmarks.sh --scale
+    ```
+  - Uses built-in scaling profiles for performance comparison.
+
+- All benchmarking scripts are designed for headless mode and can be customized.
 
 ## Additional CLI Options
 
 - `--headless` : Run simulation without graphics (for benchmarking)
 - `--scale` : scaling benchmark (takes like 2 mins on my machine)
+- `--benchmark-profiles` : run all YAML profiles marked with `benchmark: true`
 - `--log-level <level>` : Set logging level (`error`, `warn`, `info`, `debug`, `trace`)
 
 For a full list of options, run:
