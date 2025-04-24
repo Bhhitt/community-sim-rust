@@ -13,8 +13,15 @@
   num_agents: 100
   ticks: 10
   benchmark: true
+- name: 2k
+  map_width: 2000
+  map_height: 1200
+  num_agents: 2000
+  ticks: 100
+  benchmark: true
 - name: 50x
-  map_size: 400
+  map_width: 1200
+  map_height: 700
   num_agents: 1000
   ticks: 10
   benchmark: true
