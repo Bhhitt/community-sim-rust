@@ -3,8 +3,6 @@ use crate::graphics::sim_state::CachedStats;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::ttf::Font;
-use sdl2::rect::Rect;
-use sdl2::pixels::Color;
 
 /// Stats window rendering function
 pub fn stats_window_render(

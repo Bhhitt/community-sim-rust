@@ -6,18 +6,12 @@ use sdl2::EventPump;
 use std::time::Duration;
 use std::collections::HashMap;
 use log;
-use legion::{World, Resources, IntoQuery, systems::Runnable};
+use legion::{IntoQuery, systems::Runnable};
 
 use crate::graphics::camera::Camera;
 use crate::agent::AgentType;
 use crate::log_config::LogConfig;
 use crate::graphics::render::terrain::draw_terrain;
-use crate::graphics::render::food_system::food_render_system;
-use crate::graphics::render::agent_system::agent_render_system;
-use crate::graphics::render::selected_agent_path_system::selected_agent_path_render;
-use crate::graphics::render::stats_system::stats_window_render;
-use crate::graphics::render::event_log_system::event_log_window_render;
-use crate::graphics::render::overlays::empty_cell_flash_render;
 use crate::graphics::sim_state::SimUIState;
 use crate::event_log::EventLog;
 
@@ -181,7 +175,7 @@ pub fn main_sim_loop(
         // Now destructure sim_ui_state for rendering
         let SimUIState {
             world,
-            resources,
+            
             // schedule,
             camera,
             font,
