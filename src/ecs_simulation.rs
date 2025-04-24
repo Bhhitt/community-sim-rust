@@ -4,6 +4,7 @@ use crate::ecs_components::*;
 use legion::Schedule;
 use legion::IntoQuery;
 use crate::food::{collect_food_positions_system, Food};
+use crate::food::systems::{collect_food_spawn_positions_system, food_spawn_apply_system};
 use crate::agent::{AgentType, Hunger, Energy, AgentState, path_following_system, action_selection_system, agent_movement_history_system, agent_death_system};
 use crate::navigation::{Target, Path};
 
@@ -56,6 +57,8 @@ impl SystemProfile {
 pub fn build_simulation_schedule() -> Schedule {
     Schedule::builder()
         .add_system(collect_food_positions_system())
+        .add_system(collect_food_spawn_positions_system())
+        .add_system(food_spawn_apply_system())
         .add_system(path_following_system())
         .add_system(action_selection_system())
         .add_system(agent_movement_history_system())
@@ -69,6 +72,8 @@ pub fn build_simulation_schedule() -> Schedule {
 pub fn build_simulation_schedule_parallel() -> Schedule {
     Schedule::builder()
         .add_system(collect_food_positions_system())
+        .add_system(collect_food_spawn_positions_system())
+        .add_system(food_spawn_apply_system())
         .add_system(path_following_system())
         .add_system(action_selection_system())
         .add_system(agent_movement_history_system())
@@ -161,6 +166,8 @@ pub fn simulation_tick_parallel(world: &mut World, resources: &mut Resources, sc
 pub fn build_simulation_schedule_with_log() -> Schedule {
     Schedule::builder()
         .add_system(collect_food_positions_system())
+        .add_system(collect_food_spawn_positions_system())
+        .add_system(food_spawn_apply_system())
         .add_system(path_following_system())
         .add_system(action_selection_system())
         .add_system(agent_movement_history_system())

@@ -6,17 +6,18 @@ use sdl2::EventPump;
 use std::time::Duration;
 use std::collections::HashMap;
 use log;
-use legion::IntoQuery;
+use legion::{World, Resources, IntoQuery, systems::Runnable};
 
 use crate::graphics::camera::Camera;
 use crate::agent::AgentType;
 use crate::log_config::LogConfig;
 use crate::graphics::render::terrain::draw_terrain;
-use crate::graphics::render::food_system::food_render;
-use crate::graphics::render::agent_system::agent_render;
+use crate::graphics::render::food_system::food_render_system;
+use crate::graphics::render::agent_system::agent_render_system;
 use crate::graphics::render::selected_agent_path_system::selected_agent_path_render;
 use crate::graphics::render::stats_system::stats_window_render;
 use crate::graphics::render::event_log_system::event_log_window_render;
+use crate::graphics::render::overlays::empty_cell_flash_render;
 use crate::graphics::sim_state::SimUIState;
 use crate::event_log::EventLog;
 
@@ -140,15 +141,14 @@ pub fn main_sim_loop(
                 }
             }
         }
-        // --- Render Event Log Window ---
-        if let Some(event_log) = sim_ui_state.resources.get::<EventLog>() {
-            event_log_window_render(
-                &event_log,
-                log_canvas,
-                sim_ui_state.font,
-                log_config.interact,
-            );
-        }
+        // --- Event log window rendering ---
+        crate::graphics::render::event_log_system::event_log_window_render(
+            &sim_ui_state.world,
+            log_canvas,
+            sim_ui_state.font,
+            &sim_ui_state.resources.get::<EventLog>().unwrap(),
+            log_config.interact,
+        );
         // Handle events (refactored: collect input events into InputQueue)
         crate::graphics::input::collect_input_events(
             event_pump,
@@ -195,19 +195,45 @@ pub fn main_sim_loop(
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
         draw_terrain(canvas, render_map, camera.x, camera.y, cell_size);
-        // draw_food(canvas, world, camera.x, camera.y, cell_size, *selected_agent);
-        // --- ECS food rendering (plain function) ---
-        food_render(world, canvas, camera.x, camera.y, cell_size, *selected_agent);
+        // --- ECS food rendering system integration ---
+        crate::graphics::render::food_system::food_render_system(
+            world,
+            canvas,
+            camera.x,
+            camera.y,
+            cell_size,
+            *selected_agent,
+        );
         log::debug!("[DEBUG] sim_loop: selected_agent = {:?}", selected_agent);
-        // draw_selected_agent_path(canvas, world, *selected_agent, camera.x, camera.y, cell_size);
-        // --- ECS selected agent path rendering (plain function) ---
-        selected_agent_path_render(world, canvas, *selected_agent, camera.x, camera.y, cell_size);
-        // --- ECS agent rendering (plain function) ---
-        agent_render(world, canvas, camera.x, camera.y, cell_size);
-        if let Some((fx, fy, t)) = *empty_cell_flash {
-            if t.elapsed().as_millis() < 200 {
-                crate::graphics::overlays::draw_empty_cell_flash(canvas, fx, fy, camera.x, camera.y, cell_size);
-            } else {
+        // --- Selected agent path rendering ---
+        crate::graphics::render::selected_agent_path_system::selected_agent_path_render(
+            world,
+            canvas,
+            *selected_agent,
+            camera.x,
+            camera.y,
+            cell_size,
+        );
+        // --- Agent rendering ---
+        crate::graphics::render::agent_system::agent_render_system(
+            world,
+            canvas,
+            camera.x,
+            camera.y,
+            cell_size,
+        );
+        // --- Empty cell flash overlay rendering ---
+        crate::graphics::render::overlays::empty_cell_flash_render(
+            world,
+            canvas,
+            *empty_cell_flash,
+            camera.x,
+            camera.y,
+            cell_size,
+        );
+        // Clear the flash if expired
+        if let Some((_, _, t)) = *empty_cell_flash {
+            if t.elapsed().as_millis() >= 200 {
                 *empty_cell_flash = None;
             }
         }
@@ -222,9 +248,9 @@ pub fn main_sim_loop(
         for (agent_type,) in agent_query.iter(*world) {
             *agent_type_counts.entry(agent_type.name.clone()).or_insert(0) += 1;
         }
-        stats_window_render(
+        // --- Stats window rendering ---
+        crate::graphics::render::stats_system::stats_window_render(
             world,
-            resources,
             stats_canvas,
             font,
             cached_stats,

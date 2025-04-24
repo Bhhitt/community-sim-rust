@@ -10,6 +10,7 @@ use crate::config::StatsWindowConfig;
 use std::path::Path;
 use crate::graphics::sim_state::CachedStats;
 use legion::{World, Resources, EntityStore};
+use std::time::Instant;
 
 /// Draws the event log window
 pub fn draw_event_log_window(canvas: &mut Canvas<Window>, font: &Font, event_log: &EventLog, log_window_enabled: bool) {
@@ -50,16 +51,20 @@ pub fn draw_event_log_window(canvas: &mut Canvas<Window>, font: &Font, event_log
     canvas.present();
 }
 
-/// Draws the flash highlight for empty cell clicks
-pub fn draw_empty_cell_flash(canvas: &mut Canvas<Window>, fx: i32, fy: i32, camera_x: f32, camera_y: f32, cell_size: f32) {
-    let rect = Rect::new(
-        ((fx as f32 - camera_x) * cell_size) as i32,
-        ((fy as f32 - camera_y) * cell_size) as i32,
-        cell_size as u32,
-        cell_size as u32,
-    );
-    canvas.set_draw_color(Color::RGB(255, 255, 0));
-    canvas.draw_rect(rect).ok();
+/// Empty cell flash overlay rendering function
+pub fn empty_cell_flash_render(world: &World, canvas: &mut Canvas<Window>, fx: Option<(i32, i32, Instant)>, camera_x: f32, camera_y: f32, cell_size: f32) {
+    if let Some((fx_x, fx_y, t)) = fx {
+        if t.elapsed().as_millis() < 200 {
+            let rect = Rect::new(
+                ((fx_x as f32 - camera_x) * cell_size) as i32,
+                ((fx_y as f32 - camera_y) * cell_size) as i32,
+                cell_size as u32,
+                cell_size as u32,
+            );
+            canvas.set_draw_color(Color::RGB(255, 255, 0));
+            let _ = canvas.draw_rect(rect);
+        }
+    }
 }
 
 /// Draws the stats window (agent/food counts, interactions, graph, selected agent details)

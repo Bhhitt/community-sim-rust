@@ -9,13 +9,32 @@ pub fn load_agent_types(path: &str) -> Vec<AgentType> {
     let raw_types: Vec<serde_yaml::Value> = serde_yaml::from_str(&contents).expect("Failed to parse config/agent_types.yaml");
     raw_types.into_iter().map(|raw| {
         let name = raw["type"].as_str().unwrap_or("").to_string();
-        let color = match raw["color"].as_sequence() {
-            Some(seq) if seq.len() == 3 => (
-                seq[0].as_u64().unwrap_or(255) as u8,
-                seq[1].as_u64().unwrap_or(255) as u8,
-                seq[2].as_u64().unwrap_or(255) as u8,
-            ),
-            _ => (255, 255, 255),
+        let color = if let Some(seq) = raw["color"].as_sequence() {
+            if seq.len() == 3 {
+                (
+                    seq[0].as_u64().unwrap_or(255) as u8,
+                    seq[1].as_u64().unwrap_or(255) as u8,
+                    seq[2].as_u64().unwrap_or(255) as u8,
+                )
+            } else {
+                (255, 255, 255)
+            }
+        } else if let Some(hex_str) = raw["color"].as_str() {
+            // Parse hex string like "#FF7043"
+            if let Some(hex) = hex_str.strip_prefix('#') {
+                if hex.len() == 6 {
+                    let r = u8::from_str_radix(&hex[0..2], 16).unwrap_or(255);
+                    let g = u8::from_str_radix(&hex[2..4], 16).unwrap_or(255);
+                    let b = u8::from_str_radix(&hex[4..6], 16).unwrap_or(255);
+                    (r, g, b)
+                } else {
+                    (255, 255, 255)
+                }
+            } else {
+                (255, 255, 255)
+            }
+        } else {
+            (255, 255, 255)
         };
         let speed = raw["move_speed"].as_f64().unwrap_or(1.0) as f32;
         let effect = match raw["move_effect"].as_str() {

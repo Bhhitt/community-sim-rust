@@ -245,7 +245,7 @@ pub fn run_profiles_from_yaml(path: &str, agent_types: &[AgentType], profile_sys
 // --- END: Commented out after ECS refactor ---
 
 pub fn run_profile_from_yaml(
-    _path: &str,
+    path: &str,
     profile_name: &str,
     agent_types: &[AgentType],
     profile_systems: bool,
@@ -254,18 +254,22 @@ pub fn run_profile_from_yaml(
     event_log: Arc<Mutex<EventLog>>,
 ) {
     log::info!("[TEST] Entered run_profile_from_yaml");
-    // --- BEGIN: Commented out after ECS refactor ---
-    // let profiles = load_profiles_from_yaml(path);
-    // let profile = profiles.iter().find(|p| p.name == profile_name).expect("Profile not found");
-    // --- END: Commented out after ECS refactor ---
-    let width = 20;
-    let height = 20;
+    let profiles = crate::ecs::schedule::load_profiles_from_yaml(path);
+    let profile = profiles.iter().find(|p| p.name == profile_name)
+        .expect("Profile not found in sim_profiles.yaml");
+    let width = profile.map_width.or(profile.map_size).unwrap_or(20);
+    let height = profile.map_height.or(profile.map_size).unwrap_or(20);
+    let num_agents = profile.num_agents;
+    let ticks = profile.ticks;
     log::info!("\n===== Simulation Profile: {} =====", profile_name);
-    log::info!("Launching GUI with profile: {} (map {}x{}, {} agents, {} ticks)", profile_name, width, height, 10, 10);
+    log::info!(
+        "Launching GUI with profile: {} (map {}x{}, {} agents, {} ticks)",
+        profile_name, width, height, num_agents, ticks
+    );
     run_with_graphics_profile(
         width,
         height,
-        10,
+        num_agents,
         agent_types,
         profile_systems,
         profile_csv,
