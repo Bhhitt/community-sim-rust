@@ -2,18 +2,22 @@
   map_size: 20
   num_agents: 10
   ticks: 10
+  benchmark: true
 - name: 2x
   map_size: 40
   num_agents: 40
   ticks: 10
+  benchmark: true
 - name: 10x
   map_size: 200
   num_agents: 100
   ticks: 10
+  benchmark: true
 - name: 50x
   map_size: 400
   num_agents: 1000
   ticks: 10
+  benchmark: true
 #- name: 500x
 #  map_size: 2000
 #  num_agents: 10000
@@ -26,11 +30,13 @@
   map_size: 666
   num_agents: 3333
   ticks: 10
+  benchmark: true
 - name: base_run
   map_width: 1200
   map_height: 700
   num_agents: 5000
   ticks: 10
+  benchmark: true
 - name: med_run
   map_width: 700
   map_height: 500
@@ -38,6 +44,7 @@
   ticks: 1000
   log_info_eat: true
   log_info_interact: true
+  benchmark: true
 - name: med_run_quiet
   map_width: 700
   map_height: 500
@@ -46,3 +53,4 @@
   stats: false
   eat: false
   interact: false
+  benchmark: true

@@ -27,6 +27,7 @@ pub struct SimProfile {
     pub map_size: Option<i32>,
     pub num_agents: usize,
     pub ticks: usize,
+    pub benchmark: Option<bool>,
 }
 
 pub fn load_profiles_from_yaml(path: &str) -> Vec<SimProfile> {
@@ -246,6 +247,28 @@ pub fn run_profiles_from_yaml(path: &str, agent_types: &[AgentType], profile_sys
         let height = profile.map_height.unwrap_or(profile.map_size.unwrap_or(20));
         log::info!("Running profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
         run_simulation(width, height, profile.num_agents, profile.ticks, &profile.name, agent_types, profile_systems, profile_csv);
+    }
+}
+
+pub fn run_benchmark_profiles_from_yaml(
+    path: &str,
+    agent_types: &[AgentType],
+    profile_systems: bool,
+    profile_csv: &str,
+) {
+    let profiles = load_profiles_from_yaml(path);
+    let mut found = false;
+    log::info!("\n===== Benchmark Profiles (YAML) =====");
+    for profile in profiles.iter().filter(|p| p.benchmark.unwrap_or(false)) {
+        found = true;
+        let width = profile.map_width.or(profile.map_size).unwrap_or(20);
+        let height = profile.map_height.or(profile.map_size).unwrap_or(20);
+        log::info!("Benchmarking profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
+        run_simulation(width, height, profile.num_agents, profile.ticks, &profile.name, agent_types, profile_systems, profile_csv);
+    }
+    if !found {
+        log::warn!("[WARNING] No profiles with benchmark: true found in YAML. Falling back to hardcoded scaling benchmarks.");
+        run_scaling_benchmarks(agent_types);
     }
 }
 

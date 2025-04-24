@@ -41,6 +41,9 @@ pub struct Args {
     /// Run scaling benchmarks
     #[arg(long)]
     scale: bool,
+    /// Run YAML-driven benchmark profiles (benchmark: true)
+    #[arg(long)]
+    benchmark_profiles: bool,
     /// YAML file for agent types
     #[arg(long, default_value = "config/agent_types.yaml")]
     agent_types: String,
@@ -123,8 +126,9 @@ fn main() {
         if args.scale {
             // TODO: Move run_scaling_benchmarks to ecs module
             ecs::schedule::run_scaling_benchmarks(&agent_types);
+        } else if args.benchmark_profiles {
+            ecs::schedule::run_benchmark_profiles_from_yaml("config/sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
         } else {
-            // TODO: Move run_profiles_from_yaml to ecs module
             ecs::schedule::run_profiles_from_yaml("config/sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
         }
     } else {

@@ -308,10 +308,10 @@ pub fn run_headless(map_width: i32, map_height: i32, num_agents: usize, ticks: u
 
 pub fn run_scaling_benchmarks(agent_types: &[AgentType]) {
     let configs = [
-        (20, 20, 10, 10, "base"),
-        (200, 200, 100, 10, "10x"),
-        (400, 400, 400, 10, "20x"),
-        (2000, 2000, 10000, 10, "100x"),
+        (20, 20, 10, 10, "base"),        // Smallest, 10 ticks
+        (200, 200, 100, 100, "10x"),     // Medium, 100 ticks
+        (400, 400, 400, 500, "20x"),     // Large, 500 ticks
+        (2000, 2000, 10000, 1000, "100x"), // Very large, 1000 ticks
     ];
     log::info!("\n===== Scaling Benchmarks =====");
     for &(map_width, map_height, num_agents, ticks, label) in &configs {
