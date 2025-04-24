@@ -1,6 +1,6 @@
 use crate::graphics::input_intent::InputIntent;
 use crate::graphics::sim_state::SimUIState;
-use crate::agent::systems::spawn_agent;
+use crate::agent::{spawn_agent, AgentType};
 use crate::ecs_components::Position;
 use crate::map::Terrain;
 use legion::IntoQuery;
@@ -8,7 +8,7 @@ use legion::IntoQuery;
 /// Processes all input intents from the InputQueue, mutating the ECS world and UI state as needed.
 pub fn process_input_intents(
     sim_ui_state: &mut SimUIState,
-    agent_types: &[crate::agent::AgentType],
+    agent_types: &[AgentType],
     render_map: &crate::map::Map,
     cell_size: f32,
     paused: &mut bool,
@@ -28,7 +28,7 @@ pub fn process_input_intents(
                 log::debug!("[DEBUG] Advance one tick (paused)");
             }
             InputIntent::MoveCamera { dx, dy } => {
-                sim_ui_state.camera.move_by(dx, dy, render_map.width, render_map.height, cell_size as u32);
+                sim_ui_state.camera.move_by(dx, dy, render_map.width, render_map.height);
             }
             InputIntent::SpawnAgentRandom => {
                 use rand::Rng;

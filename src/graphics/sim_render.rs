@@ -2,15 +2,14 @@
 // Will contain the main SDL2 rendering logic and event loop
 
 use legion::*;
-use crate::agent::AgentType;
-use crate::agent::spawn_agent;
+use crate::agent::{AgentType, spawn_agent};
 use crate::food::PendingFoodSpawns;
 use rand::Rng;
 use crate::log_config::LogConfig;
 use std::fs::File;
 use crate::graphics::sim_state::SimUIState;
 use crate::ecs_simulation::{build_simulation_schedule};
-use std::sync::{Arc, Mutex};
+// use std::sync::{Arc, Mutex};
 
 const CELL_SIZE: f32 = 6.0;
 
@@ -27,7 +26,7 @@ pub fn run_sim_render(
     profile_csv: &str,
     world: &mut World,
     resources: &mut Resources,
-    event_log: std::sync::Arc<std::sync::Mutex<crate::event_log::EventLog>>,
+    _event_log: std::sync::Arc<std::sync::Mutex<crate::event_log::EventLog>>,
 ) {
     // --- ECS World Setup ---
     let map = crate::map::Map::new(_map_width, _map_height);

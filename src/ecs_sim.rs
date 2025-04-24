@@ -1,9 +1,8 @@
 //! Minimal ECS simulation loop using new ECS components
 use legion::*;
 use crate::ecs_components::*;
-use crate::food::Food;
-use crate::agent::{AgentType, MovementProfile};
-use crate::agent::systems::spawn_agent;
+use crate::Food;
+use crate::agent::{AgentType, MovementProfile, MovementEffect, spawn_agent, DecisionEngineConfig};
 use log::debug;
 use std::collections::HashMap;
 use rand::Rng;
@@ -14,34 +13,16 @@ pub fn run_ecs_sim() {
     // Spawn some agents
     let agent_types = [
         AgentType {
-            r#type: "worker".to_string(),
-            color: "blue".to_string(),
-            move_speed: 1.0,
-            move_probability: Some(1.0),
-            strength: 1,
-            stamina: 1,
-            vision: 1,
-            work_rate: 1,
-            icon: "w".to_string(),
-            damping: None,
-            name: Some("worker".to_string()),
-            movement_profile: MovementProfile { terrain_effects: HashMap::new() },
-            decision_engine: None,
+            name: "worker".to_string(),
+            color: (0, 0, 255),
+            movement_profile: MovementProfile { speed: 1.0, effect: MovementEffect::None },
+            decision_engine: DecisionEngineConfig::Simple,
         },
         AgentType {
-            r#type: "scout".to_string(),
-            color: "green".to_string(),
-            move_speed: 2.0,
-            move_probability: Some(1.0),
-            strength: 1,
-            stamina: 1,
-            vision: 1,
-            work_rate: 1,
-            icon: "s".to_string(),
-            damping: None,
-            name: Some("scout".to_string()),
-            movement_profile: MovementProfile { terrain_effects: HashMap::new() },
-            decision_engine: None,
+            name: "scout".to_string(),
+            color: (255, 255, 0),
+            movement_profile: MovementProfile { speed: 1.5, effect: MovementEffect::Slowed(0.8) },
+            decision_engine: DecisionEngineConfig::Simple,
         },
     ];
     for i in 0..5 {
@@ -56,7 +37,7 @@ pub fn run_ecs_sim() {
         let pos = Position { x: i as f32, y: 2.0 };
         // Use ECS world directly (not CommandBuffer) for this minimal example
         let nutrition = rand::thread_rng().gen_range(5.0..=10.0);
-        world.push((pos, crate::food::Food { nutrition }));
+        world.push((pos, Food { nutrition }));
     }
     // --- Example system: Print all entities and their positions ---
     let mut schedule = Schedule::builder()
@@ -68,7 +49,7 @@ pub fn run_ecs_sim() {
                         if let Some(_food) = food {
                             debug!("Food at ({}, {})", pos.x, pos.y);
                         } else if let Some(agent_type) = agent_type {
-                            debug!("Agent '{}' at ({}, {})", agent_type.r#type, pos.x, pos.y);
+                            debug!("Agent '{}' at ({}, {})", agent_type.name, pos.x, pos.y);
                         }
                     }
                 })

@@ -5,7 +5,6 @@ use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::pixels::Color;
 use legion::*;
-use crate::agent::AgentType;
 use log;
 
 /// Draws the selected agent's path if selected_agent is Some
@@ -68,7 +67,7 @@ pub fn draw_agents(
     camera_y: f32,
     cell_size: f32,
 ) {
-    for (_entity, (pos, agent_type_opt)) in <(legion::Entity, (&crate::ecs_components::Position, Option<&AgentType>))>::query().iter(world) {
+    for (_entity, (pos, agent_type_opt)) in <(legion::Entity, (&crate::ecs_components::Position, Option<&crate::agent::AgentType>))>::query().iter(world) {
         let rect = Rect::new(
             ((pos.x - camera_x) * cell_size) as i32,
             ((pos.y - camera_y) * cell_size) as i32,
@@ -76,24 +75,8 @@ pub fn draw_agents(
             cell_size as u32,
         );
         if let Some(agent_type) = agent_type_opt {
-            let color_str = agent_type.color.trim();
-            if let Some(stripped) = color_str.strip_prefix('#') {
-                if stripped.len() == 6 {
-                    if let (Ok(r), Ok(g), Ok(b)) = (
-                        u8::from_str_radix(&stripped[0..2], 16),
-                        u8::from_str_radix(&stripped[2..4], 16),
-                        u8::from_str_radix(&stripped[4..6], 16),
-                    ) {
-                        canvas.set_draw_color(Color::RGB(r, g, b));
-                    } else {
-                        canvas.set_draw_color(Color::RGB(255, 255, 255));
-                    }
-                } else {
-                    canvas.set_draw_color(Color::RGB(255, 255, 255));
-                }
-            } else {
-                canvas.set_draw_color(Color::RGB(255, 255, 255));
-            }
+            let (r, g, b) = agent_type.color;
+            canvas.set_draw_color(Color::RGB(r, g, b));
         } else {
             canvas.set_draw_color(Color::RGB(0, 220, 0));
         }

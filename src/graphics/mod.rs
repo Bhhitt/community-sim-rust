@@ -18,8 +18,8 @@ use crate::agent::AgentType;
 use crate::log_config::LogConfig;
 use legion::*;
 
-pub use sim_render::run_sim_render;
-pub use crate::graphics::sim_loop::main_sim_loop;
+// pub use sim_render::run_sim_render;
+// pub use crate::graphics::sim_loop::main_sim_loop;
 
 pub fn run_with_graphics_profile(_map_width: i32, _map_height: i32, _num_agents: usize, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str, log_config: &LogConfig, event_log: std::sync::Arc<std::sync::Mutex<crate::event_log::EventLog>>) {
     let mut world = World::default();

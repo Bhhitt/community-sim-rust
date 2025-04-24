@@ -8,9 +8,10 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(_map_width: i32, _map_height: i32, cell_size: u32, window_width: u32, window_height: u32) -> Self {
-        let width = window_width / cell_size;
-        let height = window_height / cell_size;
+    pub fn new(_map_width: i32, _map_height: i32, // cell_size: u32
+               window_width: u32, window_height: u32) -> Self {
+        let width = window_width / 1; // cell_size;
+        let height = window_height / 1; // cell_size;
         Self {
             x: 0.0,
             y: 0.0,
@@ -18,7 +19,8 @@ impl Camera {
             height,
         }
     }
-    pub fn move_by(&mut self, dx: f32, dy: f32, map_width: i32, map_height: i32, cell_size: u32) {
+    pub fn move_by(&mut self, dx: f32, dy: f32, map_width: i32, map_height: i32, // cell_size: u32
+                   ) {
         // Clamp camera so you can't pan past the map border
         let viewport_w = self.width as f32;
         let viewport_h = self.height as f32;

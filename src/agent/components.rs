@@ -1,8 +1,6 @@
 use serde::{Serialize, Deserialize};
 use legion::Entity;
 use std::collections::VecDeque;
-use std::collections::HashMap;
-use crate::terrain::types::TerrainType;
 use crate::agent::mlp::MLPConfig;
 
 pub mod agent_state;
@@ -10,62 +8,48 @@ pub use agent_state::AgentState;
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MovementEffect {
-    Normal,
-    Slow(f32),    // Cost multiplier (e.g., 2.0 = double cost)
-    Impassable,
+    None,
+    Blocked,
+    Slowed(f32),
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MovementProfile {
-    pub terrain_effects: HashMap<TerrainType, MovementEffect>,
+    pub speed: f32,
+    pub effect: MovementEffect,
 }
 
-impl MovementProfile {
-    pub fn movement_effect_for(&self, terrain: TerrainType) -> MovementEffect {
-        self.terrain_effects.get(&terrain).copied().unwrap_or(MovementEffect::Normal)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum DecisionEngineConfig {
-    RuleBased,
+    Simple,
     MLP(MLPConfig),
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct AgentType {
-    pub r#type: String,
-    pub color: String,
-    pub move_speed: f32,
-    pub strength: i32,
-    pub stamina: i32,
-    pub vision: i32,
-    pub work_rate: i32,
-    pub icon: String,
-    pub damping: Option<f32>,
-    pub move_probability: Option<f32>, // Probability to move each tick (0.0-1.0)
+    pub name: String,
+    pub color: (u8, u8, u8),
     pub movement_profile: MovementProfile,
-    pub name: Option<String>,
-    pub decision_engine: Option<DecisionEngineConfig>,
+    pub decision_engine: DecisionEngineConfig,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Hunger {
     pub value: f32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Energy {
     pub value: f32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RecentInteraction {
-    pub partner: Entity,
-    pub ticks_left: u8,
+    pub partner: Option<Entity>,
+    pub ticks_since: u32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InteractionState {
     pub target: Option<Entity>,
     pub ticks: u32,
@@ -74,26 +58,7 @@ pub struct InteractionState {
     pub recent_partners: VecDeque<RecentInteraction>,
 }
 
-impl InteractionState {
-    pub fn update_recent(&mut self) {
-        self.recent_partners.retain_mut(|ri| {
-            if ri.ticks_left > 0 {
-                ri.ticks_left -= 1;
-                true
-            } else {
-                false
-            }
-        });
-    }
-    pub fn add_partner(&mut self, partner: Entity, ticks: u8) {
-        self.recent_partners.push_back(RecentInteraction { partner, ticks_left: ticks });
-    }
-    pub fn has_recently_interacted(&self, partner: Entity) -> bool {
-        self.recent_partners.iter().any(|ri| ri.partner == partner && ri.ticks_left > 0)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MovementHistory {
     pub positions: VecDeque<(f32, f32)>,
     pub max_len: usize,
@@ -106,10 +71,10 @@ impl MovementHistory {
             max_len,
         }
     }
-    pub fn push(&mut self, pos: (f32, f32)) {
+    pub fn add(&mut self, x: f32, y: f32) {
         if self.positions.len() == self.max_len {
             self.positions.pop_front();
         }
-        self.positions.push_back(pos);
+        self.positions.push_back((x, y));
     }
 }

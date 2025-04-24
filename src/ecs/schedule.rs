@@ -1,24 +1,52 @@
-//! Main simulation loop and logic
+// ECS schedule setup for Legion ECS
+// Define system ordering, stages, and schedule construction here.
 
-use crate::agent::{AgentType, spawn_agent};
-use crate::map::{Map, Terrain};
-use crate::graphics::run_with_graphics_profile;
-use crate::ecs_components::{Position, InteractionStats, FoodPositions, FoodStats};
-use crate::food::{PendingFoodSpawns, Food};
-use crate::ecs_simulation::{simulation_tick, build_simulation_schedule_profiled, SystemProfile};
+use crate::agent::AgentType;
 use crate::log_config::LogConfig;
 use crate::event_log::EventLog;
-// use serde::Deserialize;
-use std::io::Write;
-use std::fs::File;
-use legion::IntoQuery;
-use rand::Rng;
-use legion::{World, Resources};
-use log;
-use std::collections::VecDeque;
+use crate::map::{Map, Terrain};
+use crate::food::{PendingFoodSpawns, Food};
+use crate::ecs_simulation::{simulation_tick, build_simulation_schedule_profiled, SystemProfile};
+use crate::render_ascii;
+use crate::ecs_components::{Position, InteractionStats, FoodPositions, FoodStats};
 use std::sync::{Arc, Mutex};
+use std::collections::VecDeque;
+use std::fs::File;
+use std::io::Write;
+use rand::Rng;
+use legion::{World, Resources, IntoQuery};
+use log;
+use serde::{Deserialize, /*Serialize*/};
+use serde_yaml;
 
-fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) -> (f64, f64, f64) {
+#[derive(Debug, Deserialize)]
+pub struct SimProfile {
+    pub name: String,
+    pub map_width: Option<i32>,
+    pub map_height: Option<i32>,
+    pub map_size: Option<i32>,
+    pub num_agents: usize,
+    pub ticks: usize,
+}
+
+pub fn load_profiles_from_yaml(path: &str) -> Vec<SimProfile> {
+    let yaml = std::fs::read_to_string(path).expect("Failed to read config/sim_profiles.yaml");
+    serde_yaml::from_str(&yaml).expect("Failed to parse config/sim_profiles.yaml")
+}
+
+// TODO: Move or re-export run_simulation, load_profiles_from_yaml, etc., as needed for full migration.
+
+/// Runs a single simulation profile (non-GUI), with ECS setup and tick loop. Returns timing info.
+pub fn run_simulation(
+    map_width: i32,
+    map_height: i32,
+    num_agents: usize,
+    ticks: usize,
+    label: &str,
+    agent_types: &[AgentType],
+    profile_systems: bool,
+    profile_csv: &str,
+) -> (f64, f64, f64) {
     log::info!("[TEST] Entered run_simulation");
     log::info!("\n=== Running {}: map {}x{}, {} agents, {} ticks ===", label, map_width, map_height, num_agents, ticks);
     // --- ECS World Setup (MATCH graphics mode) ---
@@ -52,7 +80,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 }
             }
             let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
-            spawn_agent(&mut world, Position { x, y }, agent_type, &map);
+            crate::agent::spawn_agent(&mut world, Position { x, y }, agent_type, &map);
             agent_count += 1;
             attempts += tries;
         }
@@ -120,7 +148,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
             writeln!(csv_file, "{}{}{}", tick, if tick == 0 { "," } else { "," }, profile.to_csv_row()).unwrap();
             // Optionally render ASCII after ECS update
             if profile_systems {
-                let ascii = crate::render_ascii::render_simulation_ascii(&world, &map);
+                let ascii = render_ascii::render_simulation_ascii(&world, &map);
                 println!("ASCII after tick {}:\n{}", tick, ascii);
             }
             log::debug!("[PROFILE] agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
@@ -174,7 +202,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 &mut schedule,
             );
             // Generate ASCII snapshot at each tick (optional, but we'll save the last)
-            last_ascii = crate::render_ascii::render_simulation_ascii(&world, &map);
+            last_ascii = render_ascii::render_simulation_ascii(&world, &map);
             // Optionally print: println!("{}", last_ascii);
         }
         // --- Write simulation summary to map file ---
@@ -210,27 +238,6 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     (0.0, 0.0, 0.0)
 }
 
-// --- BEGIN: Commented out after ECS refactor ---
-/*
-#[derive(Debug, Deserialize)]
-pub struct SimProfile {
-    pub name: String,
-    pub map_width: Option<i32>,
-    pub map_height: Option<i32>,
-    pub map_size: Option<i32>,
-    pub num_agents: usize,
-    pub ticks: usize,
-}
-
-pub fn load_profiles_from_yaml(path: &str) -> Vec<SimProfile> {
-    let yaml = fs::read_to_string(path).expect("Failed to read config/sim_profiles.yaml");
-    serde_yaml::from_str(&yaml).expect("Failed to parse config/sim_profiles.yaml")
-}
-*/
-// --- END: Commented out after ECS refactor ---
-
-// --- BEGIN: Commented out after ECS refactor ---
-/*
 pub fn run_profiles_from_yaml(path: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) {
     let profiles = load_profiles_from_yaml(path);
     log::info!("\n===== Simulation Profiles (YAML) =====");
@@ -241,11 +248,9 @@ pub fn run_profiles_from_yaml(path: &str, agent_types: &[AgentType], profile_sys
         run_simulation(width, height, profile.num_agents, profile.ticks, &profile.name, agent_types, profile_systems, profile_csv);
     }
 }
-*/
-// --- END: Commented out after ECS refactor ---
 
 pub fn run_profile_from_yaml(
-    _path: &str,
+    path: &str,
     profile_name: &str,
     agent_types: &[AgentType],
     profile_systems: bool,
@@ -253,67 +258,31 @@ pub fn run_profile_from_yaml(
     log_config: &LogConfig,
     event_log: Arc<Mutex<EventLog>>,
 ) {
-    log::info!("[TEST] Entered run_profile_from_yaml");
-    // --- BEGIN: Commented out after ECS refactor ---
-    // let profiles = load_profiles_from_yaml(path);
-    // let profile = profiles.iter().find(|p| p.name == profile_name).expect("Profile not found");
-    // --- END: Commented out after ECS refactor ---
-    let width = 20;
-    let height = 20;
-    log::info!("\n===== Simulation Profile: {} =====", profile_name);
-    log::info!("Launching GUI with profile: {} (map {}x{}, {} agents, {} ticks)", profile_name, width, height, 10, 10);
-    run_with_graphics_profile(
-        width,
-        height,
-        10,
+    // TODO: Remove crate::simulation dependency after full migration
+    crate::simulation::run_profile_from_yaml(
+        path,
+        profile_name,
         agent_types,
         profile_systems,
         profile_csv,
         log_config,
         event_log,
-    );
-}
-
-pub fn run_gui_with_profile(_path: &str, _profile_name: &str, _agent_types: &[AgentType]) {
-    log::warn!("[WARNING] run_gui_with_profile is a stub. Use run_with_graphics_profile instead.");
-}
-
-// --- BEGIN: Commented out after ECS refactor ---
-/*
-pub fn run_profiles(agent_types: &[AgentType]) {
-    log::info!("\n===== Simulation Profiles =====");
-    // let profiles = load_profiles_from_yaml("config/sim_profiles.yaml");
-    // for profile in profiles {
-    //     let width = profile.map_width.unwrap_or(profile.map_size.unwrap_or(20));
-    //     let height = profile.map_height.unwrap_or(profile.map_size.unwrap_or(20));
-    //     log::info!("Running profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
-    //     let (total, move_time, interact_time) = run_simulation(width, height, profile.num_agents, profile.ticks, &profile.name, agent_types, false, "profile.csv");
-    //     log::info!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", profile.name, total, move_time, interact_time);
-    // }
-}
-*/
-// --- END: Commented out after ECS refactor ---
-
-pub fn run_headless(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, agent_types: &[AgentType]) {
-    let (total, move_time, interact_time) = run_simulation(map_width, map_height, num_agents, ticks, "custom", agent_types, false, "headless.csv");
-    log::info!("\nPerformance summary:");
-    log::info!("  Total:    {:.3}s", total);
-    log::info!("  Movement: {:.3}s", move_time);
-    log::info!("  Interact: {:.3}s", interact_time);
+    )
 }
 
 pub fn run_scaling_benchmarks(agent_types: &[AgentType]) {
-    let configs = [
-        (20, 20, 10, 10, "base"),
-        (200, 200, 100, 10, "10x"),
-        (400, 400, 400, 10, "20x"),
-        (2000, 2000, 10000, 10, "100x"),
-    ];
-    log::info!("\n===== Scaling Benchmarks =====");
-    for &(map_width, map_height, num_agents, ticks, label) in &configs {
-        let (total, move_time, interact_time) = run_simulation(map_width, map_height, num_agents, ticks, label, agent_types, false, "scaling_benchmark.csv");
-        log::info!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", label, total, move_time, interact_time);
-    }
+    // TODO: Remove crate::simulation dependency after full migration
+    crate::simulation::run_scaling_benchmarks(agent_types)
 }
 
-// use crate::render_ascii;
+// Example (pseudo-code):
+// pub fn build_schedule() -> Schedule {
+//     Schedule::builder()
+//         .add_system(agent_system())
+//         .add_system(movement_system())
+//         .flush()
+//         .add_system(render_system())
+//         .build()
+// }
+
+// TODO: Move schedule-building logic from ecs_sim.rs, ecs_simulation.rs, or main.rs here.

@@ -2,8 +2,10 @@
 use legion::*;
 use crate::ecs_components::*;
 use legion::Schedule;
-use crate::food::{collect_food_positions_system, collect_food_spawn_positions_system, food_spawn_apply_system};
-use crate::agent::{path_following_system, action_selection_system, agent_movement_history_system, agent_death_system};
+use legion::IntoQuery;
+use crate::food::{collect_food_positions_system, Food};
+use crate::agent::{AgentType, Hunger, Energy, AgentState, path_following_system, action_selection_system, agent_movement_history_system, agent_death_system};
+use crate::navigation::{Target, Path};
 
 /// All unused imports removed for a clean build
 
@@ -59,8 +61,6 @@ pub fn build_simulation_schedule() -> Schedule {
         .add_system(agent_movement_history_system())
         .add_system(entity_interaction_system())
         .add_system(agent_death_system())
-        .add_system(collect_food_spawn_positions_system())
-        .add_system(food_spawn_apply_system())
         .build()
 }
 
@@ -74,8 +74,6 @@ pub fn build_simulation_schedule_parallel() -> Schedule {
         .add_system(agent_movement_history_system())
         .add_system(entity_interaction_system())
         .add_system(agent_death_system())
-        .add_system(collect_food_spawn_positions_system())
-        .add_system(food_spawn_apply_system())
         .build()
 }
 
@@ -94,7 +92,7 @@ pub fn build_simulation_schedule_profiled() -> Schedule {
         .add_system(SystemBuilder::new("CollectFoodPositionsProfiled")
             .write_resource::<SystemProfile>()
             .write_resource::<crate::ecs_components::FoodPositions>()
-            .with_query(<(&crate::ecs_components::Position, &crate::food::Food)>::query())
+            .with_query(<(&crate::ecs_components::Position, &Food)>::query())
             .build(|_, world, (profile, food_positions), query| {
                 let t = std::time::Instant::now();
                 let mut positions = Vec::new();
@@ -109,25 +107,25 @@ pub fn build_simulation_schedule_profiled() -> Schedule {
             .write_resource::<SystemProfile>()
             .read_resource::<crate::map::Map>()
             .write_resource::<crate::event_log::EventLog>()
-            .with_query(<(Entity, &mut crate::ecs_components::Position, &crate::agent::components::AgentType, &mut crate::agent::components::Hunger, &mut crate::agent::components::Energy, Option<&mut crate::navigation::Target>, Option<&mut crate::navigation::Path>, &mut crate::agent::components::AgentState)>::query())
+            .with_query(<(Entity, &mut crate::ecs_components::Position, &AgentType, &mut Hunger, &mut Energy, Option<&mut Target>, Option<&mut Path>, &mut AgentState)>::query())
             .build(|_, world, (profile, map, event_log), query| {
                 let t = std::time::Instant::now();
                 // Inline path_following_system logic here (or call a helper)
                 for (entity, pos, agent_type, hunger, _energy, maybe_target, mut maybe_path, agent_state) in query.iter_mut(world) {
                     match *agent_state {
-                        crate::agent::components::AgentState::Moving => {
+                        AgentState::Moving => {
                             if let (Some(target), Some(path)) = (maybe_target.as_ref(), maybe_path.as_mut()) {
                                 if let Some(next_wp) = path.waypoints.front() {
                                     let dx = next_wp.0 - pos.x;
                                     let dy = next_wp.1 - pos.y;
                                     let dist = (dx * dx + dy * dy).sqrt();
-                                    let step = agent_type.move_speed.min(dist);
+                                    let step = agent_type.movement_profile.speed.min(dist);
                                     if dist < 0.2 {
                                         path.waypoints.pop_front();
                                         if path.waypoints.is_empty() {
                                             pos.x = target.x;
                                             pos.y = target.y;
-                                            *agent_state = crate::agent::components::AgentState::Arrived;
+                                            *agent_state = AgentState::Arrived;
                                             event_log.push(format!("[ARRIVE] Agent {:?} arrived at ({:.2}, {:.2})", entity, pos.x, pos.y));
                                         }
                                     } else {
@@ -168,8 +166,6 @@ pub fn build_simulation_schedule_with_log() -> Schedule {
         .add_system(agent_movement_history_system())
         .add_system(entity_interaction_system())
         .add_system(agent_death_system())
-        .add_system(collect_food_spawn_positions_system())
-        .add_system(food_spawn_apply_system())
         .build()
 }
 

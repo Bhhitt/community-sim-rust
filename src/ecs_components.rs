@@ -4,8 +4,8 @@ use legion::IntoQuery;
 use legion::SystemBuilder;
 use rand::Rng;
 use log;
-use crate::food::{Food};
-use crate::agent::components::{InteractionState};
+use crate::food::Food;
+use crate::agent::{InteractionState};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Position {
@@ -48,7 +48,7 @@ pub fn spawn_food(cmd: &mut CommandBuffer, pos: Position, food_stats: Option<&mu
     if let Some(stats) = food_stats {
         stats.spawned_per_tick += 1;
     }
-    cmd.push((pos, crate::food::Food { nutrition }))
+    cmd.push((pos, Food { nutrition }))
 }
 
 // --- Resource for food positions (for agent movement system) ---

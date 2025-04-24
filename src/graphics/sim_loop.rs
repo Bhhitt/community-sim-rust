@@ -4,20 +4,12 @@ use sdl2::video::Window;
 use sdl2::ttf::Font;
 use sdl2::EventPump;
 use std::time::Duration;
-use std::sync::{Arc, Mutex};
-use std::collections::VecDeque;
-use std::{fs, io};
-
-use legion::{World, Resources, IntoQuery};
-use rand::Rng;
-use serde::{Deserialize, Serialize};
-use serde_yaml;
+use std::collections::HashMap;
 use log;
+use legion::IntoQuery;
 
 use crate::graphics::camera::Camera;
 use crate::agent::AgentType;
-use crate::agent::systems::spawn_agent;
-use crate::map::Map;
 use crate::log_config::LogConfig;
 use crate::graphics::render::terrain::draw_terrain;
 use crate::graphics::render::food_system::food_render;
@@ -26,10 +18,8 @@ use crate::graphics::render::selected_agent_path_system::selected_agent_path_ren
 use crate::graphics::render::stats_system::stats_window_render;
 use crate::graphics::render::event_log_system::event_log_window_render;
 use crate::graphics::sim_state::SimUIState;
-use crate::graphics::render::overlays::draw_empty_cell_flash;
-use crate::ecs_simulation::{simulation_tick, build_simulation_schedule_profiled};
-use crate::ecs_components::InteractionStats;
-use crate::food::{PendingFoodSpawns, Food};
+use crate::event_log::EventLog;
+use crate::ecs_simulation::simulation_tick_parallel;
 
 pub fn init_sdl2(
     map_width: i32,
@@ -51,7 +41,7 @@ pub fn init_sdl2(
     let window_id = canvas.window().id();
     let _texture_creator = canvas.texture_creator();
     let event_pump = sdl_context.event_pump().unwrap();
-    let camera = Camera::new(map_width, map_height, cell_size as u32, window_width, window_height);
+    let camera = Camera::new(map_width, map_height, window_width, window_height);
     // Allocate ttf_context and font on the heap and leak both for 'static lifetime
     let ttf_context = Box::new(sdl2::ttf::init().unwrap());
     let ttf_context_ref: &'static sdl2::ttf::Sdl2TtfContext = Box::leak(ttf_context);
@@ -144,7 +134,7 @@ pub fn main_sim_loop(
             advance_one = false;
         }
         // --- Print latest EventLog entry to console ---
-        if let Some(event_log) = sim_ui_state.resources.get::<crate::event_log::EventLog>() {
+        if let Some(event_log) = sim_ui_state.resources.get::<EventLog>() {
             if !event_log.events.is_empty() {
                 if let Some(last_event) = event_log.events.back() {
                     log::debug!("{}", last_event);
@@ -152,7 +142,7 @@ pub fn main_sim_loop(
             }
         }
         // --- Render Event Log Window ---
-        if let Some(event_log) = sim_ui_state.resources.get::<crate::event_log::EventLog>() {
+        if let Some(event_log) = sim_ui_state.resources.get::<EventLog>() {
             event_log_window_render(
                 &event_log,
                 log_canvas,
@@ -227,6 +217,11 @@ pub fn main_sim_loop(
         let (stats_w, stats_h) = stats_canvas.window().size();
         if log_config.stats {
             log::info!("[STATS] Window size: {}x{}", stats_w, stats_h);
+        }
+        let mut agent_type_counts = HashMap::<String, usize>::new();
+        let mut agent_query = <(&AgentType,)>::query();
+        for (agent_type,) in agent_query.iter(*world) {
+            *agent_type_counts.entry(agent_type.name.clone()).or_insert(0) += 1;
         }
         stats_window_render(
             world,

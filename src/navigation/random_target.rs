@@ -1,5 +1,5 @@
 use crate::map::Map;
-use crate::agent::components::AgentType;
+use crate::agent::AgentType;
 use rand::Rng;
 
 /// Returns a random passable target within a given radius of (cx, cy).
@@ -26,7 +26,7 @@ fn random_passable_target_within_radius<R: Rng>(
             continue;
         }
         let terrain = map.tiles[ny as usize][nx as usize];
-        let is_scout = agent_type.name.as_deref() == Some("scout");
+        let is_scout = agent_type.name == "scout";
         let passable = match terrain {
             crate::map::Terrain::Mountain => is_scout, // only scouts cross mountains
             _ => terrain.movement_cost().is_some(),
@@ -57,7 +57,7 @@ pub fn random_passable_target<R: Rng>(map: &Map, agent_type: &AgentType, rng: &m
             let x = rng.gen_range(0..map.width) as i32;
             let y = rng.gen_range(0..map.height) as i32;
             let terrain = map.tiles[y as usize][x as usize];
-            let is_scout = agent_type.name.as_deref() == Some("scout");
+            let is_scout = agent_type.name == "scout";
             let passable = match terrain {
                 crate::map::Terrain::Mountain => is_scout,
                 _ => terrain.movement_cost().is_some(),

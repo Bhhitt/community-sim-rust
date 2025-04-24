@@ -3,6 +3,7 @@ use legion::*;
 use sdl2::ttf::Font;
 use crate::graphics::camera::Camera;
 use crate::graphics::input_intent::InputQueue;
+use crate::food::Food;
 
 // All unused imports removed for a clean build
 pub struct SimUIState<'a> {
@@ -42,14 +43,14 @@ pub fn update_cached_stats(world: &World, resources: &Resources, cached: &mut Ca
     let mut agent_type_counts = std::collections::HashMap::<String, usize>::new();
     let mut query = <(&AgentType,)>::query();
     for (agent_type,) in query.iter(world) {
-        *agent_type_counts.entry(agent_type.r#type.clone()).or_insert(0) += 1;
+        *agent_type_counts.entry(agent_type.name.clone()).or_insert(0) += 1;
     }
     let mut counts_vec: Vec<_> = agent_type_counts.into_iter().collect();
     counts_vec.sort_by(|a, b| a.0.cmp(&b.0));
     cached.agent_counts = counts_vec;
 
     // Food count
-    cached.food_count = <(&crate::ecs_components::Position, &crate::food::Food)>::query().iter(world).count();
+    cached.food_count = <(&crate::ecs_components::Position, &Food)>::query().iter(world).count();
     // Food stats
     if let Some(food_stats) = resources.get::<crate::ecs_components::FoodStats>() {
         cached.food_spawned_per_tick = food_stats.spawned_per_tick;

@@ -6,6 +6,8 @@ use sdl2::pixels::Color;
 use sdl2::ttf::Font;
 use legion::*;
 use crate::ecs_components::FoodStats;
+use crate::food::Food;
+use crate::agent::AgentType;
 
 pub fn draw_stats(
     canvas: &mut Canvas<Window>,
@@ -25,7 +27,7 @@ pub fn draw_stats(
     let line_height = 22;
 
     // --- Agent stats ---
-    let agent_count = <(&crate::ecs_components::Position, Option<&crate::agent::AgentType>)>::query()
+    let agent_count = <(&crate::ecs_components::Position, Option<&AgentType>)>::query()
         .iter(world)
         .filter(|(_, agent_type)| agent_type.is_some())
         .count();
@@ -38,7 +40,7 @@ pub fn draw_stats(
     y += line_height;
 
     // --- Food stats ---
-    let food_count = <(&crate::ecs_components::Position, &crate::food::Food)>::query().iter(world).count();
+    let food_count = <(&crate::ecs_components::Position, &Food)>::query().iter(world).count();
     let text = format!("Food: {}", food_count);
     let surface = font.render(&text).blended(Color::RGB(180, 255, 180)).unwrap();
     let texture = texture_creator.create_texture_from_surface(&surface).unwrap();

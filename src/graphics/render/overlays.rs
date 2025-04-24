@@ -69,7 +69,7 @@ pub fn draw_stats_window(
     cached_stats: &CachedStats,
     selected_agent: Option<legion::Entity>,
     world: &World,
-    resources: &Resources,
+    _resources: &Resources,
     log_stats: bool,
 ) {
     let (win_w, win_h) = canvas.window().size();
@@ -183,11 +183,11 @@ pub fn draw_stats_window(
                         if let Ok(entry) = world.entry_ref(agent) {
                             // Gather all components for the agent
                             let pos = entry.get_component::<crate::ecs_components::Position>().ok();
-                            let agent_type = entry.get_component::<crate::agent::components::AgentType>().ok();
-                            let hunger = entry.get_component::<crate::agent::components::Hunger>().ok();
-                            let energy = entry.get_component::<crate::agent::components::Energy>().ok();
-                            let state = entry.get_component::<crate::agent::components::AgentState>().ok();
-                            let interaction = entry.get_component::<crate::agent::components::InteractionState>().ok();
+                            let agent_type = entry.get_component::<crate::agent::AgentType>().ok();
+                            let hunger = entry.get_component::<crate::agent::Hunger>().ok();
+                            let energy = entry.get_component::<crate::agent::Energy>().ok();
+                            let state = entry.get_component::<crate::agent::AgentState>().ok();
+                            let interaction = entry.get_component::<crate::agent::InteractionState>().ok();
 
                             render_stat_row(
                                 canvas,
@@ -214,27 +214,16 @@ pub fn draw_stats_window(
                                     canvas,
                                     font,
                                     &texture_creator,
-                                    &format!("Type: {}", agent_type.r#type),
+                                    &format!("Type: {}", agent_type.name),
                                     Color::RGB(200, 200, 255),
                                     &mut y,
                                     line_height,
                                 );
-                                if let Some(name) = &agent_type.name {
-                                    render_stat_row(
-                                        canvas,
-                                        font,
-                                        &texture_creator,
-                                        &format!("Name: {}", name),
-                                        Color::RGB(200, 200, 255),
-                                        &mut y,
-                                        line_height,
-                                    );
-                                }
                                 render_stat_row(
                                     canvas,
                                     font,
                                     &texture_creator,
-                                    &format!("Move Speed: {:.2}", agent_type.move_speed),
+                                    &format!("Move Speed: {:.2}", agent_type.movement_profile.speed),
                                     Color::RGB(180, 220, 255),
                                     &mut y,
                                     line_height,
@@ -243,7 +232,7 @@ pub fn draw_stats_window(
                                     canvas,
                                     font,
                                     &texture_creator,
-                                    &format!("Strength: {}", agent_type.strength),
+                                    &format!("Strength: N/A"),
                                     Color::RGB(180, 220, 255),
                                     &mut y,
                                     line_height,
@@ -252,7 +241,7 @@ pub fn draw_stats_window(
                                     canvas,
                                     font,
                                     &texture_creator,
-                                    &format!("Stamina: {}", agent_type.stamina),
+                                    &format!("Stamina: N/A"),
                                     Color::RGB(180, 220, 255),
                                     &mut y,
                                     line_height,
@@ -261,7 +250,7 @@ pub fn draw_stats_window(
                                     canvas,
                                     font,
                                     &texture_creator,
-                                    &format!("Vision: {}", agent_type.vision),
+                                    &format!("Vision: N/A"),
                                     Color::RGB(180, 220, 255),
                                     &mut y,
                                     line_height,
@@ -270,7 +259,7 @@ pub fn draw_stats_window(
                                     canvas,
                                     font,
                                     &texture_creator,
-                                    &format!("Work Rate: {}", agent_type.work_rate),
+                                    &format!("Work Rate: N/A"),
                                     Color::RGB(180, 220, 255),
                                     &mut y,
                                     line_height,

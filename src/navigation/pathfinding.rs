@@ -1,5 +1,4 @@
-use crate::agent::AgentType;
-use crate::agent::MovementEffect;
+use crate::agent::{AgentType, MovementEffect};
 use crate::map::{Map, Terrain};
 use crate::terrain::types::TerrainType;
 use std::collections::{BinaryHeap, HashMap};
@@ -18,7 +17,7 @@ fn terrain_to_terrain_type(terrain: Terrain) -> TerrainType {
 struct Node {
     pub x: i32,
     pub y: i32,
-    pub cost: f32, // Note: 'cost' is currently unused but kept for future extensions.
+    // pub cost: f32, // Note: 'cost' is currently unused but kept for future use
     pub est_total: f32,
 }
 
@@ -51,9 +50,9 @@ pub fn a_star_path(map: &Map, agent_type: &AgentType, start: (i32, i32), goal: (
     let h = |x: i32, y: i32| ((x - goal.0).abs() + (y - goal.1).abs()) as f32;
     g_score.insert(start, 0.0);
     f_score.insert(start, h(start.0, start.1));
-    open.push(Node { x: start.0, y: start.1, cost: 0.0, est_total: h(start.0, start.1) });
+    open.push(Node { x: start.0, y: start.1, est_total: h(start.0, start.1) });
     let directions = [(-1,0), (1,0), (0,-1), (0,1)];
-    while let Some(Node { x, y, cost: _, est_total: _ }) = open.pop() {
+    while let Some(Node { x, y, est_total: _ }) = open.pop() {
         if (x, y) == goal {
             let mut path = vec![(x as f32 + 0.5, y as f32 + 0.5)];
             let mut current = (x, y);
@@ -75,12 +74,12 @@ pub fn a_star_path(map: &Map, agent_type: &AgentType, start: (i32, i32), goal: (
                 continue;
             }
             let terrain = map.tiles[ny as usize][nx as usize];
-            let terrain_type = terrain_to_terrain_type(terrain);
-            let effect = agent_type.movement_profile.movement_effect_for(terrain_type);
+            let _terrain_type = terrain_to_terrain_type(terrain);
+            let effect = agent_type.movement_profile.effect;
             let (passable, move_cost) = match effect {
-                MovementEffect::Normal => (true, 1.0),
-                MovementEffect::Slow(mult) => (true, mult),
-                MovementEffect::Impassable => (false, 0.0),
+                MovementEffect::Slowed(mult) => (true, mult),
+                MovementEffect::Blocked => (false, 0.0),
+                MovementEffect::None => (true, 1.0),
             };
             if !passable {
                 continue;
@@ -91,7 +90,7 @@ pub fn a_star_path(map: &Map, agent_type: &AgentType, start: (i32, i32), goal: (
                 g_score.insert((nx, ny), tentative_g);
                 let f = tentative_g + h(nx, ny);
                 f_score.insert((nx, ny), f);
-                open.push(Node { x: nx, y: ny, cost: tentative_g, est_total: f });
+                open.push(Node { x: nx, y: ny, est_total: f });
             }
         }
     }

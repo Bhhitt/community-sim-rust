@@ -4,7 +4,7 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::EventPump;
 use crate::graphics::sim_state::SimUIState;
-use crate::agent::AgentType;
+use crate::agent;
 use crate::log_config::LogConfig;
 use crate::graphics::input_intent::InputIntent;
 
@@ -13,7 +13,7 @@ pub fn collect_input_events(
     event_pump: &mut EventPump,
     window_id: u32,
     sim_ui_state: &mut SimUIState,
-    _agent_types: &[AgentType],
+    _agent_types: &[agent::AgentType],
     _render_map: &crate::map::Map,
     _cell_size: f32,
     _log_config: &LogConfig,
@@ -66,7 +66,7 @@ pub fn collect_input_events(
 //     event_pump: &mut EventPump,
 //     window_id: u32,
 //     sim_ui_state: &mut SimUIState,
-//     _agent_types: &[AgentType],
+//     _agent_types: &[agent::AgentType],
 //     _render_map: &crate::map::Map,
 //     _cell_size: f32,
 //     _log_config: &LogConfig,

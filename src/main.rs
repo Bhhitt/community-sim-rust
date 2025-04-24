@@ -1,16 +1,27 @@
 mod log_config;
-mod simulation;
 mod util;
+mod ecs; // <-- new idiomatic ECS module
+mod simulation; // <-- old simulation module (to be migrated)
+mod navigation;
+mod graphics;
+mod config;
+
+pub mod agent;
+pub mod map;
+pub mod ecs_components;
+pub mod food;
+pub mod ecs_simulation;
+pub mod render_ascii;
+
+pub mod terrain;
+pub mod sim_summary;
+pub mod event_log;
 
 use clap::Parser;
 use chrono;
 use fern;
 use log;
 use std::sync::{Arc, Mutex};
-
-pub mod terrain;
-pub mod sim_summary;
-pub mod event_log;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -110,13 +121,16 @@ fn main() {
     if args.headless {
         log::info!("Running in headless mode");
         if args.scale {
-            simulation::run_scaling_benchmarks(&agent_types);
+            // TODO: Move run_scaling_benchmarks to ecs module
+            ecs::schedule::run_scaling_benchmarks(&agent_types);
         } else {
-            simulation::run_profiles_from_yaml("config/sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
+            // TODO: Move run_profiles_from_yaml to ecs module
+            ecs::schedule::run_profiles_from_yaml("config/sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
         }
     } else {
         log::info!("Running with graphics");
-        simulation::run_profile_from_yaml(
+        // TODO: Move run_profile_from_yaml to ecs module
+        ecs::schedule::run_profile_from_yaml(
             "config/sim_profiles.yaml",
             &args.profile,
             &agent_types,

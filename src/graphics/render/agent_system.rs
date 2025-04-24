@@ -16,24 +16,8 @@ pub fn agent_render(world: &World, canvas: &mut Canvas<Window>, camera_x: f32, c
                 cell_size as u32,
                 cell_size as u32,
             );
-            let color_str = agent_type.color.trim();
-            if let Some(stripped) = color_str.strip_prefix('#') {
-                if stripped.len() == 6 {
-                    if let (Ok(r), Ok(g), Ok(b)) = (
-                        u8::from_str_radix(&stripped[0..2], 16),
-                        u8::from_str_radix(&stripped[2..4], 16),
-                        u8::from_str_radix(&stripped[4..6], 16),
-                    ) {
-                        canvas.set_draw_color(Color::RGB(r, g, b));
-                    } else {
-                        canvas.set_draw_color(Color::RGB(255, 255, 255));
-                    }
-                } else {
-                    canvas.set_draw_color(Color::RGB(255, 255, 255));
-                }
-            } else {
-                canvas.set_draw_color(Color::RGB(255, 255, 255));
-            }
+            let (r, g, b) = agent_type.color;
+            canvas.set_draw_color(Color::RGB(r, g, b));
             let _ = canvas.fill_rect(rect);
         }
     }
