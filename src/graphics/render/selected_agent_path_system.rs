@@ -40,16 +40,23 @@ pub fn selected_agent_path_render(world: &World, canvas: &mut Canvas<Window>, se
             }
             // --- END DEBUG LOGGING ---
             if let (Ok(pos), Ok(path)) = (pos, path) {
-                let waypoints: Vec<_> = path.waypoints.iter().collect();
+                let waypoints = &path.waypoints;
                 if !waypoints.is_empty() {
                     canvas.set_draw_color(Color::RGB(0, 200, 255));
                     let mut last = ((pos.x - camera_x) * cell_size, (pos.y - camera_y) * cell_size);
-                    for (wx, wy) in waypoints.iter() {
-                        let wx = *wx;
-                        let wy = *wy;
+                    for &(wx, wy) in waypoints.iter() {
                         let next = ((wx - camera_x) * cell_size, (wy - camera_y) * cell_size);
                         let _ = canvas.draw_line((last.0 as i32, last.1 as i32), (next.0 as i32, next.1 as i32));
-                        last = (wx, wy);
+                        last = next;
+                    }
+                    if let Some((end_x, end_y)) = waypoints.back() {
+                        let dot_rect = Rect::new(
+                            ((*end_x - camera_x) * cell_size) as i32 - 3,
+                            ((*end_y - camera_y) * cell_size) as i32 - 3,
+                            7, 7
+                        );
+                        canvas.set_draw_color(Color::RGB(255, 0, 200));
+                        let _ = canvas.fill_rect(dot_rect);
                     }
                 }
             }
