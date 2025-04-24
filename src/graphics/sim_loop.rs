@@ -19,7 +19,6 @@ use crate::graphics::render::stats_system::stats_window_render;
 use crate::graphics::render::event_log_system::event_log_window_render;
 use crate::graphics::sim_state::SimUIState;
 use crate::event_log::EventLog;
-use crate::ecs_simulation::simulation_tick_parallel;
 
 pub fn init_sdl2(
     map_width: i32,

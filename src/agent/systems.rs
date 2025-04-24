@@ -1,7 +1,6 @@
 // Agent-related ECS systems will be moved here.
 
 use crate::navigation::*;
-use crate::ecs_components::{Position, FoodPositions};
 use legion::*;
 use rand::seq::SliceRandom;
 use std::collections::VecDeque;
@@ -36,7 +35,7 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
             let log_config = &resources.2;
             use std::time::Instant;
             let total_start = Instant::now();
-            let mut move_time = 0.0f64;
+            let move_time = 0.0f64;
             let mut waypoint_time = 0.0f64;
             let mut snap_time = 0.0f64;
             for (entity, pos, _agent_type, hunger, _energy, mut maybe_target, mut maybe_path, agent_state) in query.iter_mut(world) {
