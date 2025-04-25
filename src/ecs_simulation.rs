@@ -2,7 +2,8 @@
 use legion::*;
 use crate::ecs_components::*;
 use crate::food::systems::{collect_food_positions_system, collect_food_spawn_positions_system, food_spawn_apply_system};
-use crate::agent::{action_selection_system, agent_movement_history_system, agent_death_system, path_following_system};
+use crate::agent::{agent_action_selection_system, agent_movement_history_system, agent_death_system, path_following_system};
+use crate::ecs::systems::swimming::swimming_system;
 
 /// All unused imports removed for a clean build
 
@@ -59,13 +60,25 @@ pub fn build_simulation_schedule_profiled() -> Schedule {
         .add_system(collect_food_positions_system())
         .add_system(collect_food_spawn_positions_system())
         .add_system(food_spawn_apply_system())
-        .add_system(action_selection_system())
+        .add_system(crate::agent::pause_system::agent_pause_system())
+        .add_system(agent_action_selection_system())
+        .add_system(crate::ecs::systems::agent::agent_pausing_system())
+        .add_system(crate::ecs::systems::agent::agent_hunger_energy_system())
+        .add_system(crate::ecs::systems::agent::agent_movement_system())
+        // Agent state transition system must run after agent movement
+        .add_system(crate::ecs::systems::agent::agent_state_transition_system())
         .add_system(path_following_system())
+        // --- Agent Logging Systems ---
+        .add_system(crate::ecs::systems::agent_logging::agent_arrival_logging_system())
+        .add_system(crate::ecs::systems::agent_logging::agent_move_logging_system())
+        .add_system(crate::ecs::systems::agent_logging::agent_spawn_logging_system())
+        // --- End Agent Logging Systems ---
         .add_system(crate::agent::systems::passive_hunger_system())
         .add_system(agent_movement_history_system())
         .add_system(entity_interaction_system())
         .add_system(agent_death_system())
         .add_system(agent::agent_event_log_to_gui_system())
+        .add_system(swimming_system())
         // Add any other new systems here as needed
         .build()
 }

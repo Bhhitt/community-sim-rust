@@ -4,7 +4,7 @@ This checklist helps ensure all ECS systems access `EventLog` through ECS resour
 
 | System Name                        | File                                   | Accesses EventLog? | Pattern to Check/Unify            | Checked |
 |-------------------------------------|----------------------------------------|--------------------|-----------------------------------|---------|
-| action_selection_system             | src/agent/systems.rs                   | Yes                | Should use ECS resource           | [x]     |
+| action_selection_system             | src/agent/systems.rs                   | REMOVED             | Deprecated, logic now in agent_action_selection_system | [x]     |
 | path_following_system               | src/agent/systems.rs                   | Yes                | Should use ECS resource           | [x]     |
 | swimming_system                     | src/agent/swimming.rs                  | Yes                | Should use ECS resource           | [x]     |
 | agent_event_log_to_gui_system       | src/agent/event_log_bridge.rs          | Yes                | Should use ECS resource           | [x]     |

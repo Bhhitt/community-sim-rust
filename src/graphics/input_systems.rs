@@ -1,8 +1,10 @@
 use crate::graphics::input_intent::InputIntent;
 use crate::graphics::sim_state::SimUIState;
-use crate::agent::{spawn_agent, AgentType, event::AgentEventLog};
+use crate::agent::{AgentType, event::AgentEventLog};
 use crate::ecs_components::Position;
 use crate::map::Terrain;
+// TODO: Remove unresolved import for pending_agent_spawns
+// use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 use legion::IntoQuery;
 
 /// Processes all input intents from the InputQueue, mutating the ECS world and UI state as needed.
@@ -51,7 +53,7 @@ pub fn process_input_intents(
                 let mut agent_event_log = sim_ui_state.resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
                 if let Some(agent_type) = agent_types.get(0) {
                     let agent_type = agent_type.clone();
-                    spawn_agent(sim_ui_state.world, Position { x, y }, agent_type, render_map, &mut *agent_event_log);
+                    sim_ui_state.resources.get_mut::<PendingAgentSpawns>().unwrap().add(Position { x, y }, agent_type);
                     log::debug!("[DEBUG] Added agent at ({}, {})", x, y);
                 } else {
                     log::debug!("[ERROR] No agent types defined!");
@@ -71,7 +73,7 @@ pub fn process_input_intents(
                     if render_map.tiles[y as usize][x as usize] == Terrain::Grass || render_map.tiles[y as usize][x as usize] == Terrain::Forest {
                         let type_idx = rng.gen_range(0..num_types);
                         let agent_type = agent_types[type_idx].clone();
-                        spawn_agent(sim_ui_state.world, Position { x, y }, agent_type, render_map, &mut *agent_event_log);
+                        sim_ui_state.resources.get_mut::<PendingAgentSpawns>().unwrap().add(Position { x, y }, agent_type);
                         spawned += 1;
                     }
                     attempts += 1;

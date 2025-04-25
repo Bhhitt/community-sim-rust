@@ -2,7 +2,8 @@
 use legion::*;
 use crate::ecs_components::*;
 use crate::Food;
-use crate::agent::{AgentType, MovementProfile, MovementEffect, spawn_agent, DecisionEngineConfig};
+use crate::agent::{AgentType, MovementProfile, MovementEffect, DecisionEngineConfig};
+use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 use log::debug;
 use std::collections::HashMap;
 use rand::Rng;
@@ -13,6 +14,7 @@ pub fn run_ecs_sim() {
     let mut resources = Resources::default();
     resources.insert(crate::agent::event::AgentEventLog::default());
     resources.insert(Arc::new(Mutex::new(crate::event_log::EventLog::new(200))));
+    resources.insert(PendingAgentSpawns::default());
     // Spawn some agents
     let agent_types = [
         AgentType {
@@ -33,7 +35,7 @@ pub fn run_ecs_sim() {
         let agent_type = agent_types[i % agent_types.len()].clone();
         // NOTE: This is a minimal ECS sim; pass a dummy map for now (or refactor if needed)
         let dummy_map = crate::map::Map::new(10, 10);
-        spawn_agent(&mut world, pos, agent_type, &dummy_map);
+        resources.get_mut::<PendingAgentSpawns>().unwrap().add(pos, agent_type.clone());
     }
     // Spawn some food
     for i in 0..3 {

@@ -3,7 +3,6 @@ use legion;
 use legion::IntoQuery;
 use legion::SystemBuilder;
 use rand::Rng;
-use log;
 use crate::food::Food;
 use crate::agent::{InteractionState, event::{AgentEvent, AgentEventLog}};
 use std::sync::{Arc, Mutex};

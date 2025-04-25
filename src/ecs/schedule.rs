@@ -18,6 +18,13 @@ use serde::{Deserialize, /*Serialize*/};
 use serde_yaml;
 use crate::agent::event::AgentEventLog;
 use crate::ecs::resources::insert_standard_resources;
+use crate::ecs::systems::agent_spawn::agent_spawning_system;
+use crate::ecs::systems::{
+    agent_action_decision_system,
+    agent_target_assignment_system,
+    agent_path_assignment_system,
+    agent_state_transition_system,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct SimProfile {
@@ -140,6 +147,11 @@ pub fn run_simulation(
         let mut min_profile: Option<SystemProfile> = None;
         let mut max_profile: Option<SystemProfile> = None;
         let mut schedule = build_simulation_schedule_profiled();
+        // Register agent spawning system early so agents are created before other systems run
+        // TODO: Fix unresolved import for agent_spawn and update system registration to use correct Legion API
+        // Remove or update add_system usage if not valid for current Legion version
+        // use crate::ecs::systems::agent_spawn;
+        schedule.add_system(agent_spawning_system());
         for tick in 0..ticks {
             log::debug!("Tick {}", tick);
             log::info!("[DEBUG] AgentEventLog present at tick {}? {}", tick, resources.get::<AgentEventLog>().is_some());
@@ -197,6 +209,11 @@ pub fn run_simulation(
         }
     } else {
         let mut schedule = build_simulation_schedule_profiled();
+        // Register agent spawning system early so agents are created before other systems run
+        // TODO: Fix unresolved import for agent_spawn and update system registration to use correct Legion API
+        // Remove or update add_system usage if not valid for current Legion version
+        // use crate::ecs::systems::agent_spawn;
+        schedule.add_system(agent_spawning_system());
         let mut last_ascii = String::new();
         for tick in 0..ticks {
             log::debug!("Tick {}", tick);
@@ -314,3 +331,15 @@ pub fn run_scaling_benchmarks(agent_types: &[AgentType]) {
 // }
 
 // TODO: Move schedule-building logic from ecs_sim.rs, ecs_simulation.rs, or main.rs here.
+
+// TODO: Insert these systems into the main ECS schedule, in the correct order:
+// 1. agent_action_decision_system
+// 2. agent_target_assignment_system
+// 3. agent_path_assignment_system
+// 4. agent_state_transition_system
+//
+// For example:
+// schedule_builder.add_system(agent_action_decision_system());
+// schedule_builder.add_system(agent_target_assignment_system());
+// schedule_builder.add_system(agent_path_assignment_system());
+// schedule_builder.add_system(agent_state_transition_system());

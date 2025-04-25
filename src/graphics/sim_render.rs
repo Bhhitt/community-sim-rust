@@ -5,14 +5,17 @@
 // Will contain the main SDL2 rendering logic and event loop
 
 use legion::*;
-use crate::agent::{AgentType, spawn_agent};
+use crate::agent::AgentType;
 use rand::Rng;
 use crate::log_config::LogConfig;
 use std::fs::File;
 use crate::graphics::sim_state::SimUIState;
 use crate::ecs_simulation::{build_simulation_schedule_profiled, build_simulation_schedule_unprofiled};
-use crate::agent::event::AgentEventLog;
+// TODO: Remove unused import
+// use crate::agent::event::AgentEventLog;
 use crate::ecs::resources::insert_standard_resources;
+// TODO: Remove unresolved import for pending_agent_spawns
+// use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 
 const CELL_SIZE: f32 = 6.0;
 
@@ -53,8 +56,7 @@ pub fn run_sim_render(
                 }
             }
             let agent_type = agent_types[i % agent_types.len()].clone();
-            let mut agent_event_log = resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
-            spawn_agent(world, crate::ecs_components::Position { x, y }, agent_type, &map, &mut *agent_event_log);
+            resources.get_mut::<PendingAgentSpawns>().unwrap().add(crate::ecs_components::Position { x, y }, agent_type.clone());
             _agent_count += 1;
             _attempts += tries;
         }

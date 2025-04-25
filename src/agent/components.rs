@@ -96,7 +96,34 @@ impl MovementHistory {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Path {
+    pub waypoints: std::collections::VecDeque<(f32, f32)>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SwimmingProfile {
     pub swim_chance_percent: u8, // 1-30, how likely this agent is to want to swim
     pub swim_ticks_remaining: u32, // how many ticks left to swim, 0 if not swimming
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IdlePause {
+    pub ticks_remaining: u32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum IntendedAction {
+    SeekFood,
+    Wander,
+    Idle,
+    // Add more as needed
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Target {
+    pub x: f32,
+    pub y: f32,
+    pub stuck_ticks: u32,
+    pub path_ticks: Option<u32>,
+    pub ticks_to_reach: Option<u32>,
 }

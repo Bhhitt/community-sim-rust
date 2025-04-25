@@ -40,7 +40,7 @@
   icon: "X"
   damping: 0.95
   move_probability: 0.7
-  hunger_rate: 0.06
+  hunger_rate: 0.9
   hunger_threshold: 45.0
   movement_profile:
     Mountain: "Slow(3.0)"   # Moves at 1/3 speed on mountains (3x slower)

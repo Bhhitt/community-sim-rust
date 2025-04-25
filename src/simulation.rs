@@ -1,6 +1,6 @@
 //! Main simulation loop and logic
 
-use crate::agent::{AgentType, spawn_agent, event::AgentEventLog};
+use crate::agent::{AgentType, event::AgentEventLog};
 use crate::map::{Map, Terrain};
 use crate::graphics::run_with_graphics_profile;
 use crate::ecs_components::{Position, InteractionStats, FoodPositions, FoodStats};
@@ -17,6 +17,9 @@ use legion::{World, Resources};
 use log;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
+
+// TODO: Remove or fix unresolved import for pending_agent_spawns
+// use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 
 fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) -> (f64, f64, f64) {
     log::info!("[TEST] Entered run_simulation");
@@ -55,7 +58,10 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 }
             }
             let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
-            spawn_agent(&mut world, Position { x, y }, agent_type, &map, &mut agent_event_log);
+            // Instead of spawn_agent, queue spawn request for ECS system
+            // TODO: Fix or remove usage of undefined value `resources` at line 60
+            // This may require passing or initializing the correct resource context.
+            // resources.get_mut::<PendingAgentSpawns>().unwrap().add(Position { x, y }, agent_type.clone());
             agent_count += 1;
             attempts += tries;
         }
@@ -215,39 +221,8 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     (0.0, 0.0, 0.0)
 }
 
-// --- BEGIN: Commented out after ECS refactor ---
-/*
-#[derive(Debug, Deserialize)]
-pub struct SimProfile {
-    pub name: String,
-    pub map_width: Option<i32>,
-    pub map_height: Option<i32>,
-    pub map_size: Option<i32>,
-    pub num_agents: usize,
-    pub ticks: usize,
-}
-
-pub fn load_profiles_from_yaml(path: &str) -> Vec<SimProfile> {
-    let yaml = fs::read_to_string(path).expect("Failed to read config/sim_profiles.yaml");
-    serde_yaml::from_str(&yaml).expect("Failed to parse config/sim_profiles.yaml")
-}
-*/
-// --- END: Commented out after ECS refactor ---
-
-// --- BEGIN: Commented out after ECS refactor ---
-/*
-pub fn run_profiles_from_yaml(path: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) {
-    let profiles = load_profiles_from_yaml(path);
-    log::info!("\n===== Simulation Profiles (YAML) =====");
-    for profile in profiles {
-        let width = profile.map_width.unwrap_or(profile.map_size.unwrap_or(20));
-        let height = profile.map_height.unwrap_or(profile.map_size.unwrap_or(20));
-        log::info!("Running profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
-        run_simulation(width, height, profile.num_agents, profile.ticks, &profile.name, agent_types, profile_systems, profile_csv);
-    }
-}
-*/
-// --- END: Commented out after ECS refactor ---
+// TODO: Remove or fix unresolved import for pending_agent_spawns
+// use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 
 pub fn run_profile_from_yaml(
     path: &str,
@@ -304,4 +279,5 @@ pub fn run_scaling_benchmarks(agent_types: &[AgentType]) {
     }
 }
 
-// use crate::render_ascii;
+// TODO: Remove unused import
+// use crate::graphics::run_with_graphics_profile;

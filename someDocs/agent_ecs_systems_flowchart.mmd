@@ -1,0 +1,28 @@
+```mermaid
+flowchart TD
+    subgraph Core
+        PAUSE[agent_pause_system]\n(Decrement IdlePause)
+        ACTION[agent_action_selection_system]\n(Decide actions, assign targets)
+        PATH[path_following_system]\n(Manage paths, reset state)
+        MOVE[agent_movement_system]\n(Move agents, update positions)
+        ARRIVE[agent_arrival_system]\n(Handle arrival, set IdlePause)
+        HUNGER[passive_hunger_system]\n(Update hunger)
+        HISTORY[agent_movement_history_system]\n(Record positions)
+        DEATH[agent_death_system]\n(Remove dead agents)
+    end
+    subgraph Supporting
+        SWIM[swimming_system]\n(Handle swimming)
+        LOG[agent_event_log_to_gui_system]\n(Bridge event logs)
+    end
+    PAUSE --> ACTION
+    ACTION --> PATH
+    PATH --> MOVE
+    MOVE --> ARRIVE
+    ARRIVE --> PAUSE
+    MOVE --> HUNGER
+    MOVE --> HISTORY
+    HUNGER --> DEATH
+    SWIM --> MOVE
+    LOG --> ARRIVE
+    LOG --> MOVE
+```
