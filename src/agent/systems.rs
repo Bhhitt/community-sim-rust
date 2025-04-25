@@ -3,17 +3,19 @@
 use crate::navigation::*;
 use legion::*;
 use rand::seq::SliceRandom;
+use rand::Rng;
 use std::collections::VecDeque;
 use std::io::Write;
+use crate::agent::event::{AgentEvent, AgentEventLog};
+use std::sync::{Arc, Mutex};
 
-pub fn spawn_agent(world: &mut legion::World, pos: crate::ecs_components::Position, agent_type: crate::agent::AgentType, map: &crate::map::Map) -> legion::Entity {
+pub fn spawn_agent(world: &mut legion::World, pos: crate::ecs_components::Position, agent_type: crate::agent::AgentType, map: &crate::map::Map, agent_event_log: &mut AgentEventLog) -> legion::Entity {
     log::info!("[SPAWN_INFO] spawn_agent() called for agent type: {} at ({:.2},{:.2})", agent_type.name, pos.x, pos.y);
     if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open("spawn_agent.log") {
         use std::io::Write;
         let _ = writeln!(file, "[SPAWN_FILE] Agent spawn_agent() called");
     }
     log::debug!("[SPAWN] Agent spawn_agent() called");
-    println!("[SPAWN_PRINT] Agent spawn_agent() called");
     std::io::stdout().flush().unwrap();
     let _color = agent_type.color.clone();
     let mut rng = rand::thread_rng();
@@ -36,9 +38,13 @@ pub fn spawn_agent(world: &mut legion::World, pos: crate::ecs_components::Positi
         Path { waypoints: VecDeque::new() },
         crate::agent::AgentState::Idle,
     ));
+    agent_event_log.push(AgentEvent::Spawned {
+        agent: entity,
+        agent_type: agent_type.name.clone(),
+        pos: (pos.x, pos.y),
+    });
     log::info!("[SPAWN_INFO] Agent {:?} spawned at ({:.2},{:.2}) with state {:?}", entity, pos.x, pos.y, crate::agent::AgentState::Idle);
     log::debug!("[SPAWN] Agent {:?} spawned at ({:.2},{:.2}) with state {:?}", entity, pos.x, pos.y, crate::agent::AgentState::Idle);
-    println!("[SPAWN_PRINT] Agent {:?} spawned at ({:.2},{:.2}) with state {:?}", entity, pos.x, pos.y, crate::agent::AgentState::Idle);
     world.extend(vec![(entity, crate::agent::components::MovementHistory::new(12))]);
     world.extend(vec![(entity, swimming_profile)]);
     entity
@@ -49,7 +55,7 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("PathFollowingSystem")
         .with_query(<(Entity, &mut crate::ecs_components::Position, &crate::agent::AgentType, &mut crate::agent::Hunger, &mut crate::agent::Energy, Option<&mut Target>, Option<&mut Path>, &mut crate::agent::AgentState)>::query())
         .read_resource::<crate::map::Map>()
-        .write_resource::<crate::event_log::EventLog>()
+        .write_resource::<Arc<Mutex<crate::event_log::EventLog>>>()
         .read_resource::<crate::log_config::LogConfig>()
         .build(move |_command_buffer, world, resources, query| {
             let log_config = &resources.2;
@@ -82,9 +88,9 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
                                 pos.y += dy / dist * step;
                                 hunger.value -= agent_type.hunger_rate * step;
                                 if !log_config.quiet {
-                                    resources.1.push(format!("[MOVE] Agent {:?} moved to ({:.2}, {:.2}) via path (speed {:.2})", entity, pos.x, pos.y, agent_type.movement_profile.speed));
+                                    resources.1.lock().unwrap().push(format!("[MOVE] Agent {:?} moved to ({:.2}, {:.2}) via path (speed {:.2})", entity, pos.x, pos.y, agent_type.movement_profile.speed));
                                 }
-                                path.waypoints.remove(0);
+                                path.waypoints.pop_front();
                                 waypoint_time += wp_start.elapsed().as_secs_f64();
                                 moved += 1;
                             } else {
@@ -94,7 +100,7 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
                                 pos.y = target.y;
                                 *agent_state = crate::agent::AgentState::Arrived;
                                 if !log_config.quiet {
-                                    resources.1.push(format!("[ARRIVE] Agent {:?} arrived at ({:.2}, {:.2}) [no waypoints]", entity, pos.x, pos.y));
+                                    resources.1.lock().unwrap().push(format!("[ARRIVE] Agent {:?} arrived at ({:.2}, {:.2}) [no waypoints]", entity, pos.x, pos.y));
                                 }
                                 snap_time += snap_start.elapsed().as_secs_f64();
                                 moved += 1;
@@ -109,7 +115,7 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
                                 pos.y += (target.y - pos.y) / dist * step;
                                 hunger.value -= agent_type.hunger_rate * step;
                                 if !log_config.quiet {
-                                    resources.1.push(format!("[MOVE] Agent {:?} moved to ({:.2}, {:.2}) (speed {:.2})", entity, pos.x, pos.y, agent_type.movement_profile.speed));
+                                    resources.1.lock().unwrap().push(format!("[MOVE] Agent {:?} moved to ({:.2}, {:.2}) (speed {:.2})", entity, pos.x, pos.y, agent_type.movement_profile.speed));
                                 }
                                 moved += 1;
                             } else {
@@ -118,7 +124,7 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
                                 pos.y = target.y;
                                 *agent_state = crate::agent::AgentState::Arrived;
                                 if !log_config.quiet {
-                                    resources.1.push(format!("[ARRIVE] Agent {:?} arrived at ({:.2}, {:.2})", entity, pos.x, pos.y));
+                                    resources.1.lock().unwrap().push(format!("[ARRIVE] Agent {:?} arrived at ({:.2}, {:.2})", entity, pos.x, pos.y));
                                 }
                                 moved += 1;
                             }
@@ -145,7 +151,7 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
         .with_query(<(Entity, &mut crate::ecs_components::Position, &crate::agent::AgentType, &mut crate::agent::Hunger, &mut crate::agent::Energy, Option<&mut Target>, Option<&mut Path>, &mut crate::agent::AgentState)>::query())
         .read_resource::<crate::map::Map>()
         .read_resource::<crate::ecs_components::FoodPositions>()
-        .write_resource::<crate::event_log::EventLog>()
+        .write_resource::<Arc<Mutex<crate::event_log::EventLog>>>()
         .read_resource::<crate::log_config::LogConfig>()
         .build(move |_command_buffer, world, resources, query| {
             let log_config = &resources.3;
@@ -173,18 +179,18 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                                     target.x = *ax;
                                     target.y = *ay;
                                     if !log_config.quiet {
-                                        resources.2.push(format!("[TARGET][MLP] Agent {:?} seeks food at ({:.2}, {:.2})", entity, ax, ay));
+                                        resources.2.lock().unwrap().push(format!("[TARGET][MLP] Agent {:?} seeks food at ({:.2}, {:.2})", entity, ax, ay));
                                     }
                                     if let Some(ref mut path) = maybe_path.as_mut() {
                                         if let Some(astar_path) = pathfinding::a_star_path(&resources.0, agent_type, agent_state, (pos.x as i32, pos.y as i32), (*ax as i32, *ay as i32), 120) {
-                                            path.waypoints = astar_path.into_iter().collect();
+                                            path.waypoints = std::collections::VecDeque::from_iter(astar_path.into_iter());
                                             if !log_config.quiet {
-                                                resources.2.push(format!("[PATHFIND] Path assigned: {} waypoints", path.waypoints.len()));
+                                                resources.2.lock().unwrap().push(format!("[PATHFIND] Path assigned: {} waypoints", path.waypoints.len()));
                                             }
                                             *agent_state = crate::agent::AgentState::Moving;
                                         } else {
                                             if !log_config.quiet {
-                                                resources.2.push("[PATHFIND] No path found".to_string());
+                                                resources.2.lock().unwrap().push("[PATHFIND] No path found".to_string());
                                             }
                                             *agent_state = crate::agent::AgentState::Idle;
                                         }
@@ -195,27 +201,25 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                         }
                     } else {
                         log::debug!("[WANDER_BRANCH] Agent {:?} entering wander branch. State: {:?} Hunger: {:.2}/{:.2}", entity, agent_state, hunger.value, hunger.threshold);
-                        // Wander
-                        let (rx, ry) = random_passable_target(&resources.0, agent_type, &mut rng, Some((pos.x, pos.y)));
-                        log::debug!("[WANDER] Agent {:?} at ({:.2},{:.2}) assigned wander target ({:.2},{:.2})", entity, pos.x, pos.y, rx, ry);
+                        // Example wander: pick a random nearby tile
+                        let rx = pos.x + rng.gen_range(-5.0..=5.0);
+                        let ry = pos.y + rng.gen_range(-5.0..=5.0);
                         if let Some(ref mut target) = maybe_target.as_mut() {
                             target.x = rx;
                             target.y = ry;
                             if !log_config.quiet {
-                                resources.2.push(format!("[TARGET] Agent {:?} wanders to ({:.2}, {:.2}) [local 120 units]", entity, rx, ry));
+                                resources.2.lock().unwrap().push(format!("[TARGET] Agent {:?} wanders to ({:.2}, {:.2}) [local 120 units]", entity, rx, ry));
                             }
                             if let Some(ref mut path) = maybe_path.as_mut() {
                                 if let Some(astar_path) = pathfinding::a_star_path(&resources.0, agent_type, agent_state, (pos.x as i32, pos.y as i32), (rx as i32, ry as i32), 120) {
-                                    log::debug!("[WANDER] Agent {:?} assigned wander path with {} waypoints", entity, astar_path.len());
-                                    path.waypoints = astar_path.into_iter().collect();
+                                    path.waypoints = std::collections::VecDeque::from_iter(astar_path.into_iter());
                                     if !log_config.quiet {
-                                        resources.2.push(format!("[PATHFIND] Path assigned: {} waypoints", path.waypoints.len()));
+                                        resources.2.lock().unwrap().push(format!("[PATHFIND] Path assigned: {} waypoints", path.waypoints.len()));
                                     }
                                     *agent_state = crate::agent::AgentState::Moving;
                                 } else {
-                                    log::debug!("[WANDER] Agent {:?} could not find wander path", entity);
                                     if !log_config.quiet {
-                                        resources.2.push("[PATHFIND] No path found".to_string());
+                                        resources.2.lock().unwrap().push("[PATHFIND] No path found".to_string());
                                     }
                                     *agent_state = crate::agent::AgentState::Idle;
                                 }
@@ -224,7 +228,6 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
                     }
                 }
             }
-            log::info!("[ACTION] ActionSelectionSystem matched {} agents this tick", matched);
         })
 }
 

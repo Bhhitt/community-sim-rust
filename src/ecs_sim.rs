@@ -10,6 +10,7 @@ use rand::Rng;
 pub fn run_ecs_sim() {
     let mut world = World::default();
     let mut resources = Resources::default();
+    resources.insert(crate::agent::event::AgentEventLog::default());
     // Spawn some agents
     let agent_types = [
         AgentType {

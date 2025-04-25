@@ -1,6 +1,6 @@
 //! Main simulation loop and logic
 
-use crate::agent::{AgentType, spawn_agent};
+use crate::agent::{AgentType, spawn_agent, event::AgentEventLog};
 use crate::map::{Map, Terrain};
 use crate::graphics::run_with_graphics_profile;
 use crate::ecs_components::{Position, InteractionStats, FoodPositions, FoodStats};
@@ -36,6 +36,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     }).collect();
     let mut agent_count = 0;
     let mut attempts = 0;
+    let mut agent_event_log = AgentEventLog::default();
     if num_agents > 0 {
         for i in 0..num_agents {
             // Find a random passable tile
@@ -54,7 +55,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                 }
             }
             let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
-            spawn_agent(&mut world, Position { x, y }, agent_type, &map);
+            spawn_agent(&mut world, Position { x, y }, agent_type, &map, &mut agent_event_log);
             agent_count += 1;
             attempts += tries;
         }
@@ -105,6 +106,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     resources.insert(InteractionStats::default());
     resources.insert(Arc::new(Mutex::new(EventLog::new(200))));
     resources.insert(LogConfig::default()); // Insert LogConfig resource
+    resources.insert(AgentEventLog::default()); // Ensure AgentEventLog is always present
     // Insert other resources as needed for ECS systems
     if profile_systems {
         let mut csv_file = File::create(profile_csv).expect("Failed to create csv file");

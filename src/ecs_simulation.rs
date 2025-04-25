@@ -49,6 +49,10 @@ impl SystemProfile {
     }
 }
 
+mod agent {
+    pub use crate::agent::event_log_bridge::agent_event_log_to_gui_system;
+}
+
 /// Builds a Legion Schedule containing all ECS systems in the correct order, with per-system profiling.
 pub fn build_simulation_schedule_profiled() -> Schedule {
     Schedule::builder()
@@ -61,6 +65,7 @@ pub fn build_simulation_schedule_profiled() -> Schedule {
         .add_system(agent_movement_history_system())
         .add_system(entity_interaction_system())
         .add_system(agent_death_system())
+        .add_system(agent::agent_event_log_to_gui_system())
         // Add any other new systems here as needed
         .build()
 }

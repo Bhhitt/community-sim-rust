@@ -2,6 +2,8 @@ pub mod components;
 pub mod systems;
 pub mod mlp;
 pub mod swimming;
+pub mod event;
+pub mod event_log_bridge;
 
 // Public API: only export what is needed outside the agent module
 pub use components::{AgentType, Hunger, Energy, MovementProfile, MovementEffect, agent_state::AgentState, MovementHistory, DecisionEngineConfig, InteractionState, RecentInteraction};

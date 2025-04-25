@@ -4,6 +4,7 @@ use legion::IntoQuery;
 use community_sim::ecs_components::Position;
 use community_sim::agent::{AgentType, components::{MovementProfile, MovementEffect, DecisionEngineConfig}};
 use community_sim::agent::systems::spawn_agent;
+use community_sim::agent::event::AgentEventLog;
 use community_sim::map::Map;
 
 #[test]
@@ -23,7 +24,8 @@ fn test_ecs_agent_spawn_and_query() {
     };
     let pos = Position { x: 10.0, y: 20.0 };
     let map = Map::new(32, 32);
-    let _entity = spawn_agent(&mut world, pos, agent_type.clone(), &map);
+    let mut agent_event_log = AgentEventLog::default();
+    let _entity = spawn_agent(&mut world, pos, agent_type.clone(), &map, &mut agent_event_log);
     // Query for the agent entity
     let mut found = false;
     for (pos, agent_type_ref) in <(legion::Read<Position>, legion::Read<AgentType>)>::query().iter(&world) {

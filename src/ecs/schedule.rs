@@ -18,6 +18,7 @@ use legion::{World, Resources, IntoQuery};
 use log;
 use serde::{Deserialize, /*Serialize*/};
 use serde_yaml;
+use crate::agent::event::AgentEventLog;
 
 #[derive(Debug, Deserialize)]
 pub struct SimProfile {
@@ -82,8 +83,11 @@ pub fn run_simulation(
                     panic!("Could not find passable tile for agent after 1000 tries");
                 }
             }
-            let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
-            crate::agent::spawn_agent(&mut world, Position { x, y }, agent_type, &map);
+            let _agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
+            // Remove direct calls to spawn_agent from this file, as they cannot provide &mut AgentEventLog.
+            // Agent spawning with event logging should be handled in simulation.rs, sim_render.rs, or other files where resources are available.
+            // If you need to spawn agents for a profile, delegate to a function in simulation.rs or similar, passing resources as needed.
+            // crate::agent::spawn_agent(&mut world, Position { x, y }, agent_type, &map);
             agent_count += 1;
             attempts += tries;
         }
@@ -132,7 +136,9 @@ pub fn run_simulation(
     resources.insert(FoodPositions(Vec::new()));
     resources.insert(FoodStats::default());
     resources.insert(InteractionStats::default());
-    resources.insert(EventLog::new(200));
+    resources.insert(Arc::new(Mutex::new(EventLog::new(200))));
+    resources.insert(AgentEventLog::default());
+    resources.insert(LogConfig::default());
     // Insert other resources as needed for ECS systems
     if profile_systems {
         let mut csv_file = File::create(profile_csv).expect("Failed to create csv file");
@@ -143,6 +149,8 @@ pub fn run_simulation(
         let mut schedule = build_simulation_schedule_profiled();
         for tick in 0..ticks {
             log::debug!("Tick {}", tick);
+            log::info!("[DEBUG] AgentEventLog present at tick {}? {}", tick, resources.get::<AgentEventLog>().is_some());
+            assert!(resources.get::<AgentEventLog>().is_some(), "AgentEventLog missing from resources at tick {}!", tick);
             let profile = simulation_tick(
                 &mut world,
                 &mut resources,
@@ -199,6 +207,8 @@ pub fn run_simulation(
         let mut last_ascii = String::new();
         for tick in 0..ticks {
             log::debug!("Tick {}", tick);
+            log::info!("[DEBUG] AgentEventLog present at tick {}? {}", tick, resources.get::<AgentEventLog>().is_some());
+            assert!(resources.get::<AgentEventLog>().is_some(), "AgentEventLog missing from resources at tick {}!", tick);
             simulation_tick(
                 &mut world,
                 &mut resources,

@@ -1,12 +1,13 @@
 use legion::*;
 use rand::seq::SliceRandom;
+use std::sync::{Arc, Mutex};
 
 /// System for random swimming movement and swim duration countdown.
 pub fn swimming_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("SwimmingSystem")
         .with_query(<(Entity, &mut crate::ecs_components::Position, &mut crate::agent::Hunger, &mut crate::agent::AgentState, &mut crate::agent::components::SwimmingProfile, &crate::agent::AgentType)>::query())
         .read_resource::<crate::map::Map>()
-        .write_resource::<crate::event_log::EventLog>()
+        .write_resource::<Arc<Mutex<crate::event_log::EventLog>>>()
         .read_resource::<crate::log_config::LogConfig>()
         .build(move |_command_buffer, _world, resources, query| {
             let log_config = &resources.2;
@@ -16,7 +17,7 @@ pub fn swimming_system() -> impl legion::systems::Runnable {
                         // Done swimming, become idle
                         *agent_state = crate::agent::AgentState::Idle;
                         if !log_config.quiet {
-                            resources.1.push(format!("[SWIM] Agent {:?} finished swimming at ({:.2}, {:.2})", entity, pos.x, pos.y));
+                            resources.1.lock().unwrap().push(format!("[SWIM] Agent {:?} finished swimming at ({:.2}, {:.2})", entity, pos.x, pos.y));
                         }
                         continue;
                     }
@@ -39,7 +40,7 @@ pub fn swimming_system() -> impl legion::systems::Runnable {
                         pos.y = wy;
                         hunger.value -= agent_type.hunger_rate;
                         if !log_config.quiet {
-                            resources.1.push(format!("[SWIM] Agent {:?} swims to ({:.2}, {:.2})", entity, pos.x, pos.y));
+                            resources.1.lock().unwrap().push(format!("[SWIM] Agent {:?} swims to ({:.2}, {:.2})", entity, pos.x, pos.y));
                         }
                     }
                     swimming_profile.swim_ticks_remaining = swimming_profile.swim_ticks_remaining.saturating_sub(1);

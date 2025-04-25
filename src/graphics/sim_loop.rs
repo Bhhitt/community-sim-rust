@@ -7,6 +7,7 @@ use std::time::Duration;
 use std::collections::HashMap;
 use log;
 use legion::{IntoQuery};
+use std::sync::{Arc, Mutex};
 
 use crate::graphics::camera::Camera;
 use crate::agent::AgentType;
@@ -128,7 +129,8 @@ pub fn main_sim_loop(
             advance_one = false;
         }
         // --- Print latest EventLog entry to console ---
-        if let Some(event_log) = sim_ui_state.resources.get::<EventLog>() {
+        if let Some(event_log) = sim_ui_state.resources.get::<Arc<Mutex<EventLog>>>() {
+            let event_log = event_log.lock().unwrap();
             if !event_log.events.is_empty() {
                 if let Some(last_event) = event_log.events.back() {
                     log::debug!("{}", last_event);
@@ -140,7 +142,7 @@ pub fn main_sim_loop(
             &sim_ui_state.world,
             log_canvas,
             sim_ui_state.font,
-            &sim_ui_state.resources.get::<EventLog>().unwrap(),
+            &*sim_ui_state.resources.get::<Arc<Mutex<EventLog>>>().unwrap(),
             !log_config.quiet,
         );
         // Handle events (refactored: collect input events into InputQueue)

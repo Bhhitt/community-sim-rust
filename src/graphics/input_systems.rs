@@ -1,6 +1,6 @@
 use crate::graphics::input_intent::InputIntent;
 use crate::graphics::sim_state::SimUIState;
-use crate::agent::{spawn_agent, AgentType};
+use crate::agent::{spawn_agent, AgentType, event::AgentEventLog};
 use crate::ecs_components::Position;
 use crate::map::Terrain;
 use legion::IntoQuery;
@@ -48,9 +48,10 @@ pub fn process_input_intents(
                         return;
                     }
                 }
+                let mut agent_event_log = sim_ui_state.resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
                 if let Some(agent_type) = agent_types.get(0) {
                     let agent_type = agent_type.clone();
-                    spawn_agent(sim_ui_state.world, Position { x, y }, agent_type, render_map);
+                    spawn_agent(sim_ui_state.world, Position { x, y }, agent_type, render_map, &mut *agent_event_log);
                     log::debug!("[DEBUG] Added agent at ({}, {})", x, y);
                 } else {
                     log::debug!("[ERROR] No agent types defined!");
@@ -63,13 +64,14 @@ pub fn process_input_intents(
                 let mut attempts = 0;
                 let max_tries_per_agent = 1000;
                 let num_types = agent_types.len().max(1);
+                let mut agent_event_log = sim_ui_state.resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
                 while spawned < count && attempts < count * max_tries_per_agent {
                     let x = rng.gen_range(0..render_map.width) as f32;
                     let y = rng.gen_range(0..render_map.height) as f32;
                     if render_map.tiles[y as usize][x as usize] == Terrain::Grass || render_map.tiles[y as usize][x as usize] == Terrain::Forest {
                         let type_idx = rng.gen_range(0..num_types);
                         let agent_type = agent_types[type_idx].clone();
-                        spawn_agent(sim_ui_state.world, Position { x, y }, agent_type, render_map);
+                        spawn_agent(sim_ui_state.world, Position { x, y }, agent_type, render_map, &mut *agent_event_log);
                         spawned += 1;
                     }
                     attempts += 1;

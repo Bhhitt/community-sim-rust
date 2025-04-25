@@ -9,7 +9,8 @@ use crate::log_config::LogConfig;
 use std::fs::File;
 use crate::graphics::sim_state::SimUIState;
 use crate::ecs_simulation::{build_simulation_schedule_profiled, build_simulation_schedule_unprofiled};
-// use std::sync::{Arc, Mutex};
+use crate::agent::event::AgentEventLog;
+use std::sync::{Arc, Mutex};
 
 const CELL_SIZE: f32 = 6.0;
 
@@ -51,7 +52,8 @@ pub fn run_sim_render(
                 }
             }
             let agent_type = agent_types[i % agent_types.len()].clone();
-            spawn_agent(world, crate::ecs_components::Position { x, y }, agent_type, &map);
+            let mut agent_event_log = resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
+            spawn_agent(world, crate::ecs_components::Position { x, y }, agent_type, &map, &mut *agent_event_log);
             _agent_count += 1;
             _attempts += tries;
         }
@@ -60,10 +62,12 @@ pub fn run_sim_render(
     log::debug!("[DEBUG] Number of agents spawned: {}", agent_count_check);
     resources.insert(map.clone());
     resources.insert(crate::ecs_components::InteractionStats::default());
-    resources.insert(crate::event_log::EventLog::new(200));
+    resources.insert(Arc::new(Mutex::new(crate::event_log::EventLog::new(200))));
     resources.insert(PendingFoodSpawns(std::collections::VecDeque::new()));
     resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
     resources.insert(crate::ecs_components::FoodStats { spawned_per_tick: 0, collected_per_tick: 0 });
+    resources.insert(AgentEventLog::default());
+    resources.insert(LogConfig::default());
 
     // Instead of borrowing LogConfig from resources while resources is mutably borrowed,
     // get LogConfig at the start and pass as a plain reference to downstream functions.

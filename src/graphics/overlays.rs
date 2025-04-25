@@ -6,13 +6,15 @@ use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::pixels::Color;
 use sdl2::ttf::Font;
+use std::sync::{Arc, Mutex};
 use crate::event_log::EventLog;
 
-pub fn draw_event_log_window(canvas: &mut Canvas<Window>, font: &Font, event_log: &EventLog, log_window_enabled: bool) {
+pub fn draw_event_log_window(canvas: &mut Canvas<Window>, font: &Font, event_log: &Arc<Mutex<EventLog>>, log_window_enabled: bool) {
     canvas.set_draw_color(Color::RGB(30, 30, 30));
     canvas.clear();
     let texture_creator = canvas.texture_creator();
     if log_window_enabled {
+        let event_log = event_log.lock().unwrap();
         let mut y = 10;
         let line_height = 20;
         let max_lines = 22;

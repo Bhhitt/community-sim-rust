@@ -5,7 +5,10 @@ use legion::SystemBuilder;
 use rand::Rng;
 use log;
 use crate::food::Food;
-use crate::agent::{InteractionState};
+use crate::agent::{InteractionState, event::{AgentEvent, AgentEventLog}};
+use std::sync::{Arc, Mutex};
+// Example usage in entity_interaction_system:
+// agent_event_log.push(AgentEvent::AteFood { agent, food, nutrition });
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Position {
@@ -74,13 +77,14 @@ pub fn agent_interaction_system() -> impl legion::systems::Runnable {
 pub fn entity_interaction_system() -> impl legion::systems::Runnable {
     SystemBuilder::new("EntityInteractionSystem")
         .write_resource::<InteractionStats>()
-        .write_resource::<crate::event_log::EventLog>()
+        .write_resource::<Arc<Mutex<crate::event_log::EventLog>>>()
         .write_resource::<FoodStats>()
+        .write_resource::<AgentEventLog>()
         .with_query(<(legion::Entity, &Position, &InteractionState)>::query()) // agents
         .with_query(<(legion::Entity, &Position, &Food)>::query()) // food
         .with_query(<(legion::Entity, &mut Position)>::query())
-        .build(|cmd, world, (stats, event_log, food_stats), (agent_query, food_query, agent_stats_query)| {
-            let event_log = event_log;
+        .build(|cmd, world, (stats, event_log, food_stats, agent_event_log), (agent_query, food_query, agent_stats_query)| {
+            let mut event_log = event_log.lock().unwrap();
             let agent_count = agent_query.iter(world).count();
             let food_count = food_query.iter(world).count();
             event_log.push(format!("[TICK] Agents: {}, Food: {}", agent_count, food_count));
@@ -126,7 +130,11 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
             for (agent_entity, food_e, nutrition) in food_eaten {
                 if let Some((_entity, _pos)) = agent_stats_query.iter_mut(world).find(|(e, _pos)| **e == agent_entity) {
                     event_log.push(format!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition));
-                    log::info!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition);
+                    agent_event_log.push(AgentEvent::AteFood {
+                        agent: agent_entity,
+                        food: food_e,
+                        nutrition,
+                    });
                 }
                 cmd.remove(food_e);
                 food_stats.collected_per_tick += 1;
