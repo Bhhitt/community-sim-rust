@@ -85,7 +85,7 @@ pub fn run_sim_render(
     let window_width = map_pixel_width.max(320).min(default_window_width);
     let window_height = map_pixel_height.max(240).min(default_window_height);
 
-    let (mut canvas, mut stats_canvas, mut log_canvas, mut event_pump, window_id, _stats_window_id, _log_window_id, mut camera, font) =
+    let (mut canvas, mut stats_canvas, mut log_canvas_opt, mut event_pump, window_id, _stats_window_id, _log_window_id, mut camera, font) =
         crate::graphics::sim_loop::init_sdl2(
             _map_width,
             _map_height,
@@ -120,7 +120,7 @@ pub fn run_sim_render(
         &mut sim_ui_state,
         &mut canvas,
         &mut stats_canvas,
-        &mut log_canvas,
+        &mut log_canvas_opt,
         &mut event_pump,
         window_id,
         agent_types,

@@ -61,3 +61,4 @@
   eat: false
   interact: false
   benchmark: true
+  quiet: true

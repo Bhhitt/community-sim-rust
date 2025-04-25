@@ -28,6 +28,7 @@ pub struct SimProfile {
     pub num_agents: usize,
     pub ticks: usize,
     pub benchmark: Option<bool>,
+    pub quiet: Option<bool>,
 }
 
 pub fn load_profiles_from_yaml(path: &str) -> Vec<SimProfile> {

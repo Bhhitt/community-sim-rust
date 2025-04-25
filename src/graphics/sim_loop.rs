@@ -23,7 +23,7 @@ pub fn init_sdl2(
     window_width: u32,
     window_height: u32,
     log_config: &LogConfig,
-) -> (Canvas<Window>, Canvas<Window>, Canvas<Window>, EventPump, u32, u32, u32, Camera, &'static Font<'static, 'static>) {
+) -> (Canvas<Window>, Canvas<Window>, Option<Canvas<Window>>, EventPump, u32, u32, Option<u32>, Camera, &'static Font<'static, 'static>) {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let window = video_subsystem
@@ -69,13 +69,18 @@ pub fn init_sdl2(
     };
     let stats_canvas = stats_window_canvas;
     let _stats_window_id = stats_canvas.window().id();
-    let log_window_canvas = video_subsystem.window("Event Log", 600, 480)
-        .position(340, 0)
-        .resizable()
-        .build().unwrap()
-        .into_canvas().build().unwrap();
-    let log_canvas = log_window_canvas;
-    let _log_window_id = log_canvas.window().id();
+    let (log_canvas, _log_window_id) = if !log_config.quiet {
+        let log_window_canvas = video_subsystem.window("Event Log", 600, 480)
+            .position(340, 0)
+            .resizable()
+            .build().unwrap()
+            .into_canvas().build().unwrap();
+        let log_canvas = log_window_canvas;
+        let _log_window_id = log_canvas.window().id();
+        (Some(log_canvas), Some(_log_window_id))
+    } else {
+        (None, None)
+    };
     (canvas, stats_canvas, log_canvas, event_pump, window_id, _stats_window_id, _log_window_id, camera, font_ref)
 }
 
@@ -84,7 +89,7 @@ pub fn main_sim_loop(
     sim_ui_state: &mut SimUIState,
     canvas: &mut Canvas<Window>,
     stats_canvas: &mut Canvas<Window>,
-    log_canvas: &mut Canvas<Window>,
+    log_canvas: &mut Option<Canvas<Window>>,
     event_pump: &mut EventPump,
     window_id: u32,
     agent_types: &[AgentType],
@@ -138,13 +143,15 @@ pub fn main_sim_loop(
             }
         }
         // --- Event log window rendering ---
-        crate::graphics::render::event_log_system::event_log_window_render(
-            &sim_ui_state.world,
-            &sim_ui_state.resources,
-            log_canvas,
-            sim_ui_state.font,
-            !log_config.quiet,
-        );
+        if let Some(log_canvas) = log_canvas {
+            crate::graphics::render::event_log_system::event_log_window_render(
+                &sim_ui_state.world,
+                &sim_ui_state.resources,
+                log_canvas,
+                sim_ui_state.font,
+                !log_config.quiet,
+            );
+        }
         // Handle events (refactored: collect input events into InputQueue)
         crate::graphics::input::collect_input_events(
             event_pump,

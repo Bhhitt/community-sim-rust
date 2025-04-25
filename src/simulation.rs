@@ -271,14 +271,21 @@ pub fn run_profile_from_yaml(
         "Launching GUI with profile: {} (map {}x{}, {} agents, {} ticks)",
         profile_name, width, height, num_agents, ticks
     );
-    run_with_graphics_profile(
+    // Derive quiet mode from YAML or profile name
+    let mut log_config = log_config.clone();
+    if let Some(quiet) = profile.quiet {
+        log_config.quiet = quiet;
+    } else if profile.name.ends_with("quiet") {
+        log_config.quiet = true;
+    }
+    crate::graphics::run_with_graphics_profile(
         width,
         height,
         num_agents,
         agent_types,
         profile_systems,
         profile_csv,
-        log_config,
+        &log_config,
         event_log,
     );
 }

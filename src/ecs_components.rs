@@ -108,9 +108,6 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
                             interacted[i] = true;
                             interacted[j] = true;
                             event_log.push(format!("[INTERACT] Agent {:?} interacted with Agent {:?}", agent_entity, other_entity));
-                            if true {
-                                log::info!("[INTERACT] Agent {:?} interacted with Agent {:?}", agent_entity, other_entity);
-                            }
                             break;
                         }
                     }
