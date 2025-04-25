@@ -10,13 +10,8 @@ use crate::agent::event::{AgentEvent, AgentEventLog};
 use std::sync::{Arc, Mutex};
 
 pub fn spawn_agent(world: &mut legion::World, pos: crate::ecs_components::Position, agent_type: crate::agent::AgentType, map: &crate::map::Map, agent_event_log: &mut AgentEventLog) -> legion::Entity {
-    log::info!("[SPAWN_INFO] spawn_agent() called for agent type: {} at ({:.2},{:.2})", agent_type.name, pos.x, pos.y);
-    if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open("spawn_agent.log") {
-        use std::io::Write;
-        let _ = writeln!(file, "[SPAWN_FILE] Agent spawn_agent() called");
-    }
+    log::debug!("[SPAWN_INFO] spawn_agent() called for agent type: {} at ({:.2},{:.2})", agent_type.name, pos.x, pos.y);
     log::debug!("[SPAWN] Agent spawn_agent() called");
-    std::io::stdout().flush().unwrap();
     let _color = agent_type.color.clone();
     let mut rng = rand::thread_rng();
     let (tx, ty) = random_passable_target(map, &agent_type, &mut rng, None);
@@ -43,7 +38,7 @@ pub fn spawn_agent(world: &mut legion::World, pos: crate::ecs_components::Positi
         agent_type: agent_type.name.clone(),
         pos: (pos.x, pos.y),
     });
-    log::info!("[SPAWN_INFO] Agent {:?} spawned at ({:.2},{:.2}) with state {:?}", entity, pos.x, pos.y, crate::agent::AgentState::Idle);
+    log::debug!("[SPAWN_INFO] Agent {:?} spawned at ({:.2},{:.2}) with state {:?}", entity, pos.x, pos.y, crate::agent::AgentState::Idle);
     log::debug!("[SPAWN] Agent {:?} spawned at ({:.2},{:.2}) with state {:?}", entity, pos.x, pos.y, crate::agent::AgentState::Idle);
     world.extend(vec![(entity, crate::agent::components::MovementHistory::new(12))]);
     world.extend(vec![(entity, swimming_profile)]);
@@ -59,7 +54,7 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
         .read_resource::<crate::log_config::LogConfig>()
         .build(move |_command_buffer, world, resources, query| {
             let log_config = &resources.2;
-            log::info!("[DEBUG] PathFollowingSystem running. Iterating agents...");
+            log::debug!("[DEBUG] PathFollowingSystem running. Iterating agents...");
             let mut moved = 0;
             let mut agent_count = 0;
             use std::time::Instant;
@@ -136,12 +131,10 @@ pub fn path_following_system() -> impl legion::systems::Runnable {
                     *agent_state = crate::agent::AgentState::Idle;
                 }
             }
-            log::info!("[DEBUG] PathFollowingSystem matched {} agents this tick", agent_count);
+            log::debug!("[DEBUG] PathFollowingSystem matched {} agents this tick", agent_count);
             let total_time = total_start.elapsed().as_secs_f64();
-            if !log_config.quiet {
-                log::info!("[PROFILE][PATH_FOLLOW] total: {:.6} move: {:.6} wp: {:.6} snap: {:.6}", total_time, move_time, waypoint_time, snap_time);
-            }
-            log::info!("[DEBUG] PathFollowingSystem finished. Total moved: {}", moved);
+            log::debug!("[PROFILE][PATH_FOLLOW] total: {:.6} move: {:.6} wp: {:.6} snap: {:.6}", total_time, move_time, waypoint_time, snap_time);
+            log::debug!("[DEBUG] PathFollowingSystem finished. Total moved: {}", moved);
         })
 }
 
