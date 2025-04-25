@@ -129,7 +129,6 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
             // Second pass: apply food eaten mutations
             for (agent_entity, food_e, nutrition) in food_eaten {
                 if let Some((_entity, _pos)) = agent_stats_query.iter_mut(world).find(|(e, _pos)| **e == agent_entity) {
-                    event_log.push(format!("[EAT] Agent {:?} ate food {:?} (+{:.1})", agent_entity, food_e, nutrition));
                     agent_event_log.push(AgentEvent::AteFood {
                         agent: agent_entity,
                         food: food_e,

@@ -9,8 +9,6 @@ pub mod sim_loop;
 pub mod terrain;
 pub mod utils;
 pub mod agent_render;
-pub mod overlays;
-pub mod stats;
 pub mod sim_state;
 // Add further submodules as the migration proceeds
 
