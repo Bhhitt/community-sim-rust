@@ -1,16 +1,18 @@
+// Unified Event Log Access Pattern: ALWAYS access EventLog via ECS resources as Arc<Mutex<EventLog>>.
+// Do not pass EventLog as a direct argument. This ensures a single, obvious pattern for all systems.
+
 // Main simulation rendering and event loop
 // Will contain the main SDL2 rendering logic and event loop
 
 use legion::*;
 use crate::agent::{AgentType, spawn_agent};
-use crate::food::PendingFoodSpawns;
 use rand::Rng;
 use crate::log_config::LogConfig;
 use std::fs::File;
 use crate::graphics::sim_state::SimUIState;
 use crate::ecs_simulation::{build_simulation_schedule_profiled, build_simulation_schedule_unprofiled};
 use crate::agent::event::AgentEventLog;
-use std::sync::{Arc, Mutex};
+use crate::ecs::resources::insert_standard_resources;
 
 const CELL_SIZE: f32 = 6.0;
 
@@ -27,7 +29,6 @@ pub fn run_sim_render(
     profile_csv: &str,
     world: &mut World,
     resources: &mut Resources,
-    _event_log: std::sync::Arc<std::sync::Mutex<crate::event_log::EventLog>>,
 ) {
     // --- ECS World Setup ---
     let map = crate::map::Map::new(_map_width, _map_height);
@@ -60,14 +61,7 @@ pub fn run_sim_render(
     }
     let agent_count_check = <(Read<crate::ecs_components::Position>,)>::query().iter(world).count();
     log::debug!("[DEBUG] Number of agents spawned: {}", agent_count_check);
-    resources.insert(map.clone());
-    resources.insert(crate::ecs_components::InteractionStats::default());
-    resources.insert(Arc::new(Mutex::new(crate::event_log::EventLog::new(200))));
-    resources.insert(PendingFoodSpawns(std::collections::VecDeque::new()));
-    resources.insert(crate::ecs_components::FoodPositions(Vec::new()));
-    resources.insert(crate::ecs_components::FoodStats { spawned_per_tick: 0, collected_per_tick: 0 });
-    resources.insert(AgentEventLog::default());
-    resources.insert(LogConfig::default());
+    insert_standard_resources(resources, &map);
 
     // Instead of borrowing LogConfig from resources while resources is mutably borrowed,
     // get LogConfig at the start and pass as a plain reference to downstream functions.
@@ -122,7 +116,6 @@ pub fn run_sim_render(
     };
 
     // --- MAIN SIMULATION LOOP ---
-    // Remove the extra event_log.clone() argument to match main_sim_loop signature
     crate::graphics::sim_loop::main_sim_loop(
         &mut sim_ui_state,
         &mut canvas,

@@ -6,11 +6,13 @@ use crate::agent::{AgentType, MovementProfile, MovementEffect, spawn_agent, Deci
 use log::debug;
 use std::collections::HashMap;
 use rand::Rng;
+use std::sync::{Arc, Mutex};
 
 pub fn run_ecs_sim() {
     let mut world = World::default();
     let mut resources = Resources::default();
     resources.insert(crate::agent::event::AgentEventLog::default());
+    resources.insert(Arc::new(Mutex::new(crate::event_log::EventLog::new(200))));
     // Spawn some agents
     let agent_types = [
         AgentType {

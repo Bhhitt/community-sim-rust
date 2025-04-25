@@ -140,9 +140,9 @@ pub fn main_sim_loop(
         // --- Event log window rendering ---
         crate::graphics::render::event_log_system::event_log_window_render(
             &sim_ui_state.world,
+            &sim_ui_state.resources,
             log_canvas,
             sim_ui_state.font,
-            &*sim_ui_state.resources.get::<Arc<Mutex<EventLog>>>().unwrap(),
             !log_config.quiet,
         );
         // Handle events (refactored: collect input events into InputQueue)

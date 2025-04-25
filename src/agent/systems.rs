@@ -157,9 +157,9 @@ pub fn action_selection_system() -> impl legion::systems::Runnable {
             let log_config = &resources.3;
             let mut rng = rand::thread_rng();
             let food_positions = &resources.1.0;
-            let mut matched = 0;
+            let mut _matched = 0;
             for (entity, pos, agent_type, hunger, _energy, mut maybe_target, mut maybe_path, agent_state) in query.iter_mut(world) {
-                matched += 1;
+                _matched += 1;
                 log::debug!("[ACTION] Matching agent {:?} state: {:?} hunger: {:.2}/{:.2}", entity, agent_state, hunger.value, hunger.threshold);
                 if *agent_state == crate::agent::AgentState::Idle || *agent_state == crate::agent::AgentState::Arrived {
                     log::debug!("[ACTION_BRANCH] Agent {:?} entered Idle/Arrived branch. State: {:?} Hunger: {:.2}/{:.2}", entity, agent_state, hunger.value, hunger.threshold);

@@ -5,12 +5,10 @@ use crate::agent::AgentType;
 use crate::log_config::LogConfig;
 use crate::event_log::EventLog;
 use crate::map::{Map, Terrain};
-use crate::food::{PendingFoodSpawns, Food};
 use crate::ecs_simulation::{simulation_tick, build_simulation_schedule_profiled, SystemProfile};
 use crate::render_ascii;
-use crate::ecs_components::{Position, InteractionStats, FoodPositions, FoodStats};
+use crate::ecs_components::{Position, InteractionStats};
 use std::sync::{Arc, Mutex};
-use std::collections::VecDeque;
 use std::fs::File;
 use std::io::Write;
 use rand::Rng;
@@ -19,6 +17,7 @@ use log;
 use serde::{Deserialize, /*Serialize*/};
 use serde_yaml;
 use crate::agent::event::AgentEventLog;
+use crate::ecs::resources::insert_standard_resources;
 
 #[derive(Debug, Deserialize)]
 pub struct SimProfile {
@@ -108,7 +107,7 @@ pub fn run_simulation(
                 panic!("Could not find passable tile for food after 1000 tries");
             }
         }
-        world.push((Position { x, y }, Food { nutrition: rng.gen_range(5.0..=10.0) }));
+        world.push((Position { x, y }, /*Food { nutrition: rng.gen_range(5.0..=10.0) }*/));
     }
     log::debug!("[DEBUG] Total spawn attempts: {} (avg {:.2} per agent)", attempts, attempts as f32 / agent_count as f32);
     let total_entities = world.len();
@@ -121,24 +120,17 @@ pub fn run_simulation(
         legion::Entity,
         &Position,
         Option<&AgentType>,
-        Option<&Food>
+        //Option<&Food>
     )>::query();
-    for (entity, _pos, agent_type, food) in query.iter(&world) {
+    for (entity, _pos, agent_type, /*food*/) in query.iter(&world) {
         let mut comps = vec!["Position"];
         if agent_type.is_some() { comps.push("AgentType"); }
-        if food.is_some() { comps.push("Food"); }
+        //if food.is_some() { comps.push("Food"); }
         log::debug!("  Entity {:?}: [{}]", entity, comps.join(", "));
     }
     // --- Main simulation loop ---
     let mut resources = Resources::default();
-    resources.insert(map.clone());
-    resources.insert(PendingFoodSpawns(VecDeque::new()));
-    resources.insert(FoodPositions(Vec::new()));
-    resources.insert(FoodStats::default());
-    resources.insert(InteractionStats::default());
-    resources.insert(Arc::new(Mutex::new(EventLog::new(200))));
-    resources.insert(AgentEventLog::default());
-    resources.insert(LogConfig::default());
+    insert_standard_resources(&mut resources, &map);
     // Insert other resources as needed for ECS systems
     if profile_systems {
         let mut csv_file = File::create(profile_csv).expect("Failed to create csv file");
