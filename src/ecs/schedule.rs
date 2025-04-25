@@ -60,6 +60,8 @@ pub fn run_simulation(
         color: a.color,
         movement_profile: a.movement_profile,
         decision_engine: a.decision_engine.clone(),
+        hunger_rate: a.hunger_rate,
+        hunger_threshold: a.hunger_threshold,
     }).collect();
     let mut agent_count = 0;
     let mut attempts = 0;

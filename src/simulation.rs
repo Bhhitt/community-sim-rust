@@ -31,6 +31,8 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         color: a.color,
         movement_profile: a.movement_profile,
         decision_engine: a.decision_engine.clone(),
+        hunger_rate: a.hunger_rate,
+        hunger_threshold: a.hunger_threshold,
     }).collect();
     let mut agent_count = 0;
     let mut attempts = 0;
@@ -101,7 +103,8 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     resources.insert(FoodPositions(Vec::new()));
     resources.insert(FoodStats::default());
     resources.insert(InteractionStats::default());
-    resources.insert(EventLog::new(200));
+    resources.insert(Arc::new(Mutex::new(EventLog::new(200))));
+    resources.insert(LogConfig::default()); // Insert LogConfig resource
     // Insert other resources as needed for ECS systems
     if profile_systems {
         let mut csv_file = File::create(profile_csv).expect("Failed to create csv file");
@@ -276,34 +279,6 @@ pub fn run_profile_from_yaml(
         log_config,
         event_log,
     );
-}
-
-pub fn run_gui_with_profile(_path: &str, _profile_name: &str, _agent_types: &[AgentType]) {
-    log::warn!("[WARNING] run_gui_with_profile is a stub. Use run_with_graphics_profile instead.");
-}
-
-// --- BEGIN: Commented out after ECS refactor ---
-/*
-pub fn run_profiles(agent_types: &[AgentType]) {
-    log::info!("\n===== Simulation Profiles =====");
-    // let profiles = load_profiles_from_yaml("config/sim_profiles.yaml");
-    // for profile in profiles {
-    //     let width = profile.map_width.unwrap_or(profile.map_size.unwrap_or(20));
-    //     let height = profile.map_height.unwrap_or(profile.map_size.unwrap_or(20));
-    //     log::info!("Running profile: {} (map {}x{}, {} agents, {} ticks)", profile.name, width, height, profile.num_agents, profile.ticks);
-    //     let (total, move_time, interact_time) = run_simulation(width, height, profile.num_agents, profile.ticks, &profile.name, agent_types, false, "profile.csv");
-    //     log::info!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", profile.name, total, move_time, interact_time);
-    // }
-}
-*/
-// --- END: Commented out after ECS refactor ---
-
-pub fn run_headless(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, agent_types: &[AgentType]) {
-    let (total, move_time, interact_time) = run_simulation(map_width, map_height, num_agents, ticks, "custom", agent_types, false, "headless.csv");
-    log::info!("\nPerformance summary:");
-    log::info!("  Total:    {:.3}s", total);
-    log::info!("  Movement: {:.3}s", move_time);
-    log::info!("  Interact: {:.3}s", interact_time);
 }
 
 pub fn run_scaling_benchmarks(agent_types: &[AgentType]) {

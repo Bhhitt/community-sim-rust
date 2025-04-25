@@ -62,12 +62,6 @@ pub struct Args {
     /// Enable stats logs
     #[arg(long)]
     log_stats: bool,
-    /// Enable eat logs
-    #[arg(long)]
-    log_eat: bool,
-    /// Enable interact logs
-    #[arg(long)]
-    log_interact: bool,
     /// Enable quiet logs
     #[arg(long)]
     log_quiet: bool,
@@ -85,9 +79,9 @@ fn parse_log_level(level: &str) -> log::LevelFilter {
 }
 
 // Logging setup with fern
-fn setup_logging(log_level: log::LevelFilter) {
+fn setup_logging(log_level: log::LevelFilter, event_log: Option<Arc<Mutex<event_log::EventLog>>>) {
     let log_file = "community_sim.log";
-    fern::Dispatch::new()
+    let mut dispatch = fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
                 "{} [{}] {}",
@@ -99,28 +93,30 @@ fn setup_logging(log_level: log::LevelFilter) {
         .level(log_level)
         .level_for("community_sim", log_level)
         .chain(std::io::stdout())
-        .chain(fern::log_file(log_file).unwrap())
-        .apply()
-        .unwrap();
+        .chain(fern::log_file(log_file).unwrap());
+
+    if let Some(event_log) = event_log {
+        dispatch = dispatch.chain(Box::new(crate::event_log::EventLogWriter::new(event_log)) as Box<dyn std::io::Write + Send>);
+    }
+
+    dispatch.apply().unwrap();
 }
 
 fn main() {
     let args = Args::parse();
     let log_level = parse_log_level(&args.log_level);
-    setup_logging(log_level);
+    let event_log = if args.headless {
+        None
+    } else {
+        let event_log = Arc::new(Mutex::new(event_log::EventLog::new(200)));
+        Some(event_log)
+    };
+    setup_logging(log_level, event_log.clone());
     let agent_types = util::load_agent_types(&args.agent_types);
     let log_config = log_config::LogConfig {
         quiet: args.log_quiet,
         stats: args.log_stats,
-        eat: args.log_eat,
-        interact: args.log_interact,
     };
-    // --- EventLog for piping logs to window ---
-    let event_log = Arc::new(Mutex::new(event_log::EventLog::new(200)));
-    // Register the custom logger (will pipe info logs to EventLog)
-    let _ = event_log::EventLogLogger::init(event_log.clone(), log_level);
-    // Insert event_log into ECS resources (if needed elsewhere)
-    // ...
     if args.headless {
         log::info!("Running in headless mode");
         if args.scale {
@@ -141,7 +137,7 @@ fn main() {
             args.profile_systems,
             &args.profile_csv,
             &log_config,
-            event_log.clone(), // Pass event_log down
+            event_log.expect("Event log should exist in GUI mode"),
         );
     }
 }

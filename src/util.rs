@@ -64,11 +64,16 @@ pub fn load_agent_types(path: &str) -> Vec<AgentType> {
         } else {
             DecisionEngineConfig::Simple
         };
+        // --- Parse hunger_rate from YAML ---
+        let hunger_rate = raw["hunger_rate"].as_f64().unwrap_or(0.01) as f32;
+        let hunger_threshold = raw["hunger_threshold"].as_f64().unwrap_or(50.0) as f32;
         AgentType {
             name,
             color,
             movement_profile,
             decision_engine,
+            hunger_rate,
+            hunger_threshold,
         }
     }).collect()
 }

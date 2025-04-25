@@ -10,6 +10,8 @@
   icon: "W"
   damping: 0.85
   move_probability: 1.0
+  hunger_rate: 0.04
+  hunger_threshold: 50.0
   movement_profile:
     Mountain: "Slow(2.0)"   # Moves at half speed on mountains (2x slower)
 - name: "Scout"
@@ -23,6 +25,8 @@
   icon: "S"
   damping: 0.85
   move_probability: 1.0
+  hunger_rate: 0.02
+  hunger_threshold: 40.0
   movement_profile:
     Mountain: "Slow(1.5)"   # Moves at 2/3 speed on mountains (1.5x slower)
 - name: "Soldier"
@@ -36,6 +40,8 @@
   icon: "X"
   damping: 0.95
   move_probability: 0.7
+  hunger_rate: 0.06
+  hunger_threshold: 45.0
   movement_profile:
     Mountain: "Slow(3.0)"   # Moves at 1/3 speed on mountains (3x slower)
 - name: "Miner"
@@ -49,6 +55,8 @@
   icon: "M"
   damping: 0.95
   move_probability: 0.5
+  hunger_rate: 0.02
+  hunger_threshold: 38.0
   movement_profile:
     Mountain: "Slow(1.2)"   # Moves at 5/6 speed on mountains (1.2x slower)
 - name: "Farmer"
@@ -62,6 +70,8 @@
   icon: "F"
   damping: 0.95
   move_probability: 0.5
+  hunger_rate: 0.01
+  hunger_threshold: 42.0
   movement_profile:
     Mountain: "Normal"   # Not slowed on mountains
 - name: "Builder"
@@ -75,6 +85,8 @@
   icon: "B"
   damping: 0.95
   move_probability: 0.5
+  hunger_rate: 0.02
+  hunger_threshold: 42.0
   movement_profile:
     Mountain: "Slow(1.8)"   # Moves at ~55% speed on mountains (1.8x slower)
 - name: "Doctor"
@@ -88,5 +100,7 @@
   icon: "+"
   damping: 0.85
   move_probability: 1.0
+  hunger_rate: 0.01
+  hunger_threshold: 40.0
   movement_profile:
     Mountain: "Slow(2.5)"   # Moves at 40% speed on mountains (2.5x slower)

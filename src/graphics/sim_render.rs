@@ -8,7 +8,7 @@ use rand::Rng;
 use crate::log_config::LogConfig;
 use std::fs::File;
 use crate::graphics::sim_state::SimUIState;
-use crate::ecs_simulation::{build_simulation_schedule};
+use crate::ecs_simulation::{build_simulation_schedule_profiled, build_simulation_schedule_unprofiled};
 // use std::sync::{Arc, Mutex};
 
 const CELL_SIZE: f32 = 6.0;
@@ -103,11 +103,14 @@ pub fn run_sim_render(
     let mut sim_ui_state = SimUIState {
         world,
         resources,
-        schedule: &mut build_simulation_schedule(),
+        schedule: if profile_systems {
+            &mut build_simulation_schedule_profiled()
+        } else {
+            &mut build_simulation_schedule_unprofiled()
+        },
         camera: &mut camera,
         font: &font,
         cached_stats: crate::graphics::sim_state::CachedStats::default(),
-        last_stats_update: std::time::Instant::now(),
         selected_agent: None,
         empty_cell_flash: None,
         tick: 0,

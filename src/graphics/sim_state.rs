@@ -13,7 +13,6 @@ pub struct SimUIState<'a> {
     pub camera: &'a mut Camera,
     pub font: &'a Font<'static, 'static>,
     pub cached_stats: CachedStats,
-    pub last_stats_update: std::time::Instant,
     pub selected_agent: Option<legion::Entity>,
     pub empty_cell_flash: Option<(i32, i32, std::time::Instant)>,
     pub tick: i32,

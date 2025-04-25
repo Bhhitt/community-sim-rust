@@ -127,6 +127,35 @@ impl Map {
             _ => true,
         }
     }
+
+    /// Find the nearest water tile to the given (x, y) position using BFS.
+    /// Returns Some((wx, wy, distance)) if a water tile is found, else None.
+    pub fn find_nearest_water(&self, x: i32, y: i32) -> Option<(i32, i32, i32)> {
+        use std::collections::{VecDeque, HashSet};
+        let mut queue = VecDeque::new();
+        let mut visited = HashSet::new();
+        queue.push_back((x, y, 0));
+        visited.insert((x, y));
+        let directions = [(-1,0),(1,0),(0,-1),(0,1)];
+        while let Some((cx, cy, dist)) = queue.pop_front() {
+            if cx >= 0 && cy >= 0 && cx < self.width && cy < self.height {
+                if let Terrain::Water = self.tiles[cy as usize][cx as usize] {
+                    return Some((cx, cy, dist));
+                }
+                for (dx, dy) in &directions {
+                    let nx = cx + dx;
+                    let ny = cy + dy;
+                    if nx >= 0 && ny >= 0 && nx < self.width && ny < self.height {
+                        if !visited.contains(&(nx, ny)) {
+                            queue.push_back((nx, ny, dist + 1));
+                            visited.insert((nx, ny));
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
 }
 
 #[cfg(test)]

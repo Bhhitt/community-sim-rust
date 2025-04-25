@@ -32,16 +32,26 @@ pub enum DecisionEngineConfig {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum AgentStatus {
+    Normal,
+    Hungry,
+    // Add more statuses as needed
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct AgentType {
     pub name: String,
     pub color: (u8, u8, u8),
     pub movement_profile: MovementProfile,
     pub decision_engine: DecisionEngineConfig,
+    pub hunger_rate: f32,
+    pub hunger_threshold: f32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Hunger {
     pub value: f32,
+    pub threshold: f32, // Configurable per agent type
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -83,4 +93,10 @@ impl MovementHistory {
         }
         self.positions.push_back((x, y));
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SwimmingProfile {
+    pub swim_chance_percent: u8, // 1-30, how likely this agent is to want to swim
+    pub swim_ticks_remaining: u32, // how many ticks left to swim, 0 if not swimming
 }

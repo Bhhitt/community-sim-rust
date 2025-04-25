@@ -52,7 +52,7 @@ pub fn draw_event_log_window(canvas: &mut Canvas<Window>, font: &Font, event_log
 }
 
 /// Empty cell flash overlay rendering function
-pub fn empty_cell_flash_render(world: &World, canvas: &mut Canvas<Window>, fx: Option<(i32, i32, Instant)>, camera_x: f32, camera_y: f32, cell_size: f32) {
+pub fn empty_cell_flash_render(_world: &World, canvas: &mut Canvas<Window>, fx: Option<(i32, i32, Instant)>, camera_x: f32, camera_y: f32, cell_size: f32) {
     if let Some((fx_x, fx_y, t)) = fx {
         if t.elapsed().as_millis() < 200 {
             let rect = Rect::new(
@@ -73,7 +73,7 @@ pub fn draw_stats_window(
     font: &Font,
     cached_stats: &CachedStats,
     selected_agent: Option<legion::Entity>,
-    world: &World,
+    _world: &World,
     _resources: &Resources,
     log_stats: bool,
 ) {
@@ -185,7 +185,7 @@ pub fn draw_stats_window(
                 }
                 "selected_agent" => {
                     if let Some(agent) = selected_agent {
-                        if let Ok(entry) = world.entry_ref(agent) {
+                        if let Ok(entry) = _world.entry_ref(agent) {
                             // Gather all components for the agent
                             let pos = entry.get_component::<crate::ecs_components::Position>().ok();
                             let agent_type = entry.get_component::<crate::agent::AgentType>().ok();

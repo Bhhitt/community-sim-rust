@@ -18,6 +18,8 @@ fn test_ecs_agent_spawn_and_query() {
         color: (0, 0, 255), // blue
         movement_profile,
         decision_engine: DecisionEngineConfig::Simple,
+        hunger_rate: 1.0,
+        hunger_threshold: 10.0,
     };
     let pos = Position { x: 10.0, y: 20.0 };
     let map = Map::new(32, 32);

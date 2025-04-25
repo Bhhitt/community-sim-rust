@@ -7,6 +7,8 @@ fn test_agent_type_deserialize() {
   color: [0, 0, 255]
   movement_profile: { speed: 2.0, effect: None }
   decision_engine: Simple
+  hunger_rate: 1.0
+  hunger_threshold: 10.0
 - name: "mlp_agent"
   color: [255, 0, 0]
   movement_profile: { speed: 2.0, effect: None }
@@ -20,10 +22,14 @@ fn test_agent_type_deserialize() {
     biases:
       - [0.1, 0.2, 0.3, 0.4]
       - [0.5, 0.6]
+  hunger_rate: 1.0
+  hunger_threshold: 10.0
 - name: "scout"
   color: [0, 255, 0]
   movement_profile: { speed: 4.0, effect: None }
   decision_engine: Simple
+  hunger_rate: 1.0
+  hunger_threshold: 10.0
 "#;
     let agent_types: Vec<AgentType> = serde_yaml::from_str(yaml).expect("YAML parse failed");
     assert_eq!(agent_types.len(), 3);

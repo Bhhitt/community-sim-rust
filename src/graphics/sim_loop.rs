@@ -6,7 +6,7 @@ use sdl2::EventPump;
 use std::time::Duration;
 use std::collections::HashMap;
 use log;
-use legion::{IntoQuery, systems::Runnable};
+use legion::{IntoQuery};
 
 use crate::graphics::camera::Camera;
 use crate::agent::AgentType;
@@ -18,7 +18,7 @@ use crate::event_log::EventLog;
 pub fn init_sdl2(
     map_width: i32,
     map_height: i32,
-    cell_size: f32,
+    _cell_size: f32,
     window_width: u32,
     window_height: u32,
     log_config: &LogConfig,
@@ -93,7 +93,7 @@ pub fn main_sim_loop(
     csv_file: &mut Option<std::fs::File>,
     _map_width: i32,
     _map_height: i32,
-    cell_size: f32,
+    _cell_size: f32,
     _window_width: u32,
     _window_height: u32,
 ) {
@@ -141,7 +141,7 @@ pub fn main_sim_loop(
             log_canvas,
             sim_ui_state.font,
             &sim_ui_state.resources.get::<EventLog>().unwrap(),
-            log_config.interact,
+            !log_config.quiet,
         );
         // Handle events (refactored: collect input events into InputQueue)
         crate::graphics::input::collect_input_events(
@@ -150,7 +150,7 @@ pub fn main_sim_loop(
             sim_ui_state,
             agent_types,
             render_map,
-            cell_size,
+            _cell_size,
             log_config,
             paused,
         );
@@ -159,7 +159,7 @@ pub fn main_sim_loop(
             sim_ui_state,
             agent_types,
             render_map,
-            cell_size,
+            _cell_size,
             &mut paused,
             &mut advance_one,
         );
@@ -175,7 +175,6 @@ pub fn main_sim_loop(
         // Now destructure sim_ui_state for rendering
         let SimUIState {
             world,
-            
             // schedule,
             camera,
             font,
@@ -188,14 +187,14 @@ pub fn main_sim_loop(
         log::debug!("[DEBUG] About to render terrain");
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
-        draw_terrain(canvas, render_map, camera.x, camera.y, cell_size);
+        draw_terrain(canvas, render_map, camera.x, camera.y, _cell_size);
         // --- ECS food rendering system integration ---
         crate::graphics::render::food_system::food_render_system(
             world,
             canvas,
             camera.x,
             camera.y,
-            cell_size,
+            _cell_size,
             *selected_agent,
         );
         log::debug!("[DEBUG] sim_loop: selected_agent = {:?}", selected_agent);
@@ -206,7 +205,7 @@ pub fn main_sim_loop(
             *selected_agent,
             camera.x,
             camera.y,
-            cell_size,
+            _cell_size,
         );
         // --- Agent rendering ---
         crate::graphics::render::agent_system::agent_render_system(
@@ -214,7 +213,7 @@ pub fn main_sim_loop(
             canvas,
             camera.x,
             camera.y,
-            cell_size,
+            _cell_size,
         );
         // --- Empty cell flash overlay rendering ---
         crate::graphics::render::overlays::empty_cell_flash_render(
@@ -223,7 +222,7 @@ pub fn main_sim_loop(
             *empty_cell_flash,
             camera.x,
             camera.y,
-            cell_size,
+            _cell_size,
         );
         // Clear the flash if expired
         if let Some((_, _, t)) = *empty_cell_flash {

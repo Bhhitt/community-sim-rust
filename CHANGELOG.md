@@ -43,6 +43,19 @@ This release brings the first release of this project to light. No telling if th
 - **Testing and Quality**
   - Comprehensive unit and integration tests for core logic and systems.
 
+## 🐛 Bug Fixes & Improvements (Unreleased)
+
+- **Agent Movement Decoupled from Hunger:**
+  - Agents will now move regardless of hunger state. Hunger only affects target/goal selection, not whether an agent can move.
+- **Event Log Window Logic:**
+  - The event log window now displays logs unless the `quiet` flag is set. Previously, log display was incorrectly tied to the `interact` flag.
+- **Debugging Enhancements:**
+  - Improved logging in `spawn_agent` and agent movement systems for easier traceability and debugging.
+- **Profile/Config Clarity:**
+  - Confirmed that the `med_run` profile does not suppress logs in the event log window by default; only `med_run_quiet` disables them.
+- **Code Hygiene:**
+  - Cleaned up unused imports and variables as identified by compiler warnings.
+
 ---
 
 ## 🛠️ Installation & Usage

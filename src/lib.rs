@@ -20,3 +20,4 @@ pub mod sim_summary;
 
 // If you want to restrict the public API, you can `pub use` only what you want to expose here.
 // For now, this setup allows both main.rs and integration tests to access all needed modules.
+// Removed unused import: agent::swimming::swimming_system

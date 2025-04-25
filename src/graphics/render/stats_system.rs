@@ -24,24 +24,4 @@ pub fn stats_window_render(
     );
 }
 
-// Old function left for reference. Remove after integration.
-/// ECS-style stats window rendering as a plain function
-pub fn stats_window_render_old(
-    world: &World,
-    resources: &legion::Resources,
-    canvas: &mut Canvas<Window>,
-    font: &Font,
-    cached_stats: &CachedStats,
-    selected_agent: Option<legion::Entity>,
-    log_stats: bool,
-) {
-    crate::graphics::render::overlays::draw_stats_window(
-        canvas,
-        font,
-        cached_stats,
-        selected_agent,
-        world,
-        resources,
-        log_stats,
-    );
-}
+// Removed never-used function: stats_window_render_old

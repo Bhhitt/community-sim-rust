@@ -2,6 +2,13 @@
 pub struct LogConfig {
     pub quiet: bool,
     pub stats: bool,
-    pub eat: bool,
-    pub interact: bool,
+}
+
+impl Default for LogConfig {
+    fn default() -> Self {
+        LogConfig {
+            quiet: false,
+            stats: false,
+        }
+    }
 }
