@@ -3,8 +3,7 @@ use crate::graphics::sim_state::SimUIState;
 use crate::agent::{AgentType, event::AgentEventLog};
 use crate::ecs_components::Position;
 use crate::map::Terrain;
-// TODO: Remove unresolved import for pending_agent_spawns
-// use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
+use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 use legion::IntoQuery;
 
 /// Processes all input intents from the InputQueue, mutating the ECS world and UI state as needed.

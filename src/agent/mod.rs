@@ -8,7 +8,8 @@ pub mod pause_system;
 
 // Public API: only export what is needed outside the agent module
 pub use components::{AgentType, Hunger, Energy, MovementProfile, MovementEffect, agent_state::AgentState, MovementHistory, DecisionEngineConfig, InteractionState, RecentInteraction};
-pub use systems::{agent_action_selection_system, agent_death_system};
+// Removed unresolved/legacy system exports
+pub use systems::{agent_death_system};
 pub use mlp::{MLP, MLPConfig};
 
 // TODO: Remove unresolved imports for missing systems

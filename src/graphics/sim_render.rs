@@ -11,11 +11,8 @@ use crate::log_config::LogConfig;
 use std::fs::File;
 use crate::graphics::sim_state::SimUIState;
 use crate::ecs_simulation::{build_simulation_schedule_profiled, build_simulation_schedule_unprofiled};
-// TODO: Remove unused import
-// use crate::agent::event::AgentEventLog;
 use crate::ecs::resources::insert_standard_resources;
-// TODO: Remove unresolved import for pending_agent_spawns
-// use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
+use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 
 const CELL_SIZE: f32 = 6.0;
 
@@ -39,6 +36,10 @@ pub fn run_sim_render(
     let mut rng = rand::thread_rng();
     let mut _agent_count = 0;
     let mut _attempts = 0;
+
+    // Insert standard resources before any resource access!
+    insert_standard_resources(resources, &map);
+
     if _num_agents > 0 {
         for i in 0.._num_agents {
             let mut x;
@@ -63,7 +64,6 @@ pub fn run_sim_render(
     }
     let agent_count_check = <(Read<crate::ecs_components::Position>,)>::query().iter(world).count();
     log::debug!("[DEBUG] Number of agents spawned: {}", agent_count_check);
-    insert_standard_resources(resources, &map);
 
     // Instead of borrowing LogConfig from resources while resources is mutably borrowed,
     // get LogConfig at the start and pass as a plain reference to downstream functions.

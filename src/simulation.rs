@@ -2,7 +2,6 @@
 
 use crate::agent::{AgentType, event::AgentEventLog};
 use crate::map::{Map, Terrain};
-use crate::graphics::run_with_graphics_profile;
 use crate::ecs_components::{Position, InteractionStats, FoodPositions, FoodStats};
 use crate::food::{PendingFoodSpawns, Food};
 use crate::ecs_simulation::{simulation_tick, build_simulation_schedule_profiled, SystemProfile};
@@ -39,7 +38,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     }).collect();
     let mut agent_count = 0;
     let mut attempts = 0;
-    let mut agent_event_log = AgentEventLog::default();
+    let _agent_event_log = AgentEventLog::default();
     if num_agents > 0 {
         for i in 0..num_agents {
             // Find a random passable tile
@@ -57,7 +56,7 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
                     panic!("Could not find passable tile for agent after 1000 tries");
                 }
             }
-            let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
+            let _agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
             // Instead of spawn_agent, queue spawn request for ECS system
             // TODO: Fix or remove usage of undefined value `resources` at line 60
             // This may require passing or initializing the correct resource context.

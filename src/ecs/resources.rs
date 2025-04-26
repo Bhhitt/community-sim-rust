@@ -7,6 +7,7 @@ use crate::log_config::LogConfig;
 use crate::ecs_components::{FoodPositions, FoodStats, InteractionStats};
 use crate::food::PendingFoodSpawns;
 use crate::map::Map;
+use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 
 pub fn insert_standard_resources(resources: &mut Resources, map: &Map) {
     resources.insert(map.clone());
@@ -17,4 +18,6 @@ pub fn insert_standard_resources(resources: &mut Resources, map: &Map) {
     resources.insert(Arc::new(Mutex::new(EventLog::new(200))));
     resources.insert(AgentEventLog::default());
     resources.insert(LogConfig::default());
+    // Insert PendingAgentSpawns for agent spawning
+    resources.insert(PendingAgentSpawns::default());
 }

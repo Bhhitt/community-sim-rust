@@ -4,53 +4,86 @@
 // Agent ECS system implementation
 // Refactored: Movement logic split for clarity and ECS best practices.
 
-// use crate::navigation::*; // (Unused)
-use legion::*;
-// use std::sync::{Arc, Mutex}; // (Unused)
+use legion::{Entity, IntoQuery};
+use crate::agent::{AgentType, AgentState};
+use crate::ecs_components::Position;
 use crate::agent::components::{Target, Path};
 
-/// Pure agent movement system: only updates positions along path/waypoints or directly toward target.
-pub fn agent_movement_system() -> impl legion::systems::Runnable {
-    legion::SystemBuilder::new("AgentMovementSystem")
-        .with_query::<(
-            &mut crate::ecs_components::Position,
-            &crate::agent::AgentType,
-            Option<&mut crate::agent::components::Target>,
-            Option<&mut crate::agent::components::Path>,
-            &mut crate::agent::AgentState,
-            &mut crate::agent::components::IdlePause,
-        ), ()>()
+// --- ECS Agent Path Movement System ---
+/// Moves agent along waypoints if Path is present and not empty.
+pub fn agent_path_movement_system() -> impl legion::systems::Runnable {
+    legion::SystemBuilder::new("AgentPathMovementSystem")
+        .with_query(<(&mut Position, &AgentType, &mut Path, &mut Target, &mut AgentState)>::query())
         .build(|_, world, _, query| {
-            for (pos, agent_type, maybe_target, maybe_path, agent_state, _idle_pause) in query.iter_mut(world) {
-                // Pausing logic removed: all pausing is now handled by agent_pausing_system
-                if *agent_state == crate::agent::AgentState::Idle || *agent_state == crate::agent::AgentState::Moving {
-                    if let Some(target) = maybe_target.as_mut() {
-                        if let Some(path) = maybe_path.as_mut() {
-                            if !path.waypoints.is_empty() {
-                                let (tx, ty) = path.waypoints[0];
-                                let dx = tx as f32 - pos.x;
-                                let dy = ty as f32 - pos.y;
-                                let dist = (dx * dx + dy * dy).sqrt();
-                                let step = agent_type.movement_profile.speed.min(dist);
-                                pos.x += dx / dist * step;
-                                pos.y += dy / dist * step;
-                                path.waypoints.pop_front();
-                            } else {
-                                pos.x = target.x;
-                                pos.y = target.y;
-                                // State transition removed: handled by separate system
-                            }
-                        } else {
-                            let dist = ((target.x - pos.x).powi(2) + (target.y - pos.y).powi(2)).sqrt();
+            for (pos, agent_type, path, maybe_target, agent_state) in query.iter_mut(world) {
+                if *agent_state == AgentState::Idle || *agent_state == AgentState::Moving {
+                    if !path.waypoints.is_empty() {
+                        let (tx, ty) = path.waypoints[0];
+                        let dx = tx as f32 - pos.x;
+                        let dy = ty as f32 - pos.y;
+                        let dist = (dx * dx + dy * dy).sqrt();
+                        let step = agent_type.movement_profile.speed.min(dist);
+                        pos.x += dx / dist * step;
+                        pos.y += dy / dist * step;
+                        path.waypoints.pop_front();
+                    } else {
+                        pos.x = maybe_target.x;
+                        pos.y = maybe_target.y;
+                        // State transition handled elsewhere
+                    }
+                }
+            }
+        })
+}
+
+// --- ECS Agent Direct Movement System ---
+/// Moves agent directly toward target if no path is present.
+pub fn agent_direct_movement_system() -> impl legion::systems::Runnable {
+    legion::SystemBuilder::new("AgentDirectMovementSystem")
+        .with_query(<(&mut Position, &AgentType, &mut Target, &mut AgentState)>::query())
+        .build(|_, world, _, query| {
+            for (pos, agent_type, target, agent_state) in query.iter_mut(world) {
+                if *agent_state == AgentState::Idle || *agent_state == AgentState::Moving {
+                    let dist = ((target.x - pos.x).powi(2) + (target.y - pos.y).powi(2)).sqrt();
+                    let step = agent_type.movement_profile.speed.min(dist);
+                    if dist > 0.1 {
+                        pos.x += (target.x - pos.x) / dist * step;
+                        pos.y += (target.y - pos.y) / dist * step;
+                    } else {
+                        pos.x = target.x;
+                        pos.y = target.y;
+                        // State transition handled elsewhere
+                    }
+                }
+            }
+        })
+}
+
+// --- DEPRECATED: ECS Agent Movement System ---
+/// This system is deprecated; use agent_path_movement_system and agent_direct_movement_system instead.
+#[deprecated(note = "Use agent_path_movement_system and agent_direct_movement_system instead.")]
+pub fn agent_movement_system() -> impl legion::systems::Runnable {
+    legion::SystemBuilder::new("AgentMovementSystem (Deprecated)")
+        .with_query(<(&mut Position, &AgentType, Option<&mut Target>, Option<&mut Path>, &mut AgentState)>::query())
+        .build(|_, world, _, query| {
+            for (pos, agent_type, maybe_target, maybe_path, agent_state) in query.iter_mut(world) {
+                if *agent_state == AgentState::Idle || *agent_state == AgentState::Moving {
+                    if let Some(path) = maybe_path {
+                        if !path.waypoints.is_empty() {
+                            let (tx, ty) = path.waypoints[0];
+                            let dx = tx as f32 - pos.x;
+                            let dy = ty as f32 - pos.y;
+                            let dist = (dx * dx + dy * dy).sqrt();
                             let step = agent_type.movement_profile.speed.min(dist);
-                            if dist > 0.1 {
-                                pos.x += (target.x - pos.x) / dist * step;
-                                pos.y += (target.y - pos.y) / dist * step;
-                            } else {
+                            pos.x += dx / dist * step;
+                            pos.y += dy / dist * step;
+                            path.waypoints.pop_front();
+                        } else {
+                            if let Some(target) = maybe_target {
                                 pos.x = target.x;
                                 pos.y = target.y;
-                                // State transition removed: handled by separate system
                             }
+                            // State transition handled elsewhere
                         }
                     }
                 }
@@ -61,19 +94,13 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
 /// Agent state transition system: sets AgentState::Arrived when agent position matches target.
 pub fn agent_state_transition_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentStateTransitionSystem")
-        .with_query::<(
-            &mut crate::ecs_components::Position,
-            Option<&crate::agent::components::Target>,
-            &mut crate::agent::AgentState,
-        ), ()>()
+        .with_query(<(&mut Position, &Target, &mut AgentState)>::query())
         .build(|_, world, _, query| {
-            for (pos, maybe_target, agent_state) in query.iter_mut(world) {
-                if *agent_state == crate::agent::AgentState::Moving || *agent_state == crate::agent::AgentState::Idle {
-                    if let Some(target) = maybe_target {
-                        let dist = ((target.x - pos.x).powi(2) + (target.y - pos.y).powi(2)).sqrt();
-                        if dist <= 0.1 {
-                            *agent_state = crate::agent::AgentState::Arrived;
-                        }
+            for (pos, target, agent_state) in query.iter_mut(world) {
+                if *agent_state == AgentState::Moving || *agent_state == AgentState::Idle {
+                    let dist = ((target.x - pos.x).powi(2) + (target.y - pos.y).powi(2)).sqrt();
+                    if dist <= 0.1 {
+                        *agent_state = AgentState::Arrived;
                     }
                 }
             }
@@ -83,9 +110,9 @@ pub fn agent_state_transition_system() -> impl legion::systems::Runnable {
 /// Agent pausing system: handles all IdlePause logic (decrementing ticks_remaining).
 pub fn agent_pausing_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentPausingSystem")
-        .with_query::<(&mut crate::agent::components::IdlePause,), ()>()
+        .with_query(<(Entity, &mut crate::agent::components::IdlePause)>::query())
         .build(|_, world, _, query| {
-            for (idle_pause,) in query.iter_mut(world) {
+            for (_entity, idle_pause) in query.iter_mut(world) {
                 if idle_pause.ticks_remaining > 0 {
                     idle_pause.ticks_remaining -= 1;
                 }
@@ -96,9 +123,9 @@ pub fn agent_pausing_system() -> impl legion::systems::Runnable {
 /// Agent movement history system: records each agent's recent positions for analytics/debugging.
 pub fn agent_movement_history_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentMovementHistorySystem")
-        .with_query::<(Entity, &crate::ecs_components::Position, &mut crate::agent::components::MovementHistory), ()>()
+        .with_query(<(Entity, &Position, &mut crate::agent::components::MovementHistory)>::query())
         .build(|_, world, _, query| {
-            for (entity, pos, history) in query.iter_mut(world) {
+            for (_entity, pos, history) in query.iter_mut(world) {
                 history.add(pos.x, pos.y);
             }
         })
@@ -107,19 +134,14 @@ pub fn agent_movement_history_system() -> impl legion::systems::Runnable {
 // --- ECS Agent Hunger/Energy System ---
 pub fn agent_hunger_energy_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentHungerEnergySystem")
-        .with_query::<(
-            &crate::agent::AgentType,
-            &mut crate::agent::Hunger,
-            &mut crate::agent::Energy,
-            &crate::agent::AgentState,
-        ), ()>()
+        .with_query(<(Entity, &AgentType, &mut crate::agent::Hunger, &mut crate::agent::Energy, &AgentState)>::query())
         .build(|_, world, _, query| {
-            for (agent_type, hunger, energy, agent_state) in query.iter_mut(world) {
+            for (_entity, agent_type, hunger, energy, agent_state) in query.iter_mut(world) {
                 // Hunger logic (mirrors previous passive_hunger_system)
-                if *agent_state == crate::agent::AgentState::Idle || *agent_state == crate::agent::AgentState::Arrived {
+                if *agent_state == AgentState::Idle || *agent_state == AgentState::Arrived {
                     hunger.value -= agent_type.hunger_rate * 0.1;
                     energy.value -= 0.1; // Example: slow energy drain when idle/arrived
-                } else if *agent_state == crate::agent::AgentState::Moving {
+                } else if *agent_state == AgentState::Moving {
                     hunger.value -= agent_type.hunger_rate;
                     energy.value -= 1.0; // Example: faster energy drain when moving
                 }

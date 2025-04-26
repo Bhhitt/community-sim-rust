@@ -65,7 +65,7 @@ pub struct RecentInteraction {
     pub ticks_since: u32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct InteractionState {
     pub target: Option<Entity>,
     pub ticks: u32,
@@ -95,18 +95,18 @@ impl MovementHistory {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Path {
     pub waypoints: std::collections::VecDeque<(f32, f32)>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct SwimmingProfile {
     pub swim_chance_percent: u8, // 1-30, how likely this agent is to want to swim
     pub swim_ticks_remaining: u32, // how many ticks left to swim, 0 if not swimming
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct IdlePause {
     pub ticks_remaining: u32,
 }
@@ -119,7 +119,7 @@ pub enum IntendedAction {
     // Add more as needed
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Target {
     pub x: f32,
     pub y: f32,

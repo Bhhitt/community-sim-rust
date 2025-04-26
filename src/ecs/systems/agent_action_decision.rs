@@ -1,21 +1,16 @@
 // ECS System: Agent Action Decision System
 // Decides the next action for each agent (rules-based or MLP-based) and writes it to the IntendedAction component.
 
-use legion::{Entity, IntoQuery, systems::Runnable, world::SubWorld, systems::SystemBuilder};
+use legion::{Entity, IntoQuery, systems::Runnable, systems::SystemBuilder};
 use crate::agent::components::{IntendedAction, AgentState, Hunger};
 use crate::agent::AgentType;
 
 pub fn agent_action_decision_system() -> impl Runnable {
     SystemBuilder::new("AgentActionDecisionSystem")
-        .with_query::<(
-            Entity,
-            &AgentType,
-            &Hunger,
-            &AgentState,
-        )>()
+        .with_query(<(Entity, &AgentType, &Hunger, &AgentState)>::query())
         .write_component::<IntendedAction>()
         .build(|cmd, world, _, query| {
-            for (entity, agent_type, hunger, agent_state) in query.iter(world) {
+            for (entity, _agent_type, hunger, agent_state) in query.iter(world) {
                 // Only select actions for agents that are Idle (not paused, not moving, not arrived)
                 if *agent_state != AgentState::Idle {
                     continue;
@@ -27,7 +22,7 @@ pub fn agent_action_decision_system() -> impl Runnable {
                 } else {
                     IntendedAction::Wander
                 };
-                cmd.add_component(entity, intended_action);
+                cmd.add_component(*entity, intended_action);
             }
         })
 }
