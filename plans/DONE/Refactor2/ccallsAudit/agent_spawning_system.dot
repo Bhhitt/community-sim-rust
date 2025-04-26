@@ -1,0 +1,7 @@
+digraph agent_spawning_system {
+    node [shape=box]
+    agent_spawning_system -> PendingAgentSpawns [label="write (drain)"]
+    agent_spawning_system -> AgentEventLog [label="write"]
+    agent_spawning_system -> Map [label="read"]
+    agent_spawning_system -> ECS_AgentEntity [label="spawn+add components"]
+}

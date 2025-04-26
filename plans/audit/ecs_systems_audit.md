@@ -7,13 +7,26 @@ Categorize all ECS systems currently registered in the simulation schedule, as a
 
 ## System List & Categorization (from `build_simulation_schedule_profiled` in `ecs_simulation.rs`)
 
+| System | ccallAudit Status |
+|--------|-------------------|
+| collect_food_positions_system() | Done |
+| collect_food_spawn_positions_system() | Done |
+| food_spawn_apply_system() | Done |
+| crate::agent::pause_system::agent_pause_system() | REMOVED |
+| crate::ecs::systems::agent::agent_pausing_system() | Done |
+| crate::ecs::systems::agent::agent_hunger_energy_system() | Done |
+| crate::ecs::systems::agent::agent_path_movement_system() | Done |
+| crate::ecs::systems::agent::agent_direct_movement_system() | Done |
+| crate::ecs::systems::agent::agent_state_transition_system() | Done |
+
+- `crate::agent::pause_system::agent_pause_system()` was removed as of 2025-04-26. All pausing logic is now handled by `agent_pausing_system` in `src/ecs/systems/agent.rs`.
+
 ### Food Systems
 - `collect_food_positions_system()`
 - `collect_food_spawn_positions_system()`
 - `food_spawn_apply_system()`
 
 ### Agent Control & State Systems
-- `crate::agent::pause_system::agent_pause_system()`
 - `crate::ecs::systems::agent::agent_pausing_system()`
 - `crate::ecs::systems::agent::agent_hunger_energy_system()`
 - `crate::ecs::systems::agent::agent_path_movement_system()`
@@ -37,6 +50,16 @@ Categorize all ECS systems currently registered in the simulation schedule, as a
 ### (Commented/Legacy)
 - `swimming_system()` (commented out)
 - `passive_hunger_system` (unresolved/legacy)
+
+---
+
+## System Audit Table
+
+| System Name                   | File                       | Reads                | Writes           | Description                                                                 | ECS Safety Notes               |
+|-------------------------------|----------------------------|----------------------|------------------|-----------------------------------------------------------------------------|-------------------------------|
+| collect_food_positions_system | src/food/systems.rs        | Position, Food       | FoodPositions    | Gathers all food entity positions and stores them in FoodPositions resource. | No conflicts; safe if FoodPositions is only read after. |
+| collect_food_spawn_positions_system | src/food/systems.rs | Map      | PendingFoodSpawns  | Fills PendingFoodSpawns with new spawn positions based on map terrain.      | Safe: Only writes PendingFoodSpawns, flush after system prevents conflicts. |
+| food_spawn_apply_system            | src/food/systems.rs | PendingFoodSpawns | PendingFoodSpawns, FoodStats | Drains PendingFoodSpawns and spawns food entities, updating FoodStats. | Safe: Exclusive access, ECS flushes prevent conflicts. |
 
 ---
 

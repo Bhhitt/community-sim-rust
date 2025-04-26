@@ -1,0 +1,6 @@
+digraph agent_state_transition_system {
+    node [shape=box]
+    agent_state_transition_system -> Position [label="write"]
+    agent_state_transition_system -> Target [label="read"]
+    agent_state_transition_system -> AgentState [label="write"]
+}

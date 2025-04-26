@@ -1,0 +1,12 @@
+digraph spawn_food {
+    spawn_food [shape=box]
+    CommandBuffer [shape=oval, style=filled, fillcolor=lightyellow]
+    FoodStats [shape=oval, style=filled, fillcolor=lightblue]
+    Position [shape=oval]
+    Food [shape=oval]
+
+    spawn_food -> CommandBuffer [label="writes (push)"]
+    spawn_food -> FoodStats [label="writes (optional)"]
+    spawn_food -> Position [label="used"]
+    spawn_food -> Food [label="used"]
+}

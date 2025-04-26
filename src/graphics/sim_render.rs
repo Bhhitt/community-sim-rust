@@ -42,6 +42,15 @@ pub fn run_sim_render(
     insert_standard_resources(resources, &map);
 
     if num_agents > 0 {
+        let mut passable_count = 0;
+        for row in &map.tiles {
+            for tile in row {
+                if *tile == crate::map::Terrain::Grass || *tile == crate::map::Terrain::Forest {
+                    passable_count += 1;
+                }
+            }
+        }
+        log::debug!("[DIAG] Passable tiles: {}, Agents to spawn: {}", passable_count, num_agents);
         for i in 0..num_agents {
             let mut x;
             let mut y;

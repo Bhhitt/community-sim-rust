@@ -1,0 +1,5 @@
+digraph agent_pause_system {
+    node [shape=box]
+    agent_pause_system -> IdlePause [label="write"]
+    agent_pause_system -> Entity [label="read (for log)"]
+}

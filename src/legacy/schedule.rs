@@ -1,3 +1,9 @@
+// =============================
+// LEGACY FILE (NOT USED IN PRODUCTION)
+// This file contains schedule setup and simulation logic that is no longer referenced by the main codebase.
+// Kept for historical/reference purposes only. All active ECS scheduling is handled in src/ecs/schedules/.
+// =============================
+
 // LEGACY: This file contains legacy or reference ECS schedule setup code. Not used in the main simulation. See main simulation loop for active schedule.
 
 // ECS schedule setup for Legion ECS

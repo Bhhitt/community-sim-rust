@@ -40,12 +40,12 @@ pub fn agent_death_system() -> impl legion::systems::Runnable {
 - **Code Quality:**
   - ✅ Clear, idiomatic ECS code. No extraneous logic.
 - **Schedule/Order Dependencies:**
-  - ⚠️ Should run after hunger/energy systems. Document dependency in schedule builder.
+  - ⚠️ Should run after hunger/energy systems. Documented in `add_agent_death_systems` doc comment.
 
 ## Comments
 - The system is focused and minimal.
-- Only improvement: document (in schedule builder) that it must run after hunger/energy systems.
+- Schedule dependency is now documented in the schedule builder (see `src/ecs/schedules/death.rs`).
 
 ## Audit Status
 - ✅ Audited (2025-04-26)
-- ⬜ Refactored (pending modular schedule builder)
+- ✅ Refactored & documented (2025-04-26)

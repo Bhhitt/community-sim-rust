@@ -1,4 +1,5 @@
 use legion::Entity;
+use std::collections::VecDeque;
 
 #[derive(Debug, Clone)]
 pub enum AgentEvent {
@@ -48,11 +49,11 @@ impl AgentEvent {
 
 // ECS resource to store agent events for the current tick
 #[derive(Default)]
-pub struct AgentEventLog(pub Vec<AgentEvent>);
+pub struct AgentEventLog(pub VecDeque<AgentEvent>);
 
 impl AgentEventLog {
     pub fn push(&mut self, event: AgentEvent) {
-        self.0.push(event);
+        self.0.push_back(event);
     }
     pub fn clear(&mut self) {
         self.0.clear();

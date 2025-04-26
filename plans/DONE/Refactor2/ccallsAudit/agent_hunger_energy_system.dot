@@ -1,0 +1,7 @@
+digraph agent_hunger_energy_system {
+    node [shape=box]
+    agent_hunger_energy_system -> Hunger [label="write"]
+    agent_hunger_energy_system -> Energy [label="write"]
+    agent_hunger_energy_system -> AgentType [label="read"]
+    agent_hunger_energy_system -> AgentState [label="read"]
+}

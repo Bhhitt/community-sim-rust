@@ -137,6 +137,18 @@ The `benchmark/` directory contains scripts and tools for running simulation ben
 
 - All benchmarking scripts are designed for headless mode and can be customized.
 
+## ECS Interaction Systems Refactor (2025)
+
+The original monolithic `entity_interaction_system` has been DEPRECATED and replaced by modular, single-responsibility systems:
+- **Food Collection System**: Handles agent-food interactions and food removal.
+- **Agent-Agent Interaction System**: Handles agent-to-agent interactions.
+- **Interaction Stats Update System**: Maintains and updates interaction statistics and history.
+- **Interaction Event Logging System**: Drains and logs interaction events to the main event log.
+
+All references to the old system have been removed from ECS schedules. See `src/ecs/systems/` for the new systems. Legacy code is marked as deprecated and will be removed after migration is verified.
+
+For migration details and subsystem plans, see `plans/refactor2/`.
+
 ## Additional CLI Options
 
 - `--headless` : Run simulation without graphics (for benchmarking)

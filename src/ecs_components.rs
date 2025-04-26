@@ -72,7 +72,15 @@ pub fn agent_interaction_system() -> impl legion::systems::Runnable {
         })
 }
 
-// --- ECS Interaction System (agent-agent, agent-food) ---
+// =============================
+// DEPRECATED: entity_interaction_system
+// This monolithic system has been replaced by modular subsystems:
+// - Food Collection System
+// - Agent-Agent Interaction System
+// - Interaction Stats Update System
+// - Interaction Event Logging System
+// Remove this system after migration is verified.
+// =============================
 pub fn entity_interaction_system() -> impl legion::systems::Runnable {
     SystemBuilder::new("EntityInteractionSystem")
         .write_resource::<InteractionStats>()

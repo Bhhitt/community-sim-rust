@@ -14,6 +14,11 @@ pub mod pending_agent_spawns;
 pub mod drain_agent_spawn_queue;
 // Add more as you migrate systems
 
+// --- Modular interaction systems ---
+pub mod agent_agent_interaction;
+pub mod interaction_stats_update;
+pub mod interaction_event_logging;
+
 // Re-export public ECS systems for schedule.rs and other modules
 pub use agent::agent_state_transition_system;
 // pub use agent::agent_movement_system;
@@ -28,5 +33,10 @@ pub use agent_path_assignment::agent_path_assignment_system;
 // pub use agent_state_transition::agent_state_transition_system;
 pub use agent_spawn::agent_spawning_system;
 pub use pending_agent_spawns::{PendingAgentSpawns, AgentSpawnRequest};
+
+// Re-export modular interaction systems for schedule.rs
+pub use agent_agent_interaction::agent_agent_interaction_system;
+pub use interaction_stats_update::interaction_stats_update_system;
+pub use interaction_event_logging::interaction_event_logging_system;
 
 // TODO: Create one file per system (agent.rs, food.rs, etc.) and move system logic from ecs_sim.rs, ecs_simulation.rs, etc.

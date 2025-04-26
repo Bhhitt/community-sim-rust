@@ -1,6 +1,6 @@
 // Agent-related ECS systems will be moved here.
 
-// NOTE: The agent_pause_system is implemented in a separate file (pause_system.rs) due to Legion's 8-parameter limit on system queries.
+// NOTE: The agent_pause_system is no longer used or implemented here.
 // If the parameter limit is ever increased or the query simplified, consider consolidating for clarity. See pause_system.rs for details.
 
 use legion::{Entity, IntoQuery};

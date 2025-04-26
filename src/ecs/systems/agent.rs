@@ -16,21 +16,18 @@ pub fn agent_path_movement_system() -> impl legion::systems::Runnable {
         .with_query(<(&mut Position, &AgentType, &mut Path, &mut Target, &mut AgentState)>::query())
         .build(|_, world, _, query| {
             for (pos, agent_type, path, maybe_target, agent_state) in query.iter_mut(world) {
-                if *agent_state == AgentState::Idle || *agent_state == AgentState::Moving {
-                    if !path.waypoints.is_empty() {
-                        let (tx, ty) = path.waypoints[0];
-                        let dx = tx as f32 - pos.x;
-                        let dy = ty as f32 - pos.y;
-                        let dist = (dx * dx + dy * dy).sqrt();
-                        let step = agent_type.movement_profile.speed.min(dist);
-                        pos.x += dx / dist * step;
-                        pos.y += dy / dist * step;
-                        path.waypoints.pop_front();
-                    } else {
-                        pos.x = maybe_target.x;
-                        pos.y = maybe_target.y;
-                        // State transition handled elsewhere
-                    }
+                if (*agent_state == AgentState::Idle || *agent_state == AgentState::Moving)
+                    && !path.waypoints.is_empty()
+                {
+                    log::debug!("[PathMove] Entity: {:?} Path: {:?} State: {:?}", pos, path.waypoints, agent_state);
+                    let (tx, ty) = path.waypoints[0];
+                    let dx = tx as f32 - pos.x;
+                    let dy = ty as f32 - pos.y;
+                    let dist = (dx * dx + dy * dy).sqrt();
+                    let step = agent_type.movement_profile.speed.min(dist);
+                    pos.x += dx / dist * step;
+                    pos.y += dy / dist * step;
+                    path.waypoints.pop_front();
                 }
             }
         })
@@ -40,10 +37,13 @@ pub fn agent_path_movement_system() -> impl legion::systems::Runnable {
 /// Moves agent directly toward target if no path is present.
 pub fn agent_direct_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentDirectMovementSystem")
-        .with_query(<(&mut Position, &AgentType, &mut Target, &mut AgentState)>::query())
+        .with_query(<(&mut Position, &AgentType, &mut Path, &mut Target, &mut AgentState)>::query())
         .build(|_, world, _, query| {
-            for (pos, agent_type, target, agent_state) in query.iter_mut(world) {
-                if *agent_state == AgentState::Idle || *agent_state == AgentState::Moving {
+            for (pos, agent_type, path, target, agent_state) in query.iter_mut(world) {
+                if (*agent_state == AgentState::Idle || *agent_state == AgentState::Moving)
+                    && path.waypoints.is_empty()
+                {
+                    log::debug!("[DirectMove] Entity: {:?} Target: ({}, {}) State: {:?}", pos, target.x, target.y, agent_state);
                     let dist = ((target.x - pos.x).powi(2) + (target.y - pos.y).powi(2)).sqrt();
                     let step = agent_type.movement_profile.speed.min(dist);
                     if dist > 0.1 {
@@ -52,39 +52,6 @@ pub fn agent_direct_movement_system() -> impl legion::systems::Runnable {
                     } else {
                         pos.x = target.x;
                         pos.y = target.y;
-                        // State transition handled elsewhere
-                    }
-                }
-            }
-        })
-}
-
-// --- DEPRECATED: ECS Agent Movement System ---
-/// This system is deprecated; use agent_path_movement_system and agent_direct_movement_system instead.
-#[deprecated(note = "Use agent_path_movement_system and agent_direct_movement_system instead.")]
-pub fn agent_movement_system() -> impl legion::systems::Runnable {
-    legion::SystemBuilder::new("AgentMovementSystem (Deprecated)")
-        .with_query(<(&mut Position, &AgentType, Option<&mut Target>, Option<&mut Path>, &mut AgentState)>::query())
-        .build(|_, world, _, query| {
-            for (pos, agent_type, maybe_target, maybe_path, agent_state) in query.iter_mut(world) {
-                if *agent_state == AgentState::Idle || *agent_state == AgentState::Moving {
-                    if let Some(path) = maybe_path {
-                        if !path.waypoints.is_empty() {
-                            let (tx, ty) = path.waypoints[0];
-                            let dx = tx as f32 - pos.x;
-                            let dy = ty as f32 - pos.y;
-                            let dist = (dx * dx + dy * dy).sqrt();
-                            let step = agent_type.movement_profile.speed.min(dist);
-                            pos.x += dx / dist * step;
-                            pos.y += dy / dist * step;
-                            path.waypoints.pop_front();
-                        } else {
-                            if let Some(target) = maybe_target {
-                                pos.x = target.x;
-                                pos.y = target.y;
-                            }
-                            // State transition handled elsewhere
-                        }
                     }
                 }
             }
@@ -94,12 +61,15 @@ pub fn agent_movement_system() -> impl legion::systems::Runnable {
 /// Agent state transition system: sets AgentState::Arrived when agent position matches target.
 pub fn agent_state_transition_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentStateTransitionSystem")
-        .with_query(<(&mut Position, &Target, &mut AgentState)>::query())
+        .with_query(<(&mut Position, &Target, &mut AgentState, &Path)>::query())
         .build(|_, world, _, query| {
-            for (pos, target, agent_state) in query.iter_mut(world) {
-                if *agent_state == AgentState::Moving || *agent_state == AgentState::Idle {
+            for (pos, target, agent_state, path) in query.iter_mut(world) {
+                if (*agent_state == AgentState::Moving || *agent_state == AgentState::Idle)
+                    && path.waypoints.is_empty()
+                {
                     let dist = ((target.x - pos.x).powi(2) + (target.y - pos.y).powi(2)).sqrt();
                     if dist <= 0.1 {
+                        log::debug!("[StateTransition] Entity: {:?} arrived at target ({}, {})", pos, target.x, target.y);
                         *agent_state = AgentState::Arrived;
                     }
                 }
@@ -137,13 +107,13 @@ pub fn agent_hunger_energy_system() -> impl legion::systems::Runnable {
         .with_query(<(Entity, &AgentType, &mut crate::agent::Hunger, &mut crate::agent::Energy, &AgentState)>::query())
         .build(|_, world, _, query| {
             for (_entity, agent_type, hunger, energy, agent_state) in query.iter_mut(world) {
-                // Hunger logic (mirrors previous passive_hunger_system)
+                // Hunger logic for idle/arrived and moving states
                 if *agent_state == AgentState::Idle || *agent_state == AgentState::Arrived {
                     hunger.value -= agent_type.hunger_rate * 0.1;
-                    energy.value -= 0.1; // Example: slow energy drain when idle/arrived
+                    energy.value -= 0.1;
                 } else if *agent_state == AgentState::Moving {
                     hunger.value -= agent_type.hunger_rate;
-                    energy.value -= 1.0; // Example: faster energy drain when moving
+                    energy.value -= 1.0;
                 }
             }
         })

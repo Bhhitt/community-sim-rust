@@ -71,3 +71,6 @@ fn build_simulation_schedule_profiled() -> Schedule {
 1. Draft the modular schedule builder functions for each domain.
 2. Refactor `build_simulation_schedule_profiled()` to use these builders.
 3. Test the new modular schedule to ensure system order and dependencies are preserved.
+
+
+DONE

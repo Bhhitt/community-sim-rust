@@ -1,3 +1,9 @@
+// =============================
+// LEGACY FILE (NOT USED IN PRODUCTION)
+// This file contains a minimal ECS simulation loop for scaffolding/testing only.
+// It is not referenced by the main codebase. All active ECS scheduling is handled in src/ecs/schedules/.
+// =============================
+
 // LEGACY: This file contains a minimal ECS simulation loop and schedule for testing/scaffolding only. Not used in the main simulation.
 
 //! Minimal ECS simulation loop using new ECS components

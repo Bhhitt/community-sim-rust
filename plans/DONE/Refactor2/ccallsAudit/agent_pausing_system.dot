@@ -1,0 +1,4 @@
+digraph agent_pausing_system {
+    node [shape=box]
+    agent_pausing_system -> IdlePause [label="write"]
+}
