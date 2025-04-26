@@ -17,3 +17,5 @@ community_sim.log
 # Agent type definitions (user-editable, but not needed in repo by default)
 # Uncomment the next line if you want to ignore agent_types.yaml:
 # agent_types.yaml
+
+!/src/legacy/

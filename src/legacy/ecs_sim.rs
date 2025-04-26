@@ -1,3 +1,5 @@
+// LEGACY: This file contains a minimal ECS simulation loop and schedule for testing/scaffolding only. Not used in the main simulation.
+
 //! Minimal ECS simulation loop using new ECS components
 use legion::*;
 use crate::ecs_components::*;

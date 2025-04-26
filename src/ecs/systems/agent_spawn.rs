@@ -3,22 +3,30 @@
 
 use legion::systems::Runnable;
 use legion::systems::SystemBuilder;
+use legion::IntoQuery;
 use crate::agent::components::{Hunger, Energy, AgentState, IdlePause, SwimmingProfile, InteractionState, MovementHistory, Path, Target};
 use crate::ecs::systems::pending_agent_spawns::{PendingAgentSpawns, AgentSpawnRequest};
 use crate::agent::event::{AgentEvent, AgentEventLog};
 use crate::map::Map;
 use rand;
 use std::collections::VecDeque;
+use log;
 
 pub fn agent_spawning_system() -> impl Runnable {
     SystemBuilder::new("AgentSpawningSystem")
         .write_resource::<PendingAgentSpawns>()
         .write_resource::<AgentEventLog>()
         .read_resource::<Map>()
-        .build(|cmd, _world, (pending_spawns, agent_event_log, map), _| {
+        .build(|cmd, world, (pending_spawns, agent_event_log, map), _| {
             let mut to_spawn = Vec::new();
+            let mut tick_spawn_count = 0;
             while let Some(request) = pending_spawns.pop() {
+                log::debug!("[DEBUG][AgentSpawningSystem] Popped AgentSpawnRequest: pos=({}, {}), type={}", request.pos.x, request.pos.y, request.agent_type.name);
                 to_spawn.push(request);
+            }
+            log::debug!("[DEBUG][AgentSpawningSystem] Total AgentSpawnRequests to spawn this tick: {}", to_spawn.len());
+            if to_spawn.is_empty() {
+                log::warn!("[DEBUG][AgentSpawningSystem] No AgentSpawnRequests to process this tick!");
             }
             for AgentSpawnRequest { pos, agent_type } in to_spawn {
                 let mut rng = rand::thread_rng();
@@ -29,8 +37,10 @@ pub fn agent_spawning_system() -> impl Runnable {
                 };
                 let hunger_threshold = agent_type.hunger_threshold;
                 let entity = cmd.push((pos, agent_type.clone(), Hunger { value: 100.0, threshold: hunger_threshold }, Energy { value: 100.0 }, AgentState::Idle));
+                log::debug!("[DEBUG][AgentSpawningSystem] Spawned agent entity {:?} at ({}, {}) of type {}", entity, pos.x, pos.y, agent_type.name);
+                tick_spawn_count += 1;
                 cmd.add_component(entity, IdlePause::default());
-                cmd.add_component(entity, SwimmingProfile::default());
+                cmd.add_component(entity, swimming_profile);
                 cmd.add_component(entity, InteractionState::default());
                 cmd.add_component(entity, MovementHistory::new(12));
                 cmd.add_component(entity, Path::default());
@@ -41,5 +51,7 @@ pub fn agent_spawning_system() -> impl Runnable {
                     pos: (pos.x, pos.y),
                 });
             }
+            let agent_count = <(&crate::ecs_components::Position,)>::query().iter(world).count();
+            log::info!("[DEBUG][AgentSpawningSystem] Number of agents in world after spawn: {} (spawned this tick: {})", agent_count, tick_spawn_count);
         })
 }

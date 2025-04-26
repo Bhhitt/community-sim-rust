@@ -13,10 +13,12 @@ pub mod interaction;
 pub mod graphics;
 pub mod event_log;
 pub mod render_ascii;
-pub mod ecs_simulation;
 pub mod ecs;
 pub mod config;
 pub mod sim_summary;
+pub mod ecs_simulation;
+pub mod sim_profile;
+mod legacy;
 
 // If you want to restrict the public API, you can `pub use` only what you want to expose here.
 // For now, this setup allows both main.rs and integration tests to access all needed modules.

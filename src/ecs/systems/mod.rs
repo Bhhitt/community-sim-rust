@@ -11,6 +11,7 @@ pub mod agent_path_assignment;
 pub mod agent_state_transition;
 pub mod agent_spawn;
 pub mod pending_agent_spawns;
+pub mod drain_agent_spawn_queue;
 // Add more as you migrate systems
 
 // Re-export public ECS systems for schedule.rs and other modules

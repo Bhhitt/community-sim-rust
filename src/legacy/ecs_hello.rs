@@ -1,3 +1,5 @@
+// LEGACY: This file is a minimal Legion ECS hello world for migration scaffolding. Not used in the main simulation.
+
 //! Minimal Legion ECS hello world for migration scaffolding
 
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -5,6 +5,7 @@ mod simulation; // <-- old simulation module (to be migrated)
 mod navigation;
 mod graphics;
 mod config;
+mod sim_profile;
 
 pub mod agent;
 pub mod map;
@@ -22,6 +23,7 @@ use chrono;
 use fern;
 use log;
 use std::sync::{Arc, Mutex};
+use sim_profile::{SimProfile, load_profiles_from_yaml, find_profile};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -117,27 +119,59 @@ fn main() {
         quiet: args.log_quiet,
         stats: args.log_stats,
     };
-    if args.headless {
-        log::info!("Running in headless mode");
-        if args.scale {
-            // TODO: Move run_scaling_benchmarks to ecs module
-            ecs::schedule::run_scaling_benchmarks(&agent_types);
-        } else if args.benchmark_profiles {
-            ecs::schedule::run_benchmark_profiles_from_yaml("config/sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
-        } else {
-            ecs::schedule::run_profiles_from_yaml("config/sim_profiles.yaml", &agent_types, args.profile_systems, &args.profile_csv);
+
+    // --- Unified SimProfile logic ---
+    let profile_path = "config/sim_profiles.yaml";
+    let sim_profile = if args.profile != "small" || std::path::Path::new(profile_path).exists() {
+        // If profile argument is set (not default) or file exists, try to load profile
+        let profiles = load_profiles_from_yaml(profile_path);
+        match find_profile(&profiles, &args.profile) {
+            Some(profile) => Some(profile.clone()),
+            None => {
+                log::warn!("[WARN] Profile '{}' not found in {}. Falling back to CLI args.", &args.profile, profile_path);
+                None
+            }
         }
     } else {
+        None
+    };
+
+    let (map_width, map_height, num_agents, ticks) = if let Some(profile) = &sim_profile {
+        let width = profile.map_width.or(profile.map_size).unwrap_or(args.map_size);
+        let height = profile.map_height.or(profile.map_size).unwrap_or(args.map_size);
+        (width, height, profile.num_agents, profile.ticks)
+    } else {
+        (args.map_size, args.map_size, args.agents, args.ticks)
+    };
+
+    if args.headless {
+        log::info!("Running in headless mode");
+        // TODO: Refactor headless simulation to use SimProfile if present
+        // Placeholder: print sim_profile info if loaded
+        if let Some(profile) = &sim_profile {
+            log::info!("[INFO] Loaded profile: {:?}", profile);
+        }
+        // (Headless simulation logic here)
+    } else {
         log::info!("Running with graphics");
-        // TODO: Move run_profile_from_yaml to ecs module
-        ecs::schedule::run_profile_from_yaml(
-            "config/sim_profiles.yaml",
-            &args.profile,
+        let mut world = legion::World::default();
+        let mut resources = legion::Resources::default();
+        crate::graphics::sim_render::run_sim_render(
+            sim_profile.as_ref().unwrap_or(&SimProfile {
+                name: "cli_args".to_string(),
+                map_width: Some(map_width),
+                map_height: Some(map_height),
+                map_size: None,
+                num_agents,
+                ticks,
+                benchmark: None,
+                quiet: None,
+            }),
             &agent_types,
             args.profile_systems,
             &args.profile_csv,
-            &log_config,
-            event_log.expect("Event log should exist in GUI mode"),
+            &mut world,
+            &mut resources,
         );
     }
 }

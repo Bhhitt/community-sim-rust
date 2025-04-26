@@ -116,20 +116,11 @@ pub fn main_sim_loop(
     loop {
         // --- Run ECS systems ---
         if !paused || advance_one {
-            if profile_systems {
-                use crate::ecs_simulation::simulation_tick;
-                let profile = simulation_tick(
-                    &mut sim_ui_state.world,
-                    &mut sim_ui_state.resources,
-                    &mut sim_ui_state.schedule,
-                );
-                if let Some(csv_file) = csv_file.as_mut() {
-                    writeln!(csv_file, "{}{}{}", sim_ui_state.tick, ",", profile.to_csv_row()).unwrap();
-                }
-            } else {
-                // Use parallel tick
-                let _ = crate::ecs_simulation::simulation_tick_parallel(&mut sim_ui_state.world, &mut sim_ui_state.resources, &mut sim_ui_state.schedule);
-            }
+            // Run all ECS systems for this tick
+            sim_ui_state.schedule.execute(
+                &mut sim_ui_state.world,
+                &mut sim_ui_state.resources,
+            );
             sim_ui_state.tick += 1;
             advance_one = false;
         }

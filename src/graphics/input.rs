@@ -23,6 +23,7 @@ pub fn collect_input_events(
         match event {
             Event::Quit { .. }
             | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                log::debug!("[DEBUG] Received Quit or Escape event, enqueuing Quit intent");
                 sim_ui_state.input_queue.push(InputIntent::Quit);
             }
             Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
@@ -44,6 +45,7 @@ pub fn collect_input_events(
                 sim_ui_state.input_queue.push(InputIntent::SpawnAgentRandom);
             }
             Event::KeyDown { keycode: Some(Keycode::S), .. } => {
+                log::debug!("[DEBUG] S key pressed: queuing InputIntent::SpawnAgentsRandom");
                 sim_ui_state.input_queue.push(InputIntent::SpawnAgentsRandom { count: 100 });
             }
             Event::KeyDown { keycode: Some(Keycode::Period), .. } => {

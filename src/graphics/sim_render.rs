@@ -10,9 +10,9 @@ use rand::Rng;
 use crate::log_config::LogConfig;
 use std::fs::File;
 use crate::graphics::sim_state::SimUIState;
-use crate::ecs_simulation::{build_simulation_schedule_profiled, build_simulation_schedule_unprofiled};
-use crate::ecs::resources::insert_standard_resources;
-use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
+use crate::ecs::{resources::insert_standard_resources, systems::pending_agent_spawns::PendingAgentSpawns};
+use crate::sim_profile::SimProfile;
+use crate::ecs::agent_spawn_queue::AGENT_SPAWN_QUEUE;
 
 const CELL_SIZE: f32 = 6.0;
 
@@ -21,9 +21,7 @@ const CELL_SIZE: f32 = 6.0;
 // Main SDL2 rendering/event loop, extracted from graphics.rs
 #[allow(clippy::too_many_arguments)]
 pub fn run_sim_render(
-    _map_width: i32,
-    _map_height: i32,
-    _num_agents: usize,
+    profile: &SimProfile,
     agent_types: &[AgentType],
     profile_systems: bool,
     profile_csv: &str,
@@ -31,7 +29,10 @@ pub fn run_sim_render(
     resources: &mut Resources,
 ) {
     // --- ECS World Setup ---
-    let map = crate::map::Map::new(_map_width, _map_height);
+    let map_width = profile.map_width.or(profile.map_size).unwrap();
+    let map_height = profile.map_height.or(profile.map_size).unwrap();
+    let num_agents = profile.num_agents;
+    let map = crate::map::Map::new(map_width, map_height);
     let render_map = map.clone();
     let mut rng = rand::thread_rng();
     let mut _agent_count = 0;
@@ -40,14 +41,14 @@ pub fn run_sim_render(
     // Insert standard resources before any resource access!
     insert_standard_resources(resources, &map);
 
-    if _num_agents > 0 {
-        for i in 0.._num_agents {
+    if num_agents > 0 {
+        for i in 0..num_agents {
             let mut x;
             let mut y;
             let mut tries = 0;
             loop {
-                x = rng.gen_range(0.._map_width) as f32;
-                y = rng.gen_range(0.._map_height) as f32;
+                x = rng.gen_range(0..map_width) as f32;
+                y = rng.gen_range(0..map_height) as f32;
                 if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
                     break;
                 }
@@ -57,7 +58,7 @@ pub fn run_sim_render(
                 }
             }
             let agent_type = agent_types[i % agent_types.len()].clone();
-            resources.get_mut::<PendingAgentSpawns>().unwrap().add(crate::ecs_components::Position { x, y }, agent_type.clone());
+            AGENT_SPAWN_QUEUE.lock().unwrap().push(crate::ecs::systems::pending_agent_spawns::AgentSpawnRequest { pos: crate::ecs_components::Position { x, y }, agent_type: agent_type.clone() });
             _agent_count += 1;
             _attempts += tries;
         }
@@ -79,8 +80,8 @@ pub fn run_sim_render(
 
     // --- SDL2 CONTEXT AND WINDOW SETUP ---
     // Compute window size based on map size and cell size, but do not exceed defaults
-    let map_pixel_width = (_map_width as f32 * CELL_SIZE).ceil() as u32;
-    let map_pixel_height = (_map_height as f32 * CELL_SIZE).ceil() as u32;
+    let map_pixel_width = (map_width as f32 * CELL_SIZE).ceil() as u32;
+    let map_pixel_height = (map_height as f32 * CELL_SIZE).ceil() as u32;
     // Set minimum window size (for large maps, keep current default; for small, fit map)
     let default_window_width: u32 = 1280;
     let default_window_height: u32 = 800;
@@ -89,8 +90,8 @@ pub fn run_sim_render(
 
     let (mut canvas, mut stats_canvas, mut log_canvas_opt, mut event_pump, window_id, _stats_window_id, _log_window_id, mut camera, font) =
         crate::graphics::sim_loop::init_sdl2(
-            _map_width,
-            _map_height,
+            map_width,
+            map_height,
             CELL_SIZE,
             window_width,
             window_height,
@@ -100,14 +101,13 @@ pub fn run_sim_render(
     let mut _paused = false;
     let mut _advance_one = false;
     let _ascii_snapshots: Vec<String> = Vec::new();
+
+    // Use the actual schedule builder from ecs_simulation
+    let mut schedule = crate::ecs_simulation::build_simulation_schedule_profiled();
     let mut sim_ui_state = SimUIState {
         world,
         resources,
-        schedule: if profile_systems {
-            &mut build_simulation_schedule_profiled()
-        } else {
-            &mut build_simulation_schedule_unprofiled()
-        },
+        schedule: &mut schedule,
         camera: &mut camera,
         font: &font,
         cached_stats: crate::graphics::sim_state::CachedStats::default(),
@@ -130,8 +130,8 @@ pub fn run_sim_render(
         &log_config,
         profile_systems,
         &mut csv_file,
-        _map_width,
-        _map_height,
+        map_width,
+        map_height,
         CELL_SIZE,
         window_width,
         window_height,

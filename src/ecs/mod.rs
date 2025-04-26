@@ -1,4 +1,4 @@
 pub mod components;
 pub mod systems;
-pub mod schedule;
 pub mod resources;
+pub mod agent_spawn_queue;

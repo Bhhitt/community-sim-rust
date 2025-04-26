@@ -1,3 +1,5 @@
+// LEGACY: This file contains legacy or reference ECS schedule setup code. Not used in the main simulation. See main simulation loop for active schedule.
+
 // ECS schedule setup for Legion ECS
 // Define system ordering, stages, and schedule construction here.
 
@@ -20,8 +22,7 @@ use crate::agent::event::AgentEventLog;
 use crate::ecs::resources::insert_standard_resources;
 // use crate::ecs::systems;
 
-// use crate::ecs::systems::agent_spawn;
-// If you need agent_spawn, use the correct path or re-export in mod.rs.
+use crate::ecs::systems::agent_spawn;
 
 #[derive(Debug, Deserialize)]
 pub struct SimProfile {

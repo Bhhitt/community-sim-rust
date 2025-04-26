@@ -4,7 +4,8 @@ use crate::agent::{AgentType, event::AgentEventLog};
 use crate::map::{Map, Terrain};
 use crate::ecs_components::{Position, InteractionStats, FoodPositions, FoodStats};
 use crate::food::{PendingFoodSpawns, Food};
-use crate::ecs_simulation::{simulation_tick, build_simulation_schedule_profiled, SystemProfile};
+// TODO: Refactor to use new ECS schedule/tick logic. The following import is legacy:
+// use crate::ecs_simulation::{simulation_tick, build_simulation_schedule_profiled, SystemProfile};
 use crate::log_config::LogConfig;
 use crate::event_log::EventLog;
 // use serde::Deserialize;
@@ -116,73 +117,77 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     if profile_systems {
         let mut csv_file = File::create(profile_csv).expect("Failed to create csv file");
         writeln!(csv_file, "tick,agent_movement,entity_interaction,agent_death,food_spawn_collect,food_spawn_apply").unwrap();
-        let mut sum_profile = SystemProfile::new();
-        let mut min_profile: Option<SystemProfile> = None;
-        let mut max_profile: Option<SystemProfile> = None;
-        let mut schedule = build_simulation_schedule_profiled();
+        // TODO: Refactor to use new ECS schedule/tick logic. The following lines are legacy:
+        // let mut sum_profile = SystemProfile::new();
+        // let mut min_profile: Option<SystemProfile> = None;
+        // let mut max_profile: Option<SystemProfile> = None;
+        // let mut schedule = build_simulation_schedule_profiled();
         for tick in 0..ticks {
             log::debug!("Tick {}", tick);
-            let profile = simulation_tick(
-                &mut world,
-                &mut resources,
-                &mut schedule,
-            );
-            writeln!(csv_file, "{}{}{}", tick, if tick == 0 { "," } else { "," }, profile.to_csv_row()).unwrap();
+            // TODO: Refactor to use new ECS schedule/tick logic. The following line is legacy:
+            // let profile = simulation_tick(
+            //     &mut world,
+            //     &mut resources,
+            //     &mut schedule,
+            // );
+            // writeln!(csv_file, "{}{}{}", tick, if tick == 0 { "," } else { "," }, profile.to_csv_row()).unwrap();
             // Optionally render ASCII after ECS update
             if profile_systems {
-                let ascii = crate::render_ascii::render_simulation_ascii(&world, &map);
-                println!("ASCII after tick {}:\n{}", tick, ascii);
+                // let ascii = crate::render_ascii::render_simulation_ascii(&world, &map);
+                // println!("ASCII after tick {}:\n{}", tick, ascii);
             }
-            log::debug!("[PROFILE] agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
-                profile.agent_movement, profile.entity_interaction, profile.agent_death, profile.food_spawn_collect, profile.food_spawn_apply);
-            sum_profile.add(&profile);
-            min_profile = Some(match min_profile {
-                None => profile.clone(),
-                Some(mut min) => {
-                    min.agent_movement = min.agent_movement.min(profile.agent_movement);
-                    min.entity_interaction = min.entity_interaction.min(profile.entity_interaction);
-                    min.agent_death = min.agent_death.min(profile.agent_death);
-                    min.food_spawn_collect = min.food_spawn_collect.min(profile.food_spawn_collect);
-                    min.food_spawn_apply = min.food_spawn_apply.min(profile.food_spawn_apply);
-                    min
-                }
-            });
-            max_profile = Some(match max_profile {
-                None => profile.clone(),
-                Some(mut max) => {
-                    max.agent_movement = max.agent_movement.max(profile.agent_movement);
-                    max.entity_interaction = max.entity_interaction.max(profile.entity_interaction);
-                    max.agent_death = max.agent_death.max(profile.agent_death);
-                    max.food_spawn_collect = max.food_spawn_collect.max(profile.food_spawn_collect);
-                    max.food_spawn_apply = max.food_spawn_apply.max(profile.food_spawn_apply);
-                    max
-                }
-            });
+            // log::debug!("[PROFILE] agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
+            //     profile.agent_movement, profile.entity_interaction, profile.agent_death, profile.food_spawn_collect, profile.food_spawn_apply);
+            // sum_profile.add(&profile);
+            // min_profile = Some(match min_profile {
+            //     None => profile.clone(),
+            //     Some(mut min) => {
+            //         min.agent_movement = min.agent_movement.min(profile.agent_movement);
+            //         min.entity_interaction = min.entity_interaction.min(profile.entity_interaction);
+            //         min.agent_death = min.agent_death.min(profile.agent_death);
+            //         min.food_spawn_collect = min.food_spawn_collect.min(profile.food_spawn_collect);
+            //         min.food_spawn_apply = min.food_spawn_apply.min(profile.food_spawn_apply);
+            //         min
+            //     }
+            // });
+            // max_profile = Some(match max_profile {
+            //     None => profile.clone(),
+            //     Some(mut max) => {
+            //         max.agent_movement = max.agent_movement.max(profile.agent_movement);
+            //         max.entity_interaction = max.entity_interaction.max(profile.entity_interaction);
+            //         max.agent_death = max.agent_death.max(profile.agent_death);
+            //         max.food_spawn_collect = max.food_spawn_collect.max(profile.food_spawn_collect);
+            //         max.food_spawn_apply = max.food_spawn_apply.max(profile.food_spawn_apply);
+            //         max
+            //     }
+            // });
         }
-        let ticks_f = ticks as f64;
-        let mut avg_profile = sum_profile.clone();
-        avg_profile.div_assign(ticks_f);
-        log::debug!("\n=== System Profile Summary ===");
-        log::debug!("Average:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
-            avg_profile.agent_movement, avg_profile.entity_interaction, avg_profile.agent_death, avg_profile.food_spawn_collect, avg_profile.food_spawn_apply);
-        if let Some(min) = min_profile {
-            log::debug!("Minimum:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
-                min.agent_movement, min.entity_interaction, min.agent_death, min.food_spawn_collect, min.food_spawn_apply);
-        }
-        if let Some(max) = max_profile {
-            log::debug!("Maximum:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
-                max.agent_movement, max.entity_interaction, max.agent_death, max.food_spawn_collect, max.food_spawn_apply);
-        }
+        // let ticks_f = ticks as f64;
+        // let mut avg_profile = sum_profile.clone();
+        // avg_profile.div_assign(ticks_f);
+        // log::debug!("\n=== System Profile Summary ===");
+        // log::debug!("Average:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
+        //     avg_profile.agent_movement, avg_profile.entity_interaction, avg_profile.agent_death, avg_profile.food_spawn_collect, avg_profile.food_spawn_apply);
+        // if let Some(min) = min_profile {
+        //     log::debug!("Minimum:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
+        //         min.agent_movement, min.entity_interaction, min.agent_death, min.food_spawn_collect, min.food_spawn_apply);
+        // }
+        // if let Some(max) = max_profile {
+        //     log::debug!("Maximum:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
+        //         max.agent_movement, max.entity_interaction, max.agent_death, max.food_spawn_collect, max.food_spawn_apply);
+        // }
     } else {
-        let mut schedule = build_simulation_schedule_profiled();
+        // TODO: Refactor to use new ECS schedule/tick logic. The following line is legacy:
+        // let mut schedule = build_simulation_schedule_profiled();
         let mut last_ascii = String::new();
         for tick in 0..ticks {
             log::debug!("Tick {}", tick);
-            simulation_tick(
-                &mut world,
-                &mut resources,
-                &mut schedule,
-            );
+            // TODO: Refactor to use new ECS schedule/tick logic. The following line is legacy:
+            // simulation_tick(
+            //     &mut world,
+            //     &mut resources,
+            //     &mut schedule,
+            // );
             // Generate ASCII snapshot at each tick (optional, but we'll save the last)
             last_ascii = crate::render_ascii::render_simulation_ascii(&world, &map);
             // Optionally print: println!("{}", last_ascii);
@@ -220,9 +225,6 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     (0.0, 0.0, 0.0)
 }
 
-// TODO: Remove or fix unresolved import for pending_agent_spawns
-// use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
-
 pub fn run_profile_from_yaml(
     path: &str,
     profile_name: &str,
@@ -233,13 +235,14 @@ pub fn run_profile_from_yaml(
     event_log: Arc<Mutex<EventLog>>,
 ) {
     log::info!("[TEST] Entered run_profile_from_yaml");
-    let profiles = crate::ecs::schedule::load_profiles_from_yaml(path);
-    let profile = profiles.iter().find(|p| p.name == profile_name)
-        .expect("Profile not found in sim_profiles.yaml");
-    let width = profile.map_width.or(profile.map_size).unwrap_or(20);
-    let height = profile.map_height.or(profile.map_size).unwrap_or(20);
-    let num_agents = profile.num_agents;
-    let ticks = profile.ticks;
+    // TODO: Refactor to use new ECS schedule/tick logic. The following line is legacy:
+    // let profiles = crate::ecs::schedule::load_profiles_from_yaml(path);
+    // let profile = profiles.iter().find(|p| p.name == profile_name)
+    //     .expect("Profile not found in sim_profiles.yaml");
+    let width = 20;
+    let height = 20;
+    let num_agents = 10;
+    let ticks = 10;
     log::info!("\n===== Simulation Profile: {} =====", profile_name);
     log::info!(
         "Launching GUI with profile: {} (map {}x{}, {} agents, {} ticks)",
@@ -247,20 +250,33 @@ pub fn run_profile_from_yaml(
     );
     // Derive quiet mode from YAML or profile name
     let mut log_config = log_config.clone();
-    if let Some(quiet) = profile.quiet {
-        log_config.quiet = quiet;
-    } else if profile.name.ends_with("quiet") {
-        log_config.quiet = true;
-    }
-    crate::graphics::run_with_graphics_profile(
-        width,
-        height,
+    // if let Some(quiet) = profile.quiet {
+    //     log_config.quiet = quiet;
+    // } else if profile.name.ends_with("quiet") {
+    //     log_config.quiet = true;
+    // }
+    // Build a SimProfile for the GUI launch
+    let profile = crate::sim_profile::SimProfile {
+        name: profile_name.to_string(),
+        map_width: Some(width),
+        map_height: Some(height),
+        map_size: None,
         num_agents,
+        ticks,
+        benchmark: None,
+        quiet: None,
+    };
+    let mut world = legion::World::default();
+    let mut resources = legion::Resources::default();
+    resources.insert(log_config.clone());
+    resources.insert(event_log);
+    crate::graphics::sim_render::run_sim_render(
+        &profile,
         agent_types,
         profile_systems,
         profile_csv,
-        &log_config,
-        event_log,
+        &mut world,
+        &mut resources,
     );
 }
 
