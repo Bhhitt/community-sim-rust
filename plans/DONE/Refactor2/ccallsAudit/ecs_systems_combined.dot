@@ -1,0 +1,81 @@
+digraph ecs_systems_combined {
+    node [shape=box]
+    // agent_hunger_energy_system
+    agent_hunger_energy_system -> Hunger [label="write"]
+    agent_hunger_energy_system -> Energy [label="write"]
+    agent_hunger_energy_system -> AgentType [label="read"]
+    agent_hunger_energy_system -> AgentState [label="read"]
+
+    // agent_path_movement_system
+    agent_path_movement_system -> Position [label="write"]
+    agent_path_movement_system -> Path [label="write"]
+    agent_path_movement_system -> AgentType [label="read"]
+    agent_path_movement_system -> Target [label="read"]
+    agent_path_movement_system -> AgentState [label="read"]
+
+    // agent_direct_movement_system
+    agent_direct_movement_system -> Position [label="write"]
+    agent_direct_movement_system -> AgentType [label="read"]
+    agent_direct_movement_system -> Target [label="read"]
+    agent_direct_movement_system -> AgentState [label="read"]
+
+    // agent_state_transition_system
+    agent_state_transition_system -> Position [label="write"]
+    agent_state_transition_system -> Target [label="read"]
+    agent_state_transition_system -> AgentState [label="write"]
+
+    // agent_pause_system
+    agent_pause_system -> IdlePause [label="write"]
+    agent_pause_system -> Entity [label="read (for log)"]
+
+    // agent_pausing_system
+    agent_pausing_system -> IdlePause [label="write"]
+
+    // agent_spawning_system
+    agent_spawning_system -> PendingAgentSpawns [label="write (drain)"]
+    agent_spawning_system -> AgentEventLog [label="write"]
+    agent_spawning_system -> Map [label="read"]
+    agent_spawning_system -> ECS_AgentEntity [label="spawn+add components"]
+
+    // drain_agent_spawn_queue_system
+    drain_agent_spawn_queue_system -> PendingAgentSpawns [label="write"]
+    drain_agent_spawn_queue_system -> AGENT_SPAWN_QUEUE [label="mutex read+drain"]
+
+    // collect_food_positions_system
+    collect_food_positions_system [shape=box]
+    Position [shape=oval]
+    Food [shape=oval]
+    FoodPositions [shape=oval, style=filled, fillcolor=lightyellow]
+    collect_food_positions_system -> Position [label="reads"]
+    collect_food_positions_system -> Food [label="reads"]
+    collect_food_positions_system -> FoodPositions [label="writes"]
+
+    // collect_food_spawn_positions_system
+    collect_food_spawn_positions_system [shape=box]
+    PendingFoodSpawns [shape=oval, style=filled, fillcolor=lightyellow]
+    Map [shape=oval]
+    Terrain [shape=oval]
+    collect_food_spawn_positions_system -> PendingFoodSpawns [label="writes"]
+    collect_food_spawn_positions_system -> Map [label="reads"]
+    collect_food_spawn_positions_system -> Terrain [label="reads"]
+
+    // food_spawn_apply_system
+    food_spawn_apply_system [shape=box]
+    FoodStats [shape=oval, style=filled, fillcolor=lightblue]
+    spawn_food [shape=box, style=dashed]
+    CommandBuffer [shape=oval, style=filled, fillcolor=lightyellow]
+    food_spawn_apply_system -> PendingFoodSpawns [label="writes (drain)"]
+    food_spawn_apply_system -> FoodStats [label="writes"]
+    food_spawn_apply_system -> spawn_food [label="calls"]
+    spawn_food -> CommandBuffer [label="writes (push)"]
+    spawn_food -> FoodStats [label="writes (optional)"]
+    spawn_food -> Position [label="used"]
+    spawn_food -> Food [label="used"]
+
+    // spawn_food
+    spawn_food [shape=box]
+    spawn_food -> CommandBuffer [label="writes (push)"]
+    spawn_food -> FoodStats [label="writes (optional)"]
+    spawn_food -> Position [label="used"]
+    spawn_food -> Food [label="used"]
+}

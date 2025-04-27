@@ -13,9 +13,18 @@ pub fn render_simulation_ascii(world: &World, map: &Map) -> String {
             buffer[y][x] = map.tiles[y][x].to_char();
         }
     }
-    // Overlay food and agents (entities with Position)
-    let mut query = <&crate::ecs_components::Position>::query();
-    for pos in query.iter(world) {
+    // Overlay food
+    let mut food_query = <(&crate::ecs_components::Position, &crate::food::Food)>::query();
+    for (pos, _food) in food_query.iter(world) {
+        let x = pos.x.round() as i32;
+        let y = pos.y.round() as i32;
+        if x >= 0 && y >= 0 && (x as usize) < map.width as usize && (y as usize) < map.height as usize {
+            buffer[y as usize][x as usize] = 'F';
+        }
+    }
+    // Overlay agents (must come after food to ensure agents are visible on top)
+    let mut agent_query = <(&crate::ecs_components::Position, &crate::agent::AgentType)>::query();
+    for (pos, _agent_type) in agent_query.iter(world) {
         let x = pos.x.round() as i32;
         let y = pos.y.round() as i32;
         if x >= 0 && y >= 0 && (x as usize) < map.width as usize && (y as usize) < map.height as usize {

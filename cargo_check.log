@@ -1,0 +1,435 @@
+    Checking community_sim v0.1.0 (/Users/boydhitt/projects/windsurf/community-sim-rst)
+warning: unused import: `Map`
+ --> src/simulation.rs:4:18
+  |
+4 | use crate::map::{Map, Terrain};
+  |                  ^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `FoodPositions`, `FoodStats`, and `InteractionStats`
+ --> src/simulation.rs:5:39
+  |
+5 | use crate::ecs_components::{Position, InteractionStats, FoodPositions, FoodStats};
+  |                                       ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^
+
+warning: unused import: `PendingFoodSpawns`
+ --> src/simulation.rs:6:19
+  |
+6 | use crate::food::{PendingFoodSpawns, Food};
+  |                   ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fs::File`
+  --> src/simulation.rs:13:5
+   |
+13 | use std::fs::File;
+   |     ^^^^^^^^^^^^^
+
+warning: unused import: `legion::IntoQuery`
+  --> src/simulation.rs:14:5
+   |
+14 | use legion::IntoQuery;
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Resources` and `World`
+  --> src/simulation.rs:16:14
+   |
+16 | use legion::{World, Resources};
+   |              ^^^^^  ^^^^^^^^^
+
+warning: unused import: `std::collections::VecDeque`
+  --> src/simulation.rs:18:5
+   |
+18 | use std::collections::VecDeque;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns`
+ --> src/graphics/input_systems.rs:6:5
+  |
+6 | use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `systems::pending_agent_spawns::PendingAgentSpawns`
+  --> src/graphics/sim_render.rs:13:56
+   |
+13 | use crate::ecs::{resources::insert_standard_resources, systems::pending_agent_spawns::PendingAgentSpawns};
+   |                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::io::Write`
+   --> src/graphics/sim_loop.rs:106:9
+    |
+106 |     use std::io::Write;
+    |         ^^^^^^^^^^^^^^
+
+warning: unused import: `crate::agent::AgentType`
+  --> src/graphics/mod.rs:15:5
+   |
+15 | use crate::agent::AgentType;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::agent::event::AgentEventLog`
+  --> src/graphics/mod.rs:16:5
+   |
+16 | use crate::agent::event::AgentEventLog;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::log_config::LogConfig`
+  --> src/graphics/mod.rs:17:5
+   |
+17 | use crate::log_config::LogConfig;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::sim_profile::SimProfile`
+  --> src/graphics/mod.rs:18:5
+   |
+18 | use crate::sim_profile::SimProfile;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `legion::*`
+  --> src/graphics/mod.rs:19:5
+   |
+19 | use legion::*;
+   |     ^^^^^^^^^
+
+warning: unused import: `std::collections::VecDeque`
+  --> src/ecs/systems/agent_spawn.rs:12:5
+   |
+12 | use std::collections::VecDeque;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `legion::systems::Builder`
+ --> src/ecs/schedules/mod.rs:9:5
+  |
+9 | use legion::systems::Builder;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::ecs_components::*`
+ --> src/ecs_simulation.rs:6:5
+  |
+6 | use crate::ecs_components::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::food::systems::collect_food_positions_system`
+ --> src/ecs_simulation.rs:7:5
+  |
+7 | use crate::food::systems::collect_food_positions_system;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::food::systems::collect_food_spawn_positions_system`
+ --> src/ecs_simulation.rs:8:5
+  |
+8 | use crate::food::systems::collect_food_spawn_positions_system;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::food::systems::food_spawn_apply_system`
+ --> src/ecs_simulation.rs:9:5
+  |
+9 | use crate::food::systems::food_spawn_apply_system;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::agent::agent_death_system`
+  --> src/ecs_simulation.rs:10:5
+   |
+10 | use crate::agent::agent_death_system;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::agent::event_log_bridge::agent_event_log_to_gui_system`
+  --> src/ecs_simulation.rs:59:13
+   |
+59 |     pub use crate::agent::event_log_bridge::agent_event_log_to_gui_system;
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `event::AgentEventLog`
+ --> src/sim_core.rs:3:31
+  |
+3 | use crate::agent::{AgentType, event::AgentEventLog};
+  |                               ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `FoodPositions`, `FoodStats`, and `InteractionStats`
+ --> src/sim_core.rs:5:39
+  |
+5 | use crate::ecs_components::{Position, InteractionStats, FoodPositions, FoodStats};
+  |                                       ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^
+
+warning: unused import: `PendingFoodSpawns`
+ --> src/sim_core.rs:6:19
+  |
+6 | use crate::food::{PendingFoodSpawns, Food};
+  |                   ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::log_config::LogConfig`
+ --> src/sim_core.rs:7:5
+  |
+7 | use crate::log_config::LogConfig;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::event_log::EventLog`
+ --> src/sim_core.rs:8:5
+  |
+8 | use crate::event_log::EventLog;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::VecDeque`
+  --> src/sim_core.rs:11:5
+   |
+11 | use std::collections::VecDeque;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+  --> src/sim_core.rs:12:17
+   |
+12 | use std::sync::{Arc, Mutex};
+   |                 ^^^  ^^^^^
+
+warning: unused import: `crate::map::Map`
+  --> src/sim_loop.rs:35:17
+   |
+35 |             use crate::map::Map;
+   |                 ^^^^^^^^^^^^^^^
+
+warning: unused variable: `maybe_target`
+  --> src/ecs/systems/agent.rs:18:41
+   |
+18 |             for (pos, agent_type, path, maybe_target, agent_state) in query.iter_mut(world) {
+   |                                         ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_maybe_target`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `map`
+  --> src/ecs/systems/agent_spawn.rs:20:63
+   |
+20 |         .build(|cmd, world, (pending_spawns, agent_event_log, map), _| {
+   |                                                               ^^^ help: if this is intentional, prefix it with an underscore: `_map`
+
+warning: unused import: `legion::systems::Runnable`
+ --> src/ecs/systems/agent_logging.rs:5:5
+  |
+5 | use legion::systems::Runnable;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `agent_event_log`
+  --> src/graphics/input_systems.rs:53:25
+   |
+53 |                 let mut agent_event_log = sim_ui_state.resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
+   |                         ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_agent_event_log`
+
+warning: unused variable: `agent_event_log`
+  --> src/graphics/input_systems.rs:69:25
+   |
+69 |                 let mut agent_event_log = sim_ui_state.resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
+   |                         ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_agent_event_log`
+
+warning: variable does not need to be mutable
+  --> src/graphics/input_systems.rs:53:21
+   |
+53 |                 let mut agent_event_log = sim_ui_state.resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
+   |                     ----^^^^^^^^^^^^^^^
+   |                     |
+   |                     help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: variable does not need to be mutable
+  --> src/graphics/input_systems.rs:69:21
+   |
+69 |                 let mut agent_event_log = sim_ui_state.resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
+   |                     ----^^^^^^^^^^^^^^^
+   |                     |
+   |                     help: remove this `mut`
+
+warning: unused variable: `profile_systems`
+  --> src/graphics/sim_loop.rs:98:5
+   |
+98 |     profile_systems: bool,
+   |     ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_profile_systems`
+
+warning: unused variable: `csv_file`
+  --> src/graphics/sim_loop.rs:99:5
+   |
+99 |     csv_file: &mut Option<std::fs::File>,
+   |     ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_csv_file`
+
+warning: variable `attempts` is assigned to, but never used
+  --> src/sim_core.rs:41:13
+   |
+41 |     let mut attempts = 0;
+   |             ^^^^^^^^
+   |
+   = note: consider using `_attempts` instead
+
+warning: unused variable: `tick`
+  --> src/sim_loop.rs:12:33
+   |
+12 |     fn on_tick_start(&mut self, tick: usize) {}
+   |                                 ^^^^ help: if this is intentional, prefix it with an underscore: `_tick`
+
+warning: unused variable: `tick`
+  --> src/sim_loop.rs:13:31
+   |
+13 |     fn on_tick_end(&mut self, tick: usize) {}
+   |                               ^^^^ help: if this is intentional, prefix it with an underscore: `_tick`
+
+warning: unused variable: `world`
+  --> src/sim_loop.rs:14:37
+   |
+14 |     fn on_simulation_end(&mut self, world: &World, resources: &Resources, tick: usize) {}
+   |                                     ^^^^^ help: if this is intentional, prefix it with an underscore: `_world`
+
+warning: unused variable: `resources`
+  --> src/sim_loop.rs:14:52
+   |
+14 |     fn on_simulation_end(&mut self, world: &World, resources: &Resources, tick: usize) {}
+   |                                                    ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_resources`
+
+warning: unused variable: `tick`
+  --> src/sim_loop.rs:14:75
+   |
+14 |     fn on_simulation_end(&mut self, world: &World, resources: &Resources, tick: usize) {}
+   |                                                                           ^^^^ help: if this is intentional, prefix it with an underscore: `_tick`
+
+warning: function `find_closest_food` is never used
+  --> src/agent/systems.rs:25:4
+   |
+25 | fn find_closest_food(x: f32, y: f32, food_positions: &crate::ecs_components::FoodPositions) -> Option<(i32, i32)> {
+   |    ^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: `community_sim` (lib) generated 47 warnings (run `cargo fix --lib -p community_sim` to apply 33 suggestions)
+error[E0432]: unresolved import `crate::sim_core`
+  --> src/simulation.rs:20:12
+   |
+20 | use crate::sim_core::{setup_simulation_world_and_resources, SimInit, build_simulation_schedule};
+   |            ^^^^^^^^
+   |            |
+   |            unresolved import
+   |            help: a similar path exists: `community_sim::sim_core`
+
+error[E0432]: unresolved import `crate::sim_loop`
+  --> src/simulation.rs:21:12
+   |
+21 | use crate::sim_loop::{AsciiRenderer, NoOpInput, NoOpProfiler, run_simulation_loop};
+   |            ^^^^^^^^
+   |            |
+   |            unresolved import
+   |            help: a similar path exists: `community_sim::sim_loop`
+
+warning: unused import: `std::collections::VecDeque`
+  --> src/ecs/systems/agent_spawn.rs:12:5
+   |
+12 | use std::collections::VecDeque;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `agent::agent_state_transition_system`
+  --> src/ecs/systems/mod.rs:23:9
+   |
+23 | pub use agent::agent_state_transition_system;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `agent::agent_pausing_system`
+  --> src/ecs/systems/mod.rs:25:9
+   |
+25 | pub use agent::agent_pausing_system;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `agent::agent_hunger_energy_system`
+  --> src/ecs/systems/mod.rs:26:9
+   |
+26 | pub use agent::agent_hunger_energy_system;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `agent_action_decision::agent_action_decision_system`
+  --> src/ecs/systems/mod.rs:30:9
+   |
+30 | pub use agent_action_decision::agent_action_decision_system;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `agent_target_assignment::agent_target_assignment_system`
+  --> src/ecs/systems/mod.rs:31:9
+   |
+31 | pub use agent_target_assignment::agent_target_assignment_system;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `agent_path_assignment::agent_path_assignment_system`
+  --> src/ecs/systems/mod.rs:32:9
+   |
+32 | pub use agent_path_assignment::agent_path_assignment_system;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `agent_spawn::agent_spawning_system`
+  --> src/ecs/systems/mod.rs:34:9
+   |
+34 | pub use agent_spawn::agent_spawning_system;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `AgentSpawnRequest` and `PendingAgentSpawns`
+  --> src/ecs/systems/mod.rs:35:32
+   |
+35 | pub use pending_agent_spawns::{PendingAgentSpawns, AgentSpawnRequest};
+   |                                ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `agent_agent_interaction::agent_agent_interaction_system`
+  --> src/ecs/systems/mod.rs:38:9
+   |
+38 | pub use agent_agent_interaction::agent_agent_interaction_system;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `interaction_stats_update::interaction_stats_update_system`
+  --> src/ecs/systems/mod.rs:39:9
+   |
+39 | pub use interaction_stats_update::interaction_stats_update_system;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `interaction_event_logging::interaction_event_logging_system`
+  --> src/ecs/systems/mod.rs:40:9
+   |
+40 | pub use interaction_event_logging::interaction_event_logging_system;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Map`
+ --> src/simulation.rs:4:18
+  |
+4 | use crate::map::{Map, Terrain};
+  |                  ^^^
+
+warning: unused import: `components::MovementHistory`
+  --> src/agent/mod.rs:16:9
+   |
+16 | pub use components::MovementHistory;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `components::RecentInteraction`
+  --> src/agent/mod.rs:19:9
+   |
+19 | pub use components::RecentInteraction;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `MLPConfig` and `MLP`
+  --> src/agent/mod.rs:22:15
+   |
+22 | pub use mlp::{MLP, MLPConfig};
+   |               ^^^  ^^^^^^^^^
+
+warning: unused import: `collect_food_positions_system`
+ --> src/food/mod.rs:3:25
+  |
+3 | pub use self::systems::{collect_food_positions_system};
+  |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::render_ascii::render_simulation_ascii`
+  --> src/ecs_simulation.rs:95:9
+   |
+95 | pub use crate::render_ascii::render_simulation_ascii;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `log_config`
+   --> src/main.rs:126:9
+    |
+126 |     let log_config = log_config::LogConfig {
+    |         ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_log_config`
+
+For more information about this error, try `rustc --explain E0432`.
+warning: `community_sim` (bin "community_sim") generated 49 warnings (30 duplicates)
+error: could not compile `community_sim` (bin "community_sim") due to 2 previous errors; 49 warnings emitted

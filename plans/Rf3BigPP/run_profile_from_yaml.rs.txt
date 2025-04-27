@@ -1,0 +1,23 @@
+// Extracted from src/simulation.rs (run_profile_from_yaml)
+let profile = crate::sim_profile::SimProfile {
+    name: profile_name.to_string(),
+    map_width: Some(width),
+    map_height: Some(height),
+    map_size: None,
+    num_agents,
+    ticks,
+    benchmark: None,
+    quiet: None,
+};
+let mut world = legion::World::default();
+let mut resources = legion::Resources::default();
+resources.insert(log_config.clone());
+resources.insert(event_log);
+crate::graphics::sim_render::run_sim_render(
+    &profile,
+    agent_types,
+    profile_systems,
+    profile_csv,
+    &mut world,
+    &mut resources,
+);

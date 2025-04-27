@@ -1,29 +1,26 @@
-mod log_config;
-mod util;
-mod ecs; // <-- new idiomatic ECS module
-mod simulation; // <-- old simulation module (to be migrated)
-mod navigation;
-mod graphics;
-mod config;
-mod sim_profile;
-
-pub mod agent;
-pub mod map;
-pub mod ecs_components;
-pub mod food;
-pub mod ecs_simulation;
-pub mod render_ascii;
-
-pub mod terrain;
-pub mod sim_summary;
-pub mod event_log;
+// Removed all module declarations that are also present in lib.rs. Use the library crate path for imports instead.
 
 use clap::Parser;
 use chrono;
 use fern;
 use log;
 use std::sync::{Arc, Mutex};
-use sim_profile::{SimProfile, load_profiles_from_yaml, find_profile};
+use community_sim::log_config;
+use community_sim::ecs;
+use community_sim::simulation;
+use community_sim::navigation;
+use community_sim::graphics;
+use community_sim::config;
+use community_sim::sim_profile::{SimProfile, load_profiles_from_yaml, find_profile};
+use community_sim::agent;
+use community_sim::ecs_components;
+use community_sim::food;
+use community_sim::ecs_simulation;
+use community_sim::render_ascii;
+use community_sim::terrain;
+use community_sim::sim_summary;
+use community_sim::event_log;
+use community_sim::util;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -105,6 +102,15 @@ fn setup_logging(log_level: log::LevelFilter, event_log: Option<Arc<Mutex<event_
 }
 
 fn main() {
+    // Add a panic hook to log panics to the logger and stderr
+    std::panic::set_hook(Box::new(|info| {
+        use std::io::Write;
+        // Try to log to the logger
+        log::error!("PANIC: {}", info);
+        // Also print to stderr to ensure visibility
+        let _ = writeln!(std::io::stderr(), "PANIC: {}", info);
+    }));
+
     let args = Args::parse();
     let log_level = parse_log_level(&args.log_level);
     let event_log = if args.headless {
@@ -146,12 +152,32 @@ fn main() {
 
     if args.headless {
         log::info!("Running in headless mode");
-        // TODO: Refactor headless simulation to use SimProfile if present
-        // Placeholder: print sim_profile info if loaded
         if let Some(profile) = &sim_profile {
             log::info!("[INFO] Loaded profile: {:?}", profile);
+            // Use profile values for simulation
+            crate::simulation::run_simulation(
+                profile.map_width.or(profile.map_size).unwrap_or(args.map_size),
+                profile.map_height.or(profile.map_size).unwrap_or(args.map_size),
+                profile.num_agents,
+                profile.ticks,
+                &profile.name,
+                &agent_types,
+                args.profile_systems,
+                &args.profile_csv,
+            );
+        } else {
+            // Use CLI args for simulation
+            crate::simulation::run_simulation(
+                args.map_size,
+                args.map_size,
+                args.agents,
+                args.ticks,
+                &args.profile,
+                &agent_types,
+                args.profile_systems,
+                &args.profile_csv,
+            );
         }
-        // (Headless simulation logic here)
     } else {
         log::info!("Running with graphics");
         let mut world = legion::World::default();

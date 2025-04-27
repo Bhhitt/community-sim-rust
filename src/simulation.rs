@@ -17,16 +17,19 @@ use legion::{World, Resources};
 use log;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
+use crate::sim_core::{setup_simulation_world_and_resources, SimInit, build_simulation_schedule};
+use crate::sim_loop::{AsciiRenderer, NoOpInput, NoOpProfiler, run_simulation_loop};
 
 // TODO: Remove or fix unresolved import for pending_agent_spawns
 // use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 
-fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], profile_systems: bool, profile_csv: &str) -> (f64, f64, f64) {
+pub fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], _profile_systems: bool, _profile_csv: &str) -> (f64, f64, f64) {
     log::info!("[TEST] Entered run_simulation");
     log::info!("\n=== Running {}: map {}x{}, {} agents, {} ticks ===", label, map_width, map_height, num_agents, ticks);
     // --- ECS World Setup (MATCH graphics mode) ---
-    let mut world = World::default();
-    let map = Map::new(map_width, map_height);
+    let SimInit { mut world, mut resources, map, agent_count } = setup_simulation_world_and_resources(
+        map_width, map_height, num_agents, agent_types
+    );
     let mut rng = rand::thread_rng();
     // Convert agent_types from agent.rs::AgentType to ecs_components::AgentType directly
     let ecs_agent_types: Vec<AgentType> = agent_types.iter().map(|a| AgentType {
@@ -37,7 +40,6 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
         hunger_rate: a.hunger_rate,
         hunger_threshold: a.hunger_threshold,
     }).collect();
-    let mut agent_count = 0;
     let mut attempts = 0;
     let _agent_event_log = AgentEventLog::default();
     if num_agents > 0 {
@@ -62,7 +64,6 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
             // TODO: Fix or remove usage of undefined value `resources` at line 60
             // This may require passing or initializing the correct resource context.
             // resources.get_mut::<PendingAgentSpawns>().unwrap().add(Position { x, y }, agent_type.clone());
-            agent_count += 1;
             attempts += tries;
         }
     }
@@ -89,140 +90,23 @@ fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usi
     log::debug!("[DEBUG] Total entities in world after spawning: {}", total_entities);
     std::io::stdout().flush().unwrap();
     log::debug!("[DEBUG] Spawned {} agents", agent_count);
-    // --- DEBUG: Print all entities with Position and their component type names before tick loop ---
-    log::debug!("[DEBUG] Entities with Position and their component types before tick loop:");
-    let mut query = <(
-        legion::Entity,
-        &Position,
-        Option<&AgentType>,
-        Option<&Food>
-    )>::query();
-    for (entity, _pos, agent_type, food) in query.iter(&world) {
-        let mut comps = vec!["Position"];
-        if agent_type.is_some() { comps.push("AgentType"); }
-        if food.is_some() { comps.push("Food"); }
-        log::debug!("  Entity {:?}: [{}]", entity, comps.join(", "));
-    }
-    // --- Main simulation loop ---
-    let mut resources = Resources::default();
-    resources.insert(map.clone());
-    resources.insert(PendingFoodSpawns(VecDeque::new()));
-    resources.insert(FoodPositions(Vec::new()));
-    resources.insert(FoodStats::default());
-    resources.insert(InteractionStats::default());
-    resources.insert(Arc::new(Mutex::new(EventLog::new(200))));
-    resources.insert(LogConfig::default()); // Insert LogConfig resource
-    resources.insert(AgentEventLog::default()); // Ensure AgentEventLog is always present
-    // Insert other resources as needed for ECS systems
-    if profile_systems {
-        let mut csv_file = File::create(profile_csv).expect("Failed to create csv file");
-        writeln!(csv_file, "tick,agent_movement,entity_interaction,agent_death,food_spawn_collect,food_spawn_apply").unwrap();
-        // TODO: Refactor to use new ECS schedule/tick logic. The following lines are legacy:
-        // let mut sum_profile = SystemProfile::new();
-        // let mut min_profile: Option<SystemProfile> = None;
-        // let mut max_profile: Option<SystemProfile> = None;
-        // let mut schedule = build_simulation_schedule_profiled();
-        for tick in 0..ticks {
-            log::debug!("Tick {}", tick);
-            // TODO: Refactor to use new ECS schedule/tick logic. The following line is legacy:
-            // let profile = simulation_tick(
-            //     &mut world,
-            //     &mut resources,
-            //     &mut schedule,
-            // );
-            // writeln!(csv_file, "{}{}{}", tick, if tick == 0 { "," } else { "," }, profile.to_csv_row()).unwrap();
-            // Optionally render ASCII after ECS update
-            if profile_systems {
-                // let ascii = crate::render_ascii::render_simulation_ascii(&world, &map);
-                // println!("ASCII after tick {}:\n{}", tick, ascii);
-            }
-            // log::debug!("[PROFILE] agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
-            //     profile.agent_movement, profile.entity_interaction, profile.agent_death, profile.food_spawn_collect, profile.food_spawn_apply);
-            // sum_profile.add(&profile);
-            // min_profile = Some(match min_profile {
-            //     None => profile.clone(),
-            //     Some(mut min) => {
-            //         min.agent_movement = min.agent_movement.min(profile.agent_movement);
-            //         min.entity_interaction = min.entity_interaction.min(profile.entity_interaction);
-            //         min.agent_death = min.agent_death.min(profile.agent_death);
-            //         min.food_spawn_collect = min.food_spawn_collect.min(profile.food_spawn_collect);
-            //         min.food_spawn_apply = min.food_spawn_apply.min(profile.food_spawn_apply);
-            //         min
-            //     }
-            // });
-            // max_profile = Some(match max_profile {
-            //     None => profile.clone(),
-            //     Some(mut max) => {
-            //         max.agent_movement = max.agent_movement.max(profile.agent_movement);
-            //         max.entity_interaction = max.entity_interaction.max(profile.entity_interaction);
-            //         max.agent_death = max.agent_death.max(profile.agent_death);
-            //         max.food_spawn_collect = max.food_spawn_collect.max(profile.food_spawn_collect);
-            //         max.food_spawn_apply = max.food_spawn_apply.max(profile.food_spawn_apply);
-            //         max
-            //     }
-            // });
-        }
-        // let ticks_f = ticks as f64;
-        // let mut avg_profile = sum_profile.clone();
-        // avg_profile.div_assign(ticks_f);
-        // log::debug!("\n=== System Profile Summary ===");
-        // log::debug!("Average:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
-        //     avg_profile.agent_movement, avg_profile.entity_interaction, avg_profile.agent_death, avg_profile.food_spawn_collect, avg_profile.food_spawn_apply);
-        // if let Some(min) = min_profile {
-        //     log::debug!("Minimum:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
-        //         min.agent_movement, min.entity_interaction, min.agent_death, min.food_spawn_collect, min.food_spawn_apply);
-        // }
-        // if let Some(max) = max_profile {
-        //     log::debug!("Maximum:   agent_movement: {:.6}s, entity_interaction: {:.6}s, agent_death: {:.6}s, food_spawn_collect: {:.6}s, food_spawn_apply: {:.6}s", 
-        //         max.agent_movement, max.entity_interaction, max.agent_death, max.food_spawn_collect, max.food_spawn_apply);
-        // }
-    } else {
-        // TODO: Refactor to use new ECS schedule/tick logic. The following line is legacy:
-        // let mut schedule = build_simulation_schedule_profiled();
-        let mut last_ascii = String::new();
-        for tick in 0..ticks {
-            log::debug!("Tick {}", tick);
-            // TODO: Refactor to use new ECS schedule/tick logic. The following line is legacy:
-            // simulation_tick(
-            //     &mut world,
-            //     &mut resources,
-            //     &mut schedule,
-            // );
-            // Generate ASCII snapshot at each tick (optional, but we'll save the last)
-            last_ascii = crate::render_ascii::render_simulation_ascii(&world, &map);
-            // Optionally print: println!("{}", last_ascii);
-        }
-        // --- Write simulation summary to map file ---
-        use legion::IntoQuery;
-        use std::collections::HashMap;
-        // Count agent types at end
-        let mut agent_type_counts: HashMap<String, usize> = HashMap::new();
-        let mut agent_query = <(&AgentType,)>::query();
-        for (agent_type,) in agent_query.iter(&world) {
-            *agent_type_counts.entry(agent_type.name.clone()).or_insert(0) += 1;
-        }
-        // Get interaction stats
-        let stats = resources.get::<InteractionStats>().expect("No InteractionStats resource");
-        let total_interactions = stats.agent_interactions;
-        let avg_interactions_per_tick = if ticks > 0 { total_interactions as f64 / ticks as f64 } else { 0.0 };
-        // Prepare summary string
-        let mut summary = String::new();
-        summary.push_str(&format!("# Simulation Summary\n"));
-        summary.push_str(&format!("Total interactions: {}\n", total_interactions));
-        summary.push_str(&format!("Average interactions per tick: {:.2}\n", avg_interactions_per_tick));
-        summary.push_str("Agent counts at end:\n");
-        for (name, count) in agent_type_counts.iter() {
-            summary.push_str(&format!("  {}: {}\n", name, count));
-        }
-        summary.push_str("\n");
-        // Write summary + ascii to file
-        let mut file = std::fs::File::create("simulation_ascii.txt").expect("Unable to create ascii output file");
-        file.write_all(summary.as_bytes()).expect("Unable to write summary");
-        file.write_all(last_ascii.as_bytes()).expect("Unable to write ascii output");
-        log::info!("[INFO] Simulation summary and final ASCII snapshot written to simulation_ascii.txt");
-    }
-    // Optionally: write last snapshot to file or keep for further processing
-    (0.0, 0.0, 0.0)
+    // --- ECS Schedule Setup ---
+    let mut schedule = build_simulation_schedule();
+    // --- Simulation Loop ---
+    let mut renderer = AsciiRenderer;
+    let mut input = NoOpInput;
+    let mut profiler = NoOpProfiler;
+    let stats = run_simulation_loop(
+        &mut world,
+        &mut resources,
+        &mut schedule,
+        ticks,
+        &mut renderer,
+        &mut profiler,
+        &mut input,
+    );
+    // TODO: Return real statistics if needed
+    (stats.ticks_run as f64, 0.0, 0.0)
 }
 
 pub fn run_profile_from_yaml(
@@ -234,44 +118,30 @@ pub fn run_profile_from_yaml(
     log_config: &LogConfig,
     event_log: Arc<Mutex<EventLog>>,
 ) {
+    use crate::sim_profile::{load_profiles_from_yaml, find_profile};
     log::info!("[TEST] Entered run_profile_from_yaml");
-    // TODO: Refactor to use new ECS schedule/tick logic. The following line is legacy:
-    // let profiles = crate::ecs::schedule::load_profiles_from_yaml(path);
-    // let profile = profiles.iter().find(|p| p.name == profile_name)
-    //     .expect("Profile not found in sim_profiles.yaml");
-    let width = 20;
-    let height = 20;
-    let num_agents = 10;
-    let ticks = 10;
-    log::info!("\n===== Simulation Profile: {} =====", profile_name);
-    log::info!(
-        "Launching GUI with profile: {} (map {}x{}, {} agents, {} ticks)",
-        profile_name, width, height, num_agents, ticks
-    );
-    // Derive quiet mode from YAML or profile name
-    let mut log_config = log_config.clone();
-    // if let Some(quiet) = profile.quiet {
-    //     log_config.quiet = quiet;
-    // } else if profile.name.ends_with("quiet") {
-    //     log_config.quiet = true;
-    // }
-    // Build a SimProfile for the GUI launch
-    let profile = crate::sim_profile::SimProfile {
-        name: profile_name.to_string(),
-        map_width: Some(width),
-        map_height: Some(height),
-        map_size: None,
-        num_agents,
-        ticks,
-        benchmark: None,
-        quiet: None,
+    let profiles = load_profiles_from_yaml(path);
+    let profile = match find_profile(&profiles, profile_name) {
+        Some(p) => p,
+        None => {
+            log::error!("Profile '{}' not found in {}. Aborting simulation.", profile_name, path);
+            return;
+        }
     };
+    log::info!(
+        "Launching simulation with profile: {} (map {}x{}, {} agents, {} ticks)",
+        profile.name,
+        profile.map_width.unwrap_or(0),
+        profile.map_height.unwrap_or(0),
+        profile.num_agents,
+        profile.ticks
+    );
     let mut world = legion::World::default();
     let mut resources = legion::Resources::default();
     resources.insert(log_config.clone());
     resources.insert(event_log);
     crate::graphics::sim_render::run_sim_render(
-        &profile,
+        profile,
         agent_types,
         profile_systems,
         profile_csv,

@@ -39,4 +39,6 @@ pub fn write_simulation_summary_and_ascii(
     file.write_all(summary.as_bytes()).expect("Unable to write summary");
     file.write_all(ascii_snapshot.as_bytes()).expect("Unable to write ascii output");
     log::info!("[INFO] Simulation summary and final ASCII snapshot written to {}", output_path);
+    // --- Print map to stdout at end of sim ---
+    println!("\n--- FINAL MAP ASCII ---\n{}", ascii_snapshot);
 }
