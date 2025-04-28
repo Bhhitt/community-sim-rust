@@ -7,27 +7,18 @@
 use legion::{Entity, IntoQuery};
 use crate::agent::{AgentType, AgentState};
 use crate::ecs_components::Position;
-use crate::agent::components::{Target, Path};
+use crate::agent::components::Target;
+use crate::navigation::Path;
 
 // --- ECS Agent Path Movement System ---
-/// Moves agent along waypoints if Path is present and not empty.
+/// Removes the first waypoint from the agent's path if present (does not update position).
 pub fn agent_path_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentPathMovementSystem")
-        .with_query(<(&mut Position, &AgentType, &mut Path, &mut Target, &mut AgentState)>::query())
+        .with_query(<(&mut Path,)>::query())
         .build(|_, world, _, query| {
-            for (pos, agent_type, path, maybe_target, agent_state) in query.iter_mut(world) {
-                if (*agent_state == AgentState::Idle || *agent_state == AgentState::Moving)
-                    && !path.waypoints.is_empty()
-                {
-                    log::debug!("[PathMove] Entity: {:?} Path: {:?} State: {:?}", pos, path.waypoints, agent_state);
-                    let (tx, ty) = path.waypoints[0];
-                    let dx = tx as f32 - pos.x;
-                    let dy = ty as f32 - pos.y;
-                    let dist = (dx * dx + dy * dy).sqrt();
-                    let step = agent_type.movement_profile.speed.min(dist);
-                    pos.x += dx / dist * step;
-                    pos.y += dy / dist * step;
-                    path.waypoints.pop_front();
+            for (path,) in query.iter_mut(world) {
+                if !path.waypoints.is_empty() {
+                    path.waypoints.remove(0);
                 }
             }
         })
@@ -37,13 +28,12 @@ pub fn agent_path_movement_system() -> impl legion::systems::Runnable {
 /// Moves agent directly toward target if no path is present.
 pub fn agent_direct_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentDirectMovementSystem")
-        .with_query(<(&mut Position, &AgentType, &mut Path, &mut Target, &mut AgentState)>::query())
+        .with_query(<(&mut Position, &AgentType, &Path, &Target, &AgentState)>::query())
         .build(|_, world, _, query| {
             for (pos, agent_type, path, target, agent_state) in query.iter_mut(world) {
                 if (*agent_state == AgentState::Idle || *agent_state == AgentState::Moving)
                     && path.waypoints.is_empty()
                 {
-                    log::debug!("[DirectMove] Entity: {:?} Target: ({}, {}) State: {:?}", pos, target.x, target.y, agent_state);
                     let dist = ((target.x - pos.x).powi(2) + (target.y - pos.y).powi(2)).sqrt();
                     let step = agent_type.movement_profile.speed.min(dist);
                     if dist > 0.1 {
@@ -63,6 +53,7 @@ pub fn agent_state_transition_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentStateTransitionSystem")
         .with_query(<(&mut Position, &Target, &mut AgentState, &Path)>::query())
         .build(|_, world, _, query| {
+            log::debug!("[SYSTEM] Entering agent_state_transition_system");
             for (pos, target, agent_state, path) in query.iter_mut(world) {
                 if (*agent_state == AgentState::Moving || *agent_state == AgentState::Idle)
                     && path.waypoints.is_empty()
@@ -71,17 +62,23 @@ pub fn agent_state_transition_system() -> impl legion::systems::Runnable {
                     if dist <= 0.1 {
                         log::debug!("[StateTransition] Entity: {:?} arrived at target ({}, {})", pos, target.x, target.y);
                         *agent_state = AgentState::Arrived;
+                    } else if dist > 0.1 {
+                        *agent_state = AgentState::Moving;
                     }
+                } else if path.waypoints.is_empty() {
+                    *agent_state = AgentState::Idle;
                 }
             }
         })
 }
 
+// --- ECS Agent Pausing System ---
 /// Agent pausing system: handles all IdlePause logic (decrementing ticks_remaining).
 pub fn agent_pausing_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentPausingSystem")
         .with_query(<(Entity, &mut crate::agent::components::IdlePause)>::query())
         .build(|_, world, _, query| {
+            log::debug!("[SYSTEM] Entering agent_pausing_system");
             for (_entity, idle_pause) in query.iter_mut(world) {
                 if idle_pause.ticks_remaining > 0 {
                     idle_pause.ticks_remaining -= 1;
@@ -90,6 +87,7 @@ pub fn agent_pausing_system() -> impl legion::systems::Runnable {
         })
 }
 
+// --- ECS Agent Movement History System ---
 /// Agent movement history system: records each agent's recent positions for analytics/debugging.
 pub fn agent_movement_history_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentMovementHistorySystem")
@@ -98,14 +96,16 @@ pub fn agent_movement_history_system() -> impl legion::systems::Runnable {
             for (_entity, pos, history) in query.iter_mut(world) {
                 history.add(pos.x, pos.y);
             }
-        })
+         })
 }
 
-// --- ECS Agent Hunger/Energy System ---
+// --- ecs agent hunger/energy system ---
+/// agent hunger/energy system: manages hunger and energy levels for agents.
 pub fn agent_hunger_energy_system() -> impl legion::systems::Runnable {
-    legion::SystemBuilder::new("AgentHungerEnergySystem")
+    legion::SystemBuilder::new("agent_hunger_energy_system")
         .with_query(<(Entity, &AgentType, &mut crate::agent::Hunger, &mut crate::agent::Energy, &AgentState)>::query())
         .build(|_, world, _, query| {
+            log::debug!("[SYSTEM] Entering agent_hunger_energy_system");
             for (_entity, agent_type, hunger, energy, agent_state) in query.iter_mut(world) {
                 // Hunger logic for idle/arrived and moving states
                 if *agent_state == AgentState::Idle || *agent_state == AgentState::Arrived {

@@ -1,7 +1,9 @@
 // =============================
-// LEGACY FILE (NOT USED IN PRODUCTION)
+// LEGACY FILE (DEPRECATED, NOT USED IN PRODUCTION)
 // This file contains a minimal ECS simulation loop for scaffolding/testing only.
 // It is not referenced by the main codebase. All active ECS scheduling is handled in src/ecs/schedules/.
+//
+// This file will be removed in a future cleanup. Do not use for new development.
 // =============================
 
 // LEGACY: This file contains a minimal ECS simulation loop and schedule for testing/scaffolding only. Not used in the main simulation.
@@ -56,7 +58,7 @@ pub fn run_ecs_sim() {
     let mut schedule = Schedule::builder()
         .add_system(
             SystemBuilder::new("PrintEntities")
-                .with_query(<(&Position, Option<&Food>, Option<&AgentType>)>::query())
+                .with_query::<(&Position, Option<&Food>, Option<&AgentType>)>()
                 .build(|_, world, _, query| {
                     for (pos, food, agent_type) in query.iter(world) {
                         if let Some(_food) = food {

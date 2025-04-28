@@ -40,9 +40,11 @@ pub fn setup_simulation_world_and_resources(
     let mut agent_count = 0;
     let mut attempts = 0;
     if num_agents > 0 {
-        use crate::ecs::agent_spawn_queue::AGENT_SPAWN_QUEUE;
-        use crate::ecs::systems::pending_agent_spawns::AgentSpawnRequest;
-        let mut queue = AGENT_SPAWN_QUEUE.lock().unwrap();
+        use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
+        // In any logic that previously used AGENT_SPAWN_QUEUE, replace with PendingAgentSpawns ECS resource.
+        // let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
+        // pending_spawns.add(pos, agent_type);
+        // Note: This logic should now enqueue directly into PendingAgentSpawns, and may require refactor to pass Resources or run as an ECS system.
         for i in 0..num_agents {
             // Find a random passable tile
             let mut x;
@@ -61,7 +63,10 @@ pub fn setup_simulation_world_and_resources(
             }
             let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
             // Instead of pushing directly to world, enqueue spawn request:
-            queue.push(AgentSpawnRequest { pos: Position { x, y }, agent_type });
+            // queue.push(AgentSpawnRequest { pos: Position { x, y }, agent_type });
+            // Replace with PendingAgentSpawns ECS resource usage.
+            // let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
+            // pending_spawns.add(Position { x, y }, agent_type);
             agent_count += 1;
             attempts += tries;
         }

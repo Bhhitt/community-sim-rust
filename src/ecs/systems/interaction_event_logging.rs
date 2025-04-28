@@ -11,6 +11,7 @@ pub fn interaction_event_logging_system() -> impl Runnable {
         .write_resource::<Arc<Mutex<EventLog>>>()
         .write_resource::<AgentEventLog>()
         .build(|_cmd, _world, (event_log, agent_event_log), ()| {
+            log::debug!("[SYSTEM] Entering interaction_event_logging_system");
             let mut event_log = event_log.lock().unwrap();
             // Drain all agent events and log them to the main event log
             while let Some(agent_event) = agent_event_log.0.pop_front() {

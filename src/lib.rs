@@ -20,7 +20,9 @@ pub mod ecs_simulation;
 pub mod sim_profile;
 pub mod sim_core;
 pub mod sim_loop;
+pub mod sim_loop_unified;
 pub mod util;
+pub mod sim_state;
 mod legacy;
 
 // If you want to restrict the public API, you can `pub use` only what you want to expose here.

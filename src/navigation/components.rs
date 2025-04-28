@@ -13,3 +13,9 @@ pub struct Target {
 pub struct Path {
     pub waypoints: VecDeque<(f32, f32)>,
 }
+
+impl Default for Path {
+    fn default() -> Self {
+        Path { waypoints: std::collections::VecDeque::new() }
+    }
+}

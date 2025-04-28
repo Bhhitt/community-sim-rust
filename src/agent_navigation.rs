@@ -11,9 +11,6 @@ pub struct Target {
     pub ticks_to_reach: Option<u32>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Path {
-    pub waypoints: VecDeque<(f32, f32)>,
-}
+// Removed duplicate Path struct definition. Use crate::navigation::Path instead.
 
 // Any additional helper functions for stuck/pathfinding logic can be added here.

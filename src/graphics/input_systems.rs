@@ -3,19 +3,20 @@ use crate::graphics::sim_state::SimUIState;
 use crate::agent::{AgentType, event::AgentEventLog};
 use crate::ecs_components::Position;
 use crate::map::Terrain;
-use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
+use crate::ecs::systems::pending_agent_spawns::{AgentSpawnRequest, PendingAgentSpawns};
 use legion::IntoQuery;
-use crate::ecs::agent_spawn_queue::AGENT_SPAWN_QUEUE;
+use legion::systems::Resources;
 
 /// Processes all input intents from the InputQueue, mutating the ECS world and UI state as needed.
 pub fn process_input_intents(
     sim_ui_state: &mut SimUIState,
     agent_types: &[AgentType],
     render_map: &crate::map::Map,
-    cell_size: f32,
+    _cell_size: f32,
     paused: &mut bool,
     advance_one: &mut bool,
 ) {
+    let resources = &mut sim_ui_state.resources;
     let intents = sim_ui_state.input_queue.drain();
     for intent in intents {
         match intent {
@@ -50,11 +51,13 @@ pub fn process_input_intents(
                         return;
                     }
                 }
-                let mut agent_event_log = sim_ui_state.resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
+                let mut agent_event_log = resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
                 if let Some(agent_type) = agent_types.get(0) {
                     let agent_type = agent_type.clone();
-                    AGENT_SPAWN_QUEUE.lock().unwrap().push(crate::ecs::systems::pending_agent_spawns::AgentSpawnRequest { pos: Position { x, y }, agent_type });
-                    log::debug!("[DEBUG] Added agent at ({}, {})", x, y);
+                    // TODO: Re-enable agent spawning in graphics mode
+                    // let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
+                    // pending_spawns.add(Position { x, y }, agent_type);
+                    // log::debug!("[DEBUG] Added agent at ({}, {})", x, y);
                 } else {
                     log::debug!("[ERROR] No agent types defined!");
                 }
@@ -66,16 +69,18 @@ pub fn process_input_intents(
                 let mut attempts = 0;
                 let max_tries_per_agent = 1000;
                 let num_types = agent_types.len().max(1);
-                let mut agent_event_log = sim_ui_state.resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
+                let mut agent_event_log = resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
                 while spawned < count && attempts < count * max_tries_per_agent {
                     let x = rng.gen_range(0..render_map.width) as f32;
                     let y = rng.gen_range(0..render_map.height) as f32;
                     if render_map.tiles[y as usize][x as usize] == Terrain::Grass || render_map.tiles[y as usize][x as usize] == Terrain::Forest {
                         let type_idx = rng.gen_range(0..num_types);
                         let agent_type = agent_types[type_idx].clone();
-                        AGENT_SPAWN_QUEUE.lock().unwrap().push(crate::ecs::systems::pending_agent_spawns::AgentSpawnRequest { pos: Position { x, y }, agent_type: agent_type.clone() });
-                        spawned += 1;
-                        log::debug!("[DEBUG] Enqueued AgentSpawnRequest at ({}, {}) type: {}", x, y, agent_type.name);
+                        // TODO: Re-enable agent spawning in graphics mode
+                        // let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
+                        // pending_spawns.add(Position { x, y }, agent_type.clone());
+                        // spawned += 1;
+                        // log::debug!("[DEBUG] Enqueued AgentSpawnRequest at ({}, {}) type: {}", x, y, agent_type.name);
                     }
                     attempts += 1;
                 }
@@ -89,10 +94,10 @@ pub fn process_input_intents(
                 let mut topmost_y = -1.0_f32;
                 for (entity, (pos,)) in <(legion::Entity, (&Position,) )>::query().iter(sim_ui_state.world) {
                     let rect = Rect::new(
-                        ((pos.x - sim_ui_state.camera.x) * cell_size as f32) as i32,
-                        ((pos.y - sim_ui_state.camera.y) * cell_size as f32) as i32,
-                        cell_size as u32,
-                        cell_size as u32,
+                        ((pos.x - sim_ui_state.camera.x) * _cell_size as f32) as i32,
+                        ((pos.y - sim_ui_state.camera.y) * _cell_size as f32) as i32,
+                        _cell_size as u32,
+                        _cell_size as u32,
                     );
                     if mouse_x >= rect.x && mouse_x < rect.x + rect.width() as i32 &&
                         mouse_y >= rect.y && mouse_y < rect.y + rect.height() as i32 {
@@ -103,8 +108,8 @@ pub fn process_input_intents(
                     }
                 }
                 if found_agent.is_none() {
-                    let map_x = (x as f32 / cell_size as f32 + sim_ui_state.camera.x).floor();
-                    let map_y = (y as f32 / cell_size as f32 + sim_ui_state.camera.y).floor();
+                    let map_x = (x as f32 / _cell_size as f32 + sim_ui_state.camera.x).floor();
+                    let map_y = (y as f32 / _cell_size as f32 + sim_ui_state.camera.y).floor();
                     for (entity, (pos,)) in <(legion::Entity, (&Position,) )>::query().iter(sim_ui_state.world) {
                         let food_cell_x = pos.x.floor();
                         let food_cell_y = pos.y.floor();
@@ -119,8 +124,8 @@ pub fn process_input_intents(
                     log::debug!("[DEBUG] Selected entity {:?}", sel);
                 } else {
                     log::debug!("[DEBUG] No agent or food found at clicked cell");
-                    let map_x = (x as f32 / cell_size as f32 + sim_ui_state.camera.x).floor();
-                    let map_y = (y as f32 / cell_size as f32 + sim_ui_state.camera.y).floor();
+                    let map_x = (x as f32 / _cell_size as f32 + sim_ui_state.camera.x).floor();
+                    let map_y = (y as f32 / _cell_size as f32 + sim_ui_state.camera.y).floor();
                     sim_ui_state.empty_cell_flash = Some((map_x as i32, map_y as i32, std::time::Instant::now()));
                 }
             }

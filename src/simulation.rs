@@ -18,12 +18,19 @@ use log;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 use crate::sim_core::{setup_simulation_world_and_resources, SimInit, build_simulation_schedule};
-use crate::sim_loop::{AsciiRenderer, NoOpInput, NoOpProfiler, run_simulation_loop};
+use crate::sim_loop_unified::{SimulationRenderer, SimulationInput, SimulationProfiler, run_simulation_loop, NoOpInput, NoOpProfiler, NoOpRenderer};
+use crate::sim_state::SimState;
 
-// TODO: Remove or fix unresolved import for pending_agent_spawns
-// use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
-
-pub fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks: usize, label: &str, agent_types: &[AgentType], _profile_systems: bool, _profile_csv: &str) -> (f64, f64, f64) {
+pub fn run_simulation(
+    map_width: i32,
+    map_height: i32,
+    num_agents: usize,
+    ticks: usize,
+    label: &str,
+    agent_types: &[AgentType],
+    _profile_systems: bool,
+    _profile_csv: &str,
+) -> (f64, f64, f64) {
     log::info!("[TEST] Entered run_simulation");
     log::info!("\n=== Running {}: map {}x{}, {} agents, {} ticks ===", label, map_width, map_height, num_agents, ticks);
     // --- ECS World Setup (MATCH graphics mode) ---
@@ -92,21 +99,19 @@ pub fn run_simulation(map_width: i32, map_height: i32, num_agents: usize, ticks:
     log::debug!("[DEBUG] Spawned {} agents", agent_count);
     // --- ECS Schedule Setup ---
     let mut schedule = build_simulation_schedule();
-    // --- Simulation Loop ---
-    let mut renderer = AsciiRenderer;
+    // Use unified simulation state for headless mode
+    let mut sim_state = SimState::new(&mut world, &mut resources, &mut schedule);
+    let mut renderer = NoOpRenderer;
     let mut input = NoOpInput;
     let mut profiler = NoOpProfiler;
-    let stats = run_simulation_loop(
-        &mut world,
-        &mut resources,
-        &mut schedule,
+    run_simulation_loop(
+        &mut sim_state,
         ticks,
         &mut renderer,
         &mut profiler,
         &mut input,
     );
-    // TODO: Return real statistics if needed
-    (stats.ticks_run as f64, 0.0, 0.0)
+    (ticks as f64, 0.0, 0.0)
 }
 
 pub fn run_profile_from_yaml(

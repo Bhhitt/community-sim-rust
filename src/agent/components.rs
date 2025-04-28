@@ -95,10 +95,7 @@ impl MovementHistory {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct Path {
-    pub waypoints: std::collections::VecDeque<(f32, f32)>,
-}
+// Removed duplicate Path struct definition. Use crate::navigation::Path instead.
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct SwimmingProfile {

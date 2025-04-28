@@ -11,8 +11,10 @@ use crate::log_config::LogConfig;
 use std::fs::File;
 use crate::graphics::sim_state::SimUIState;
 use crate::ecs::{resources::insert_standard_resources, systems::pending_agent_spawns::PendingAgentSpawns};
+use crate::ecs::systems::pending_agent_spawns::AgentSpawnRequest;
 use crate::sim_profile::SimProfile;
-use crate::ecs::agent_spawn_queue::AGENT_SPAWN_QUEUE;
+use crate::sim_loop_unified::{SimulationRenderer, SimulationInput, SimulationProfiler, run_simulation_loop_ui};
+use crate::sim_state::SimState;
 
 const CELL_SIZE: f32 = 6.0;
 
@@ -26,7 +28,7 @@ pub fn run_sim_render(
     profile_systems: bool,
     profile_csv: &str,
     world: &mut World,
-    resources: &mut Resources,
+    resources: &mut legion::systems::Resources,
 ) {
     // --- ECS World Setup ---
     let map_width = profile.map_width.or(profile.map_size).unwrap();
@@ -67,7 +69,15 @@ pub fn run_sim_render(
                 }
             }
             let agent_type = agent_types[i % agent_types.len()].clone();
-            AGENT_SPAWN_QUEUE.lock().unwrap().push(crate::ecs::systems::pending_agent_spawns::AgentSpawnRequest { pos: crate::ecs_components::Position { x, y }, agent_type: agent_type.clone() });
+            // In your render logic, replace:
+            // AGENT_SPAWN_QUEUE.lock().unwrap().push(...);
+            // With:
+            // let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
+            // pending_spawns.add(pos, agent_type);
+            //
+            // You may need to pass Resources to the render logic or refactor this to run as an ECS system.
+            // let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
+            // pending_spawns.add(crate::ecs_components::Position { x, y }, agent_type.clone());
             _agent_count += 1;
             _attempts += tries;
         }
@@ -127,46 +137,53 @@ pub fn run_sim_render(
     };
 
     // --- MAIN SIMULATION LOOP ---
-    crate::graphics::sim_loop::main_sim_loop(
-        &mut sim_ui_state,
-        &mut canvas,
-        &mut stats_canvas,
-        &mut log_canvas_opt,
-        &mut event_pump,
+    struct SdlRenderer {
+        canvas: sdl2::render::Canvas<sdl2::video::Window>,
+        stats_canvas: sdl2::render::Canvas<sdl2::video::Window>,
+        log_canvas_opt: Option<sdl2::render::Canvas<sdl2::video::Window>>,
+    }
+    impl SimulationRenderer for SdlRenderer {
+        fn render_ui(&mut self, sim_ui_state: &mut SimUIState, tick: usize) {
+            // TODO: Move SDL2 rendering logic here, using sim_ui_state
+        }
+    }
+    struct SdlInput {
+        event_pump: sdl2::EventPump,
+        window_id: u32,
+    }
+    impl SimulationInput for SdlInput {
+        fn handle_input_ui(&mut self, sim_ui_state: &mut SimUIState, tick: usize) {
+            // TODO: Move SDL2 input logic here, using sim_ui_state
+        }
+    }
+    struct SdlProfiler { }
+    impl SimulationProfiler for SdlProfiler {
+        fn on_simulation_end_ui(&mut self, sim_ui_state: &SimUIState, ticks: usize) {
+            // TODO: profiling/summary logic for graphics mode
+        }
+    }
+    let mut renderer = SdlRenderer {
+        canvas,
+        stats_canvas,
+        log_canvas_opt,
+    };
+    let mut input = SdlInput {
+        event_pump,
         window_id,
-        agent_types,
-        &render_map,
-        &log_config,
-        profile_systems,
-        &mut csv_file,
-        map_width,
-        map_height,
-        CELL_SIZE,
-        window_width,
-        window_height,
+    };
+    let mut profiler = SdlProfiler { };
+    run_simulation_loop_ui(
+        &mut sim_ui_state,
+        1000000, // TODO: Proper tick count or exit condition
+        &mut renderer,
+        &mut profiler,
+        &mut input,
     );
-
-//     use crate::graphics::input::handle_events;
-//     handle_events(
-//         &mut event_pump,
-//         window_id,
-//         &mut sim_ui_state,
-//         agent_types,
-//         &render_map,
-//         CELL_SIZE,
-//         &resources.get::<LogConfig>().unwrap(),
-//         &mut paused,
-//         &mut advance_one,
-//     );
-
-    // --- At end of simulation, write summary to simulation_ascii.txt ---
-    // Drop sim_ui_state to release mutable borrows before summary
     let tick = sim_ui_state.tick;
-    drop(sim_ui_state);
     use crate::sim_summary::write_simulation_summary_and_ascii;
     write_simulation_summary_and_ascii(
-        world,
-        resources,
+        sim_ui_state.world,
+        sim_ui_state.resources,
         &render_map,
         tick as usize,
         "simulation_ascii.txt",

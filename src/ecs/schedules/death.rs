@@ -1,4 +1,5 @@
 use legion::systems::Builder;
+use crate::agent::agent_death_system;
 
 /// Adds all agent death/removal systems to the ECS schedule.
 ///
@@ -8,6 +9,6 @@ use legion::systems::Builder;
 ///
 /// See: agent_death_system_audit.md for audit details.
 pub fn add_agent_death_systems(builder: &mut Builder) {
-    builder.add_system(crate::agent::agent_death_system());
+    builder.add_system(agent_death_system());
     builder.flush();
 }

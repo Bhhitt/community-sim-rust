@@ -14,6 +14,7 @@ pub fn food_collection_system() -> impl Runnable {
         .with_query(<(Entity, &Position, &crate::agent::InteractionState)>::query()) // agents
         .with_query(<(Entity, &Position, &Food)>::query()) // food
         .build(|cmd, world, (food_stats, agent_event_log), (agent_query, food_query)| {
+            log::debug!("[SYSTEM] Entering food_collection_system");
             let agents: Vec<_> = agent_query.iter(world).map(|(entity, pos, _)| (*entity, pos.x, pos.y)).collect();
             let foods: Vec<_> = food_query.iter(world).map(|(e, pos, food)| (*e, pos.x, pos.y, food.nutrition)).collect();
             let mut rng = rand::thread_rng();

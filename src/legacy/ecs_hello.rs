@@ -1,4 +1,5 @@
-// LEGACY: This file is a minimal Legion ECS hello world for migration scaffolding. Not used in the main simulation.
+// LEGACY: Minimal Legion ECS hello world for migration scaffolding. DEPRECATED, NOT USED IN PRODUCTION.
+// This file will be removed in a future cleanup. Do not use for new development.
 
 //! Minimal Legion ECS hello world for migration scaffolding
 

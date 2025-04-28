@@ -8,6 +8,18 @@ mod event_log_bridge;
 
 use legion::systems::Builder;
 
+/// Helper to wrap a Legion system with debug logging before execution
+pub fn log_system<S>(name: &'static str, system: S) -> impl FnMut(&mut legion::world::World, &mut legion::systems::Resources)
+where
+    S: FnMut(&mut legion::world::World, &mut legion::systems::Resources) + 'static,
+{
+    let mut sys = system;
+    move |world, resources| {
+        log::debug!(target: "ecs_system", "Running system: {}", name);
+        sys(world, resources);
+    }
+}
+
 pub fn build_main_schedule() -> legion::Schedule {
     let mut builder = legion::Schedule::builder();
 
@@ -17,7 +29,7 @@ pub fn build_main_schedule() -> legion::Schedule {
     builder.flush();
 
     log::debug!("[SCHEDULE] Before spawning systems");
-    spawning::add_agent_spawning_systems(&mut builder);
+    // spawning::add_agent_spawning_systems(&mut builder);
     log::debug!("[SCHEDULE] After spawning systems");
     builder.flush();
 
@@ -27,22 +39,22 @@ pub fn build_main_schedule() -> legion::Schedule {
     builder.flush();
 
     log::debug!("[SCHEDULE] Before logging systems");
-    logging::add_agent_logging_systems(&mut builder);
+    // logging::add_agent_logging_systems(&mut builder);
     log::debug!("[SCHEDULE] After logging systems");
     builder.flush();
 
-    log::debug!("[SCHEDULE] Before interaction systems");
-    interaction::add_interaction_systems(&mut builder);
-    log::debug!("[SCHEDULE] After interaction systems");
-    builder.flush();
+    // log::debug!("[SCHEDULE] Before interaction systems");
+    // interaction::add_interaction_systems(&mut builder);
+    // log::debug!("[SCHEDULE] After interaction systems");
+    // builder.flush();
 
     log::debug!("[SCHEDULE] Before death systems");
-    death::add_agent_death_systems(&mut builder);
+    // death::add_agent_death_systems(&mut builder);
     log::debug!("[SCHEDULE] After death systems");
     builder.flush();
 
     log::debug!("[SCHEDULE] Before event log bridge system");
-    event_log_bridge::add_agent_event_log_bridge_system(&mut builder);
+    // event_log_bridge::add_agent_event_log_bridge_system(&mut builder);
     log::debug!("[SCHEDULE] After event log bridge system");
     builder.flush();
 
