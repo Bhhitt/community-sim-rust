@@ -32,10 +32,6 @@ pub fn build_main_schedule() -> legion::Schedule {
     food::add_food_systems(&mut builder);
     builder.flush();
 
-    // --- Spawning systems ---
-    spawning::add_agent_spawning_systems(&mut builder);
-    builder.flush();
-
     // --- Agent core systems ---
     agent::add_agent_core_systems(&mut builder);
     builder.flush();

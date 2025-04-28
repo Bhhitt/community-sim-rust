@@ -34,6 +34,25 @@ pub fn write_simulation_summary_and_ascii(
         summary.push_str(&format!("  {}: {}\n", name, count));
     }
     summary.push_str("\n");
+    // --- Agent debug logging at end of simulation ---
+    let mut agent_count = 0;
+    let mut agent_positions = Vec::new();
+    let mut agent_query = <(&AgentType, &crate::ecs_components::Position)>::query();
+    for (agent_type, pos) in agent_query.iter(world) {
+        agent_count += 1;
+        if agent_positions.len() < 10 {
+            agent_positions.push(format!("{} at ({:.2}, {:.2})", agent_type.name, pos.x, pos.y));
+        }
+    }
+    log::debug!("[DEBUG][SUMMARY] Agent count at end: {}", agent_count);
+    for entry in &agent_positions {
+        log::debug!("[DEBUG][SUMMARY] Agent: {}", entry);
+    }
+    // Also print to stdout in case log is not flushed
+    println!("[SUMMARY] Agent count at end: {}", agent_count);
+    for entry in &agent_positions {
+        println!("[SUMMARY] Agent: {}", entry);
+    }
     let ascii_snapshot = render_ascii::render_simulation_ascii(world, map);
     let mut file = std::fs::File::create(output_path).expect("Unable to create ascii output file");
     file.write_all(summary.as_bytes()).expect("Unable to write summary");

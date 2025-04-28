@@ -4,6 +4,7 @@
 // If the parameter limit is ever increased or the query simplified, consider consolidating for clarity. See pause_system.rs for details.
 
 use legion::{Entity, IntoQuery};
+use log;
 
 // --- ECS Agent Death System ---
 pub fn agent_death_system() -> impl legion::systems::Runnable {
@@ -12,7 +13,11 @@ pub fn agent_death_system() -> impl legion::systems::Runnable {
         .build(|cmd, world, _, query| {
             let mut to_remove = Vec::new();
             for (entity, hunger, energy) in query.iter(world) {
-                if hunger.value <= 0.0 || energy.value <= 0.0 {
+                if hunger.value <= 0.0 {
+                    log::debug!("[AGENT_DEATH] Entity {:?} died of hunger (hunger={})", entity, hunger.value);
+                    to_remove.push(entity);
+                } else if energy.value <= 0.0 {
+                    log::debug!("[AGENT_DEATH] Entity {:?} died of energy depletion (energy={})", entity, energy.value);
                     to_remove.push(entity);
                 }
             }
