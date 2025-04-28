@@ -34,56 +34,11 @@ pub fn run_sim_render(
     let map_width = profile.map_width.or(profile.map_size).unwrap();
     let map_height = profile.map_height.or(profile.map_size).unwrap();
     let num_agents = profile.num_agents;
-    let map = crate::map::Map::new(map_width, map_height);
+    // --- NEW SPLIT STAGE INITIALIZATION ---
+    let (mut world, mut resources, map) = crate::sim_core::create_world_and_resources(map_width, map_height);
+    let agent_count = crate::sim_core::enqueue_initial_spawns(&mut world, &mut resources, &map, num_agents, agent_types, None); // Pass None for spawn_config in graphics mode
     let render_map = map.clone();
-    let mut rng = rand::thread_rng();
-    let mut _agent_count = 0;
-    let mut _attempts = 0;
-
-    // Insert standard resources before any resource access!
-    insert_standard_resources(resources, &map);
-
-    if num_agents > 0 {
-        let mut passable_count = 0;
-        for row in &map.tiles {
-            for tile in row {
-                if *tile == crate::map::Terrain::Grass || *tile == crate::map::Terrain::Forest {
-                    passable_count += 1;
-                }
-            }
-        }
-        log::debug!("[DIAG] Passable tiles: {}, Agents to spawn: {}", passable_count, num_agents);
-        for i in 0..num_agents {
-            let mut x;
-            let mut y;
-            let mut tries = 0;
-            loop {
-                x = rng.gen_range(0..map_width) as f32;
-                y = rng.gen_range(0..map_height) as f32;
-                if map.tiles[y as usize][x as usize] == crate::map::Terrain::Grass || map.tiles[y as usize][x as usize] == crate::map::Terrain::Forest {
-                    break;
-                }
-                tries += 1;
-                if tries > 1000 {
-                    panic!("Could not find passable tile for agent after 1000 tries");
-                }
-            }
-            let agent_type = agent_types[i % agent_types.len()].clone();
-            // In your render logic, replace:
-            // AGENT_SPAWN_QUEUE.lock().unwrap().push(...);
-            // With:
-            // let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
-            // pending_spawns.add(pos, agent_type);
-            //
-            // You may need to pass Resources to the render logic or refactor this to run as an ECS system.
-            // let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
-            // pending_spawns.add(crate::ecs_components::Position { x, y }, agent_type.clone());
-            _agent_count += 1;
-            _attempts += tries;
-        }
-    }
-    let agent_count_check = <(Read<crate::ecs_components::Position>,)>::query().iter(world).count();
-    log::debug!("[DEBUG] Number of agents spawned: {}", agent_count_check);
+    log::debug!("[DEBUG] Agents enqueued: {}", agent_count);
 
     // Instead of borrowing LogConfig from resources while resources is mutably borrowed,
     // get LogConfig at the start and pass as a plain reference to downstream functions.
@@ -124,8 +79,8 @@ pub fn run_sim_render(
     // Use the actual schedule builder from ecs_simulation
     let mut schedule = crate::ecs_simulation::build_simulation_schedule_profiled();
     let mut sim_ui_state = SimUIState {
-        world,
-        resources,
+        world: &mut world,
+        resources: &mut resources,
         schedule: &mut schedule,
         camera: &mut camera,
         font: &font,

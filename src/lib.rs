@@ -23,6 +23,7 @@ pub mod sim_loop;
 pub mod sim_loop_unified;
 pub mod util;
 pub mod sim_state;
+pub mod spawn_config;
 mod legacy;
 
 // If you want to restrict the public API, you can `pub use` only what you want to expose here.

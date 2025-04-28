@@ -1,5 +1,7 @@
 // LEGACY: Minimal Legion ECS hello world for migration scaffolding. DEPRECATED, NOT USED IN PRODUCTION.
 // This file will be removed in a future cleanup. Do not use for new development.
+// DEPRECATED: This file is not used in production. All ECS scheduling is handled in src/ecs/schedules/.
+// This file will be removed in a future cleanup.
 
 //! Minimal Legion ECS hello world for migration scaffolding
 

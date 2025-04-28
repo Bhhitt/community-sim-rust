@@ -17,7 +17,8 @@ use legion::{World, Resources};
 use log;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
-use crate::sim_core::{setup_simulation_world_and_resources, SimInit, build_simulation_schedule};
+use crate::sim_core::{create_world_and_resources, enqueue_initial_spawns, build_simulation_schedule, setup_simulation_world_and_resources, SimInit};
+use crate::spawn_config::SpawnConfig;
 use crate::sim_loop_unified::{SimulationRenderer, SimulationInput, SimulationProfiler, run_simulation_loop, NoOpInput, NoOpProfiler, NoOpRenderer};
 use crate::sim_state::SimState;
 
@@ -30,71 +31,14 @@ pub fn run_simulation(
     agent_types: &[AgentType],
     _profile_systems: bool,
     _profile_csv: &str,
+    spawn_config: Option<&SpawnConfig>,
 ) -> (f64, f64, f64) {
     log::info!("[TEST] Entered run_simulation");
     log::info!("\n=== Running {}: map {}x{}, {} agents, {} ticks ===", label, map_width, map_height, num_agents, ticks);
     // --- ECS World Setup (MATCH graphics mode) ---
     let SimInit { mut world, mut resources, map, agent_count } = setup_simulation_world_and_resources(
-        map_width, map_height, num_agents, agent_types
+        map_width, map_height, num_agents, agent_types, spawn_config
     );
-    let mut rng = rand::thread_rng();
-    // Convert agent_types from agent.rs::AgentType to ecs_components::AgentType directly
-    let ecs_agent_types: Vec<AgentType> = agent_types.iter().map(|a| AgentType {
-        name: a.name.clone(),
-        color: a.color,
-        movement_profile: a.movement_profile,
-        decision_engine: a.decision_engine.clone(),
-        hunger_rate: a.hunger_rate,
-        hunger_threshold: a.hunger_threshold,
-    }).collect();
-    let mut attempts = 0;
-    let _agent_event_log = AgentEventLog::default();
-    if num_agents > 0 {
-        for i in 0..num_agents {
-            // Find a random passable tile
-            let mut x;
-            let mut y;
-            let mut tries = 0;
-            loop {
-                x = rng.gen_range(0..map_width) as f32;
-                y = rng.gen_range(0..map_height) as f32;
-                if map.tiles[y as usize][x as usize] == Terrain::Grass || map.tiles[y as usize][x as usize] == Terrain::Forest {
-                    break;
-                }
-                tries += 1;
-                if tries > 1000 {
-                    panic!("Could not find passable tile for agent after 1000 tries");
-                }
-            }
-            let _agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
-            // Instead of spawn_agent, queue spawn request for ECS system
-            // TODO: Fix or remove usage of undefined value `resources` at line 60
-            // This may require passing or initializing the correct resource context.
-            // resources.get_mut::<PendingAgentSpawns>().unwrap().add(Position { x, y }, agent_type.clone());
-            attempts += tries;
-        }
-    }
-    // --- Spawn initial food entities (1 per 10 agents, minimum 1 if agents exist) ---
-    let food_count = if agent_count > 0 { std::cmp::max(1, agent_count / 10) } else { 0 };
-    for _ in 0..food_count {
-        let mut tries = 0;
-        let (mut x, mut y);
-        loop {
-            x = rng.gen_range(0..map_width) as f32;
-            y = rng.gen_range(0..map_height) as f32;
-            if map.tiles[y as usize][x as usize] == Terrain::Grass || map.tiles[y as usize][x as usize] == Terrain::Forest {
-                break;
-            }
-            tries += 1;
-            if tries > 1000 {
-                panic!("Could not find passable tile for food after 1000 tries");
-            }
-        }
-        world.push((Position { x, y }, Food { nutrition: rng.gen_range(5.0..=10.0) }));
-    }
-    log::debug!("[DEBUG] Total spawn attempts: {} (avg {:.2} per agent)", attempts, attempts as f32 / agent_count as f32);
-    let total_entities = world.len();
-    log::debug!("[DEBUG] Total entities in world after spawning: {}", total_entities);
     std::io::stdout().flush().unwrap();
     log::debug!("[DEBUG] Spawned {} agents", agent_count);
     // --- ECS Schedule Setup ---
@@ -110,6 +54,15 @@ pub fn run_simulation(
         &mut renderer,
         &mut profiler,
         &mut input,
+    );
+    // --- Write simulation summary and ASCII snapshot at end of headless sim ---
+    use crate::sim_summary::write_simulation_summary_and_ascii;
+    write_simulation_summary_and_ascii(
+        sim_state.world,
+        sim_state.resources,
+        &map,
+        ticks,
+        "simulation_ascii.txt",
     );
     (ticks as f64, 0.0, 0.0)
 }
@@ -164,7 +117,7 @@ pub fn run_scaling_benchmarks(agent_types: &[AgentType]) {
     ];
     log::info!("\n===== Scaling Benchmarks =====");
     for &(map_width, map_height, num_agents, ticks, label) in &configs {
-        let (total, move_time, interact_time) = run_simulation(map_width, map_height, num_agents, ticks, label, agent_types, false, "scaling_benchmark.csv");
+        let (total, move_time, interact_time) = run_simulation(map_width, map_height, num_agents, ticks, label, agent_types, false, "scaling_benchmark.csv", None);
         log::info!("{}: total {:.3}s, move {:.3}s, interact {:.3}s", label, total, move_time, interact_time);
     }
 }

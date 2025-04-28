@@ -10,6 +10,7 @@ pub struct SimProfile {
     pub ticks: usize,
     pub benchmark: Option<bool>,
     pub quiet: Option<bool>,
+    pub spawn_config: Option<String>, // Optional path to spawn config file
 }
 
 pub fn load_profiles_from_yaml(path: &str) -> Vec<SimProfile> {

@@ -6,6 +6,9 @@
 // This file will be removed in a future cleanup. Do not use for new development.
 // =============================
 
+// DEPRECATED: This file is not used in production. All ECS scheduling is handled in src/ecs/schedules/.
+// This file will be removed in a future cleanup.
+
 // LEGACY: This file contains legacy or reference ECS schedule setup code. Not used in the main simulation. See main simulation loop for active schedule.
 
 // ECS schedule setup for Legion ECS

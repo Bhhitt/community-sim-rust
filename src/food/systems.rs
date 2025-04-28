@@ -1,7 +1,24 @@
+// --- Food Spawning System ---
+// This system drains PendingFoodSpawns and spawns food entities into the world.
+use legion::systems::{CommandBuffer, SystemBuilder, Runnable};
+use crate::food::{Food, PendingFoodSpawns};
+use crate::ecs_components::{Position, FoodStats, FoodPositions};
+
+/// Spawns food entities from the PendingFoodSpawns queue.
+pub fn food_spawning_system() -> impl Runnable {
+    SystemBuilder::new("FoodSpawningSystem")
+        .write_resource::<PendingFoodSpawns>()
+        .write_resource::<FoodStats>()
+        .build(|cmd, _world, (pending, food_stats), _| {
+            for (x, y) in pending.0.drain(..) {
+                let pos = Position { x, y };
+                let stats_opt = Some(&mut **food_stats);
+                crate::ecs_components::spawn_food(cmd, pos, stats_opt);
+            }
+        })
+}
+
 use legion::*;
-use crate::food::Food;
-use crate::food::PendingFoodSpawns;
-use crate::ecs_components::{Position, FoodPositions, FoodStats};
 use rand::Rng;
 
 pub fn collect_food_positions_system() -> impl systems::Runnable {

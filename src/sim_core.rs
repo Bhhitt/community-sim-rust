@@ -10,6 +10,8 @@ use legion::{World, Resources, Schedule};
 use rand::Rng;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
+use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
+use crate::spawn_config::SpawnConfig;
 
 /// Result of simulation world/resource setup
 pub struct SimInit {
@@ -19,15 +21,69 @@ pub struct SimInit {
     pub agent_count: usize,
 }
 
-/// Sets up the ECS world, resources, and spawns agents/food for the simulation.
-pub fn setup_simulation_world_and_resources(
-    map_width: i32,
-    map_height: i32,
+/// Split ECS world/resource setup into explicit stages for clarity and debug hooks.
+pub struct SimSetupStages {
+    pub world: World,
+    pub resources: Resources,
+    pub map: Map,
+    pub agent_count: usize,
+}
+
+/// Stage 1: Create world/resources and map (no entities yet)
+pub fn create_world_and_resources(map_width: i32, map_height: i32) -> (World, Resources, Map) {
+    log::info!("[INIT] Creating world and resources...");
+    let world = World::default();
+    let map = Map::new(map_width, map_height);
+    let mut resources = Resources::default();
+    crate::ecs::resources::insert_standard_resources(&mut resources, &map);
+    log::info!("[INIT] World and resources created.");
+    (world, resources, map)
+}
+
+/// Stage 2: Enqueue initial spawn requests for agents and food
+pub fn enqueue_initial_spawns(
+    world: &mut World,
+    resources: &mut Resources,
+    map: &Map,
     num_agents: usize,
     agent_types: &[AgentType],
-) -> SimInit {
-    let mut world = World::default();
-    let map = Map::new(map_width, map_height);
+    spawn_config: Option<&SpawnConfig>,
+) -> usize {
+    log::info!("[INIT] Enqueueing initial spawn requests...");
+    let mut agent_count = 0;
+    // 1. If spawn_config is present, enqueue explicit spawns from config
+    if let Some(cfg) = spawn_config {
+        if let Some(agent_entries) = &cfg.agents {
+            let mut pending_agents = resources.get_mut::<PendingAgentSpawns>().unwrap();
+            for entry in agent_entries {
+                let agent_type = agent_types.iter().find(|a| a.name == entry.r#type)
+                    .expect("Agent type not found").clone();
+                let count = entry.count.unwrap_or(1);
+                for _ in 0..count {
+                    pending_agents.add(
+                        crate::ecs_components::Position {
+                            x: entry.pos.x as f32,
+                            y: entry.pos.y as f32,
+                        },
+                        agent_type.clone(),
+                    );
+                    agent_count += 1;
+                }
+            }
+        }
+        if let Some(food_entries) = &cfg.food {
+            let mut pending_food = resources.get_mut::<PendingFoodSpawns>().unwrap();
+            for entry in food_entries {
+                let count = entry.count.unwrap_or(1);
+                for _ in 0..count {
+                    pending_food.0.push_back((entry.pos.x as f32, entry.pos.y as f32));
+                }
+            }
+        }
+        // TODO: Items, money, etc.
+    }
+    // 2. If spawn_config is None or does not cover all agents/food, fall back to procedural/random
+    // (existing logic here, but only for remaining agents/food)
     let mut rng = rand::thread_rng();
     let ecs_agent_types: Vec<AgentType> = agent_types.iter().map(|a| AgentType {
         name: a.name.clone(),
@@ -37,22 +93,18 @@ pub fn setup_simulation_world_and_resources(
         hunger_rate: a.hunger_rate,
         hunger_threshold: a.hunger_threshold,
     }).collect();
-    let mut agent_count = 0;
     let mut attempts = 0;
-    if num_agents > 0 {
-        use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
-        // In any logic that previously used AGENT_SPAWN_QUEUE, replace with PendingAgentSpawns ECS resource.
-        // let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
-        // pending_spawns.add(pos, agent_type);
-        // Note: This logic should now enqueue directly into PendingAgentSpawns, and may require refactor to pass Resources or run as an ECS system.
-        for i in 0..num_agents {
-            // Find a random passable tile
+    // --- Agent spawn queue ---
+    if num_agents > agent_count {
+        resources.insert(PendingAgentSpawns::default());
+        let mut pending_agents = resources.get_mut::<PendingAgentSpawns>().unwrap();
+        for i in agent_count..num_agents {
             let mut x;
             let mut y;
             let mut tries = 0;
             loop {
-                x = rng.gen_range(0..map_width) as f32;
-                y = rng.gen_range(0..map_height) as f32;
+                x = rng.gen_range(0..map.width) as f32;
+                y = rng.gen_range(0..map.height) as f32;
                 if map.tiles[y as usize][x as usize] == Terrain::Grass || map.tiles[y as usize][x as usize] == Terrain::Forest {
                     break;
                 }
@@ -62,36 +114,53 @@ pub fn setup_simulation_world_and_resources(
                 }
             }
             let agent_type = ecs_agent_types[i % ecs_agent_types.len()].clone();
-            // Instead of pushing directly to world, enqueue spawn request:
-            // queue.push(AgentSpawnRequest { pos: Position { x, y }, agent_type });
-            // Replace with PendingAgentSpawns ECS resource usage.
-            // let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
-            // pending_spawns.add(Position { x, y }, agent_type);
+            pending_agents.add(Position { x, y }, agent_type);
             agent_count += 1;
             attempts += tries;
         }
+        log::info!("[INIT] Enqueued {} agent spawn requests ({} attempts)", agent_count, attempts);
     }
-    // --- Spawn initial food entities (1 per 10 agents, minimum 1 if agents exist) ---
+    // --- Food spawn queue ---
     let food_count = if agent_count > 0 { std::cmp::max(1, agent_count / 10) } else { 0 };
-    for _ in 0..food_count {
-        let mut tries = 0;
-        let (mut x, mut y);
-        loop {
-            x = rng.gen_range(0..map_width) as f32;
-            y = rng.gen_range(0..map_height) as f32;
-            if map.tiles[y as usize][x as usize] == Terrain::Grass || map.tiles[y as usize][x as usize] == Terrain::Forest {
-                break;
+    {
+        use crate::food::PendingFoodSpawns;
+        use legion::systems::Resource;
+        resources.insert(PendingFoodSpawns::default());
+        let mut pending_food = resources.get_mut::<PendingFoodSpawns>().unwrap();
+        for _ in 0..food_count {
+            let mut tries = 0;
+            let (mut x, mut y);
+            loop {
+                x = rng.gen_range(0..map.width) as f32;
+                y = rng.gen_range(0..map.height) as f32;
+                if map.tiles[y as usize][x as usize] == Terrain::Grass || map.tiles[y as usize][x as usize] == Terrain::Forest {
+                    break;
+                }
+                tries += 1;
+                if tries > 1000 {
+                    panic!("Could not find passable tile for food after 1000 tries");
+                }
             }
-            tries += 1;
-            if tries > 1000 {
-                panic!("Could not find passable tile for food after 1000 tries");
-            }
+            pending_food.0.push_back((x, y));
         }
-        world.push((Position { x, y }, Food { nutrition: rng.gen_range(5.0..=10.0) }));
+        log::info!("[INIT] Enqueued {} food spawn requests", food_count);
     }
-    // === ECS Resource Setup ===
-    let mut resources = Resources::default();
-    crate::ecs::resources::insert_standard_resources(&mut resources, &map);
+    log::info!("[INIT] Initial spawn requests enqueued.");
+    agent_count
+}
+
+/// Stage 3: Combined legacy entry point for compatibility
+pub fn setup_simulation_world_and_resources(
+    map_width: i32,
+    map_height: i32,
+    num_agents: usize,
+    agent_types: &[AgentType],
+    spawn_config: Option<&SpawnConfig>,
+) -> SimInit {
+    log::info!("[INIT] Setting up simulation world and resources...");
+    let (mut world, mut resources, map) = create_world_and_resources(map_width, map_height);
+    let agent_count = enqueue_initial_spawns(&mut world, &mut resources, &map, num_agents, agent_types, spawn_config);
+    log::info!("[INIT] Simulation world and resources set up.");
     SimInit { world, resources, map, agent_count }
 }
 

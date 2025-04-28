@@ -21,6 +21,8 @@ use community_sim::terrain;
 use community_sim::sim_summary;
 use community_sim::event_log;
 use community_sim::util;
+use community_sim::spawn_config::SpawnConfig;
+use community_sim::spawn_config;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -101,6 +103,21 @@ fn setup_logging(log_level: log::LevelFilter, event_log: Option<Arc<Mutex<event_
     dispatch.apply().unwrap();
 }
 
+fn load_spawn_config_if_needed(profile: &SimProfile) -> Option<SpawnConfig> {
+    if let Some(ref path) = profile.spawn_config {
+        let config_path = std::path::Path::new("config").join(path);
+        match spawn_config::load_spawn_config(&config_path) {
+            Ok(cfg) => Some(cfg),
+            Err(e) => {
+                log::error!("Failed to load spawn config {}: {}", config_path.display(), e);
+                None
+            }
+        }
+    } else {
+        None
+    }
+}
+
 fn main() {
     // Add a panic hook to log panics to the logger and stderr
     std::panic::set_hook(Box::new(|info| {
@@ -150,6 +167,12 @@ fn main() {
         (args.map_size, args.map_size, args.agents, args.ticks)
     };
 
+    let spawn_config = if let Some(profile) = &sim_profile {
+        load_spawn_config_if_needed(profile)
+    } else {
+        None
+    };
+
     if args.headless {
         log::info!("Running in headless mode");
         if let Some(profile) = &sim_profile {
@@ -164,6 +187,7 @@ fn main() {
                 &agent_types,
                 args.profile_systems,
                 &args.profile_csv,
+                spawn_config.as_ref(),
             );
         } else {
             // Use CLI args for simulation
@@ -176,6 +200,7 @@ fn main() {
                 &agent_types,
                 args.profile_systems,
                 &args.profile_csv,
+                spawn_config.as_ref(),
             );
         }
     } else {
@@ -192,6 +217,7 @@ fn main() {
                 ticks,
                 benchmark: None,
                 quiet: None,
+                spawn_config: None, // <--- Added this line
             }),
             &agent_types,
             args.profile_systems,

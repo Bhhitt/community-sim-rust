@@ -5,8 +5,8 @@
 //
 // This file will be removed in a future cleanup. Do not use for new development.
 // =============================
-
-// LEGACY: This file contains a minimal ECS simulation loop and schedule for testing/scaffolding only. Not used in the main simulation.
+// DEPRECATED: This file is not used in production. All ECS scheduling is handled in src/ecs/schedules/.
+// This file will be removed in a future cleanup.
 
 //! Minimal ECS simulation loop using new ECS components
 use legion::*;
