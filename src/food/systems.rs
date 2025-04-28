@@ -63,15 +63,15 @@ pub fn collect_food_spawn_positions_system() -> impl systems::Runnable {
         })
 }
 
-pub fn food_spawn_apply_system() -> impl systems::Runnable {
-    SystemBuilder::new("FoodSpawnApplySystem")
-        .write_resource::<PendingFoodSpawns>()
-        .write_resource::<FoodStats>()
-        .build(|cmd, _world, (pending, food_stats), _| {
-            for (x, y) in pending.0.drain(..) {
-                let pos = Position { x, y };
-                let stats_opt = Some(&mut **food_stats);
-                crate::ecs_components::spawn_food(cmd, pos, stats_opt);
-            }
-        })
-}
+//pub fn food_spawn_apply_system() -> impl systems::Runnable {
+//    SystemBuilder::new("FoodSpawnApplySystem")
+//        .write_resource::<PendingFoodSpawns>()
+//        .write_resource::<FoodStats>()
+//        .build(|cmd, _world, (pending, food_stats), _| {
+//            for (x, y) in pending.0.drain(..) {
+//                let pos = Position { x, y };
+//                let stats_opt = Some(&mut **food_stats);
+//                crate::ecs_components::spawn_food(cmd, pos, stats_opt);
+//            }
+//        })
+//}

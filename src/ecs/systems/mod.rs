@@ -13,6 +13,7 @@ pub mod agent_spawn;
 pub mod pending_agent_spawns;
 pub mod drain_agent_spawn_queue;
 pub mod agent_spawn_log;
+pub mod initial_spawn;
 // Add more as you migrate systems
 
 // --- Modular interaction systems ---

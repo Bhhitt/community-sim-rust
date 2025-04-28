@@ -41,6 +41,8 @@ pub fn create_world_and_resources(map_width: i32, map_height: i32) -> (World, Re
 }
 
 /// Stage 2: Enqueue initial spawn requests for agents and food
+/// [DEPRECATED: Will be replaced by ECS-driven initialization. See RF6.]
+#[deprecated(note = "Use ECS-driven initialization systems instead. See plans/RF6.")]
 pub fn enqueue_initial_spawns(
     world: &mut World,
     resources: &mut Resources,
@@ -49,6 +51,8 @@ pub fn enqueue_initial_spawns(
     agent_types: &[AgentType],
     spawn_config: Option<&SpawnConfig>,
 ) -> usize {
+    // [DEPRECATED: This imperative initialization logic will be replaced by ECS systems.]
+    // [RF6] See plans/RF6/ecs_init_refactor_plan.md
     log::info!("[INIT] Enqueueing initial spawn requests...");
     let mut agent_count = 0;
     // 1. If spawn_config is present, enqueue explicit spawns from config
@@ -149,7 +153,21 @@ pub fn enqueue_initial_spawns(
     agent_count
 }
 
+/// Inserts InitConfig resource for ECS-driven initialization (RF6)
+pub fn insert_init_config(
+    resources: &mut legion::Resources,
+    agent_types: Vec<AgentType>,
+    num_agents: usize,
+    food_spawns: Vec<(f32, f32)>,
+    agent_spawns: Vec<(f32, f32, AgentType)>,
+) {
+    use crate::ecs::resources::init_config::InitConfig;
+    resources.insert(InitConfig::new(agent_types, num_agents, food_spawns, agent_spawns));
+}
+
 /// Stage 3: Combined legacy entry point for compatibility
+/// [DEPRECATED: Will be replaced by ECS-driven initialization. See RF6.]
+#[deprecated(note = "Use ECS-driven initialization systems instead. See plans/RF6.")]
 pub fn setup_simulation_world_and_resources(
     map_width: i32,
     map_height: i32,
@@ -157,6 +175,8 @@ pub fn setup_simulation_world_and_resources(
     agent_types: &[AgentType],
     spawn_config: Option<&SpawnConfig>,
 ) -> SimInit {
+    // [DEPRECATED: This entry point will be replaced by ECS-driven initialization.]
+    // [RF6] See plans/RF6/ecs_init_refactor_plan.md
     log::info!("[INIT] Setting up simulation world and resources...");
     let (mut world, mut resources, map) = create_world_and_resources(map_width, map_height);
     let agent_count = enqueue_initial_spawns(&mut world, &mut resources, &map, num_agents, agent_types, spawn_config);

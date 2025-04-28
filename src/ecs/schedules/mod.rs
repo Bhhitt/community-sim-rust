@@ -5,6 +5,7 @@ mod logging;
 mod interaction;
 mod death;
 mod event_log_bridge;
+pub mod init;
 
 use legion::systems::Builder;
 
@@ -22,6 +23,10 @@ where
 
 pub fn build_main_schedule() -> legion::Schedule {
     let mut builder = legion::Schedule::builder();
+
+    // --- Initialization systems (RF6) ---
+    init::add_init_systems(&mut builder);
+    builder.flush();
 
     // --- Food systems ---
     food::add_food_systems(&mut builder);

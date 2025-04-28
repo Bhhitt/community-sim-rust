@@ -14,11 +14,13 @@ use std::collections::VecDeque;
 use log;
 
 pub fn agent_spawning_system() -> impl Runnable {
-    SystemBuilder::new("AgentSpawningSystem")
+    log::debug!("[SYSTEM] START agent_spawning_system");
+    let sys = SystemBuilder::new("AgentSpawningSystem")
         .write_resource::<PendingAgentSpawns>()
         .write_resource::<AgentEventLog>()
         .read_resource::<Map>()
         .build(|cmd, _world, (pending_spawns, agent_event_log, map), _| {
+            log::debug!("[SYSTEM] [CLOSURE] ENTER agent_spawning_system");
             log::debug!("[SYSTEM] Entering agent_spawning_system");
             let mut to_spawn = Vec::new();
             let mut tick_spawn_count = 0;
@@ -57,5 +59,8 @@ pub fn agent_spawning_system() -> impl Runnable {
                 }
             }
             // Logging of agent count moved to agent_spawn_log_system
-        })
+            log::debug!("[SYSTEM] [CLOSURE] EXIT agent_spawning_system");
+        });
+    log::debug!("[SYSTEM] END agent_spawning_system");
+    sys
 }

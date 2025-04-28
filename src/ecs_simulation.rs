@@ -6,7 +6,7 @@ use legion::*;
 use crate::ecs_components::*;
 use crate::food::systems::collect_food_positions_system;
 use crate::food::systems::collect_food_spawn_positions_system;
-use crate::food::systems::food_spawn_apply_system;
+// use crate::food::systems::food_spawn_apply_system;
 use crate::agent::agent_death_system;
 // use crate::ecs::systems::swimming::swimming_system;
 

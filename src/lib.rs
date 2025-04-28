@@ -24,7 +24,12 @@ pub mod sim_loop_unified;
 pub mod util;
 pub mod sim_state;
 pub mod spawn_config;
-mod legacy;
+
+pub use ecs::{
+    schedules,
+    systems,
+    resources::init_config,
+};
 
 // If you want to restrict the public API, you can `pub use` only what you want to expose here.
 // For now, this setup allows both main.rs and integration tests to access all needed modules.

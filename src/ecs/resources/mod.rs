@@ -1,3 +1,5 @@
+pub mod init_config;
+
 use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 use legion::Resources;

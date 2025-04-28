@@ -36,9 +36,17 @@ pub fn run_sim_render(
     let num_agents = profile.num_agents;
     // --- NEW SPLIT STAGE INITIALIZATION ---
     let (mut world, mut resources, map) = crate::sim_core::create_world_and_resources(map_width, map_height);
-    let agent_count = crate::sim_core::enqueue_initial_spawns(&mut world, &mut resources, &map, num_agents, agent_types, None); // Pass None for spawn_config in graphics mode
+    // [RF6] ECS-driven initialization: Insert InitConfig resource instead of imperative spawn queue mutation
+    crate::sim_core::insert_init_config(
+        &mut resources,
+        agent_types.to_vec(),
+        num_agents,
+        vec![], // TODO: fill with food spawn positions if needed
+        vec![], // TODO: fill with agent spawn positions if needed
+    );
+    // let agent_count = crate::sim_core::enqueue_initial_spawns(&mut world, &mut resources, &map, num_agents, agent_types, None); // Pass None for spawn_config in graphics mode
     let render_map = map.clone();
-    log::debug!("[DEBUG] Agents enqueued: {}", agent_count);
+    log::debug!("[DEBUG] Agents enqueued: {}", 0);
 
     // Instead of borrowing LogConfig from resources while resources is mutably borrowed,
     // get LogConfig at the start and pass as a plain reference to downstream functions.
