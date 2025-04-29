@@ -1,8 +1,0 @@
-digraph agent_path_movement_system {
-    node [shape=box]
-    agent_path_movement_system -> Position [label="write"]
-    agent_path_movement_system -> Path [label="write"]
-    agent_path_movement_system -> AgentType [label="read"]
-    agent_path_movement_system -> Target [label="read"]
-    agent_path_movement_system -> AgentState [label="read"]
-}

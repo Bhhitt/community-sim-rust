@@ -1,5 +1,0 @@
-digraph drain_agent_spawn_queue_system {
-    node [shape=box]
-    drain_agent_spawn_queue_system -> PendingAgentSpawns [label="write"]
-    drain_agent_spawn_queue_system -> AGENT_SPAWN_QUEUE [label="mutex read+drain"]
-}

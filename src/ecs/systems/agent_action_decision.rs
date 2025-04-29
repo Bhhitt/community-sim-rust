@@ -16,16 +16,20 @@ pub fn agent_action_decision_system() -> impl Runnable {
             for (entity, _agent_type, hunger, agent_state) in query.iter(world) {
                 // Only select actions for agents that are Idle (not paused, not moving, not arrived)
                 if *agent_state != AgentState::Idle {
+                    log::debug!("[ACTION_DECISION] Skipping agent {:?}: state = {:?}", entity, agent_state);
                     continue;
                 }
                 // TODO: Use agent_type.decision_engine to select rules or MLP
                 // For now, implement rules-based as placeholder
                 let intended_action = if hunger.value < hunger.threshold {
+                    log::debug!("[ACTION_DECISION] Agent {:?} is hungry ({} < {}), assigning SeekFood", entity, hunger.value, hunger.threshold);
                     IntendedAction::SeekFood
                 } else {
+                    log::debug!("[ACTION_DECISION] Agent {:?} is not hungry ({} >= {}), assigning Wander", entity, hunger.value, hunger.threshold);
                     IntendedAction::Wander
                 };
-                cmd.add_component(*entity, intended_action);
+                cmd.add_component(*entity, intended_action.clone());
+                log::debug!("[ACTION_DECISION] Assigned {:?} to agent {:?}", intended_action, entity);
             }
             let duration = start.elapsed();
             info!(target: "ecs_profile", "[PROFILE] System agent_action_decision_system took {:?}", duration);

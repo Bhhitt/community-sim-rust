@@ -158,7 +158,7 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
 /// - `max_pursue_ticks`: Maximum ticks to pursue before giving up.
 #[derive(Clone, Debug, PartialEq)]
 pub struct InteractionIntent {
-    pub target: legion::Entity,
+    pub target: Option<legion::Entity>,
     pub ticks_pursued: u32,
     pub max_pursue_ticks: u32, // e.g., 50
 }

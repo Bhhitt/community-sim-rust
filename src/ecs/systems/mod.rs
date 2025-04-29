@@ -14,6 +14,8 @@ pub mod pending_agent_spawns;
 pub mod drain_agent_spawn_queue;
 pub mod agent_spawn_log;
 pub mod initial_spawn;
+pub mod agent_arrival_event;
+pub mod interaction_end_event;
 // Add more as you migrate systems
 
 // --- Modular interaction systems ---
@@ -22,7 +24,7 @@ pub mod interaction_stats_update;
 pub mod interaction_event_logging;
 
 // Re-export public ECS systems for schedule.rs and other modules
-pub use agent::agent_state_transition_system;
+// pub use agent::agent_state_transition_system; // DEPRECATED: use agent_state_transition_system from agent_state_transition.rs
 // pub use agent::agent_movement_system;
 pub use agent::agent_pausing_system;
 pub use agent::agent_hunger_energy_system;

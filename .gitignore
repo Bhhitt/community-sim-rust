@@ -18,4 +18,6 @@ community_sim.log
 # Uncomment the next line if you want to ignore agent_types.yaml:
 # agent_types.yaml
 
+/plans/IGNORE/
+
 !/src/legacy/

@@ -42,8 +42,8 @@ pub fn build_main_schedule() -> legion::Schedule {
     builder.flush();
 
     // --- Food systems ---
-    food::add_food_systems(&mut builder);
-    builder.flush();
+    // food::add_food_systems(&mut builder);
+    // builder.flush();
 
     // --- Agent core systems ---
     agent::add_agent_core_systems(&mut builder);
@@ -54,8 +54,8 @@ pub fn build_main_schedule() -> legion::Schedule {
     builder.flush();
 
     // --- Interaction systems ---
-    interaction::add_interaction_systems(&mut builder);
-    builder.flush();
+    // interaction::add_interaction_systems(&mut builder);
+    // builder.flush();
 
     // --- Death systems ---
     death::add_agent_death_systems(&mut builder);

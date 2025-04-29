@@ -2,7 +2,7 @@
 
 use community_sim::ecs_components::{Position, InteractionStats};
 use community_sim::agent::components::InteractionState;
-use community_sim::ecs::systems::agent_agent_interaction::agent_agent_interaction_system;
+use community_sim::ecs::systems::agent_agent_interaction::{intent_assignment_system, agent_agent_interaction_system};
 use legion::*;
 use std::sync::{Arc, Mutex};
 use community_sim::event_log::EventLog;
@@ -28,11 +28,13 @@ fn test_agent_moves_and_then_interacts() {
             pos.y = 0.0;
         }
     }
-    // Run agent-agent interaction system
+    // Run intent assignment system, then interaction system (two ticks)
     let mut schedule = Schedule::builder()
+        .add_system(intent_assignment_system())
         .add_system(agent_agent_interaction_system())
         .build();
-    schedule.execute(&mut world, &mut resources);
+    schedule.execute(&mut world, &mut resources); // Assign intents
+    schedule.execute(&mut world, &mut resources); // Process interactions
     // Check event log for interaction
     let log = event_log.lock().unwrap();
     let found = log.iter().any(|entry| entry.contains(&format!("[INTERACT] Agent {:?} interacted with Agent {:?}", agent1, agent2)) || entry.contains(&format!("[INTERACT] Agent {:?} interacted with Agent {:?}", agent2, agent1)));
@@ -66,10 +68,13 @@ fn test_sequential_agent_movement() {
             }
         }
     }
+    // Run intent assignment system, then interaction system (two ticks)
     let mut schedule = Schedule::builder()
+        .add_system(intent_assignment_system())
         .add_system(agent_agent_interaction_system())
         .build();
-    schedule.execute(&mut world, &mut resources);
+    schedule.execute(&mut world, &mut resources); // Assign intents
+    schedule.execute(&mut world, &mut resources); // Process interactions
     let log = event_log.lock().unwrap();
     println!("Tick 1 event log:");
     for entry in log.iter() {
@@ -91,7 +96,13 @@ fn test_sequential_agent_movement() {
             }
         }
     }
-    schedule.execute(&mut world, &mut resources);
+    // Run intent assignment system, then interaction system (two ticks)
+    let mut schedule = Schedule::builder()
+        .add_system(intent_assignment_system())
+        .add_system(agent_agent_interaction_system())
+        .build();
+    schedule.execute(&mut world, &mut resources); // Assign intents
+    schedule.execute(&mut world, &mut resources); // Process interactions
     let log = event_log.lock().unwrap();
     println!("Tick 2 event log:");
     for entry in log.iter() {

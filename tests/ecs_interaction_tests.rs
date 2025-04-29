@@ -14,11 +14,11 @@ fn test_interaction_intent_creation() {
     let mut world = World::default();
     let target = world.push(());
     let intent = InteractionIntent {
-        target,
+        target: Some(target),
         ticks_pursued: 0,
         max_pursue_ticks: 50,
     };
-    assert_eq!(intent.target, target);
+    assert_eq!(intent.target, Some(target));
     assert_eq!(intent.ticks_pursued, 0);
     assert_eq!(intent.max_pursue_ticks, 50);
 }
@@ -28,7 +28,7 @@ fn test_interaction_intent_progress() {
     let mut world = World::default();
     let target = world.push(());
     let mut intent = InteractionIntent {
-        target,
+        target: Some(target),
         ticks_pursued: 10,
         max_pursue_ticks: 50,
     };
@@ -98,7 +98,7 @@ fn integration_intent_and_pursuit() {
     let a_intent_entry = world.entry_ref(a).unwrap();
     let a_intent_result = a_intent_entry.get_component::<InteractionIntent>();
     if let Ok(a_intent) = a_intent_result {
-        assert_eq!(a_intent.target, b);
+        assert_eq!(a_intent.target, Some(b));
     } else {
         panic!("Agent a is missing InteractionIntent after 5 ticks! This likely means the system removed it early.");
     }

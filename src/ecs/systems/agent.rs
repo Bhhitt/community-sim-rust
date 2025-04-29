@@ -54,32 +54,13 @@ pub fn agent_direct_movement_system() -> impl legion::systems::Runnable {
         })
 }
 
-/// Agent state transition system: sets AgentState::Arrived when agent position matches target.
-pub fn agent_state_transition_system() -> impl legion::systems::Runnable {
-    legion::SystemBuilder::new("AgentStateTransitionSystem")
-        .with_query(<(&mut Position, &Target, &mut AgentState, &Path)>::query())
-        .build(|_, world, _, query| {
-            let start = std::time::Instant::now();
-            log::debug!("[SYSTEM] Entering agent_state_transition_system");
-            for (pos, target, agent_state, path) in query.iter_mut(world) {
-                if (*agent_state == AgentState::Moving || *agent_state == AgentState::Idle)
-                    && path.waypoints.is_empty()
-                {
-                    let dist = ((target.x - pos.x).powi(2) + (target.y - pos.y).powi(2)).sqrt();
-                    if dist <= 0.1 {
-                        log::debug!("[StateTransition] Entity: {:?} arrived at target ({}, {})", pos, target.x, target.y);
-                        *agent_state = AgentState::Arrived;
-                    } else if dist > 0.1 {
-                        *agent_state = AgentState::Moving;
-                    }
-                } else if path.waypoints.is_empty() {
-                    *agent_state = AgentState::Idle;
-                }
-            }
-            let duration = start.elapsed();
-            log::info!(target: "ecs_profile", "[PROFILE] System agent_state_transition_system took {:?}", duration);
-        })
-}
+// --- [DEPRECATED/REMOVED] agent_state_transition_system ---
+// The old agent_state_transition_system has been removed.
+// Use ecs/systems/agent_state_transition.rs for the current implementation.
+//
+// pub fn agent_state_transition_system() -> impl legion::systems::Runnable {
+//     panic!("[DEPRECATED] agent_state_transition_system in agent.rs is deprecated. Use ecs/systems/agent_state_transition.rs");
+// }
 
 // --- ECS Agent Pausing System ---
 /// Agent pausing system: handles all IdlePause logic (decrementing ticks_remaining).
@@ -89,11 +70,20 @@ pub fn agent_pausing_system() -> impl legion::systems::Runnable {
         .build(|_, world, _, query| {
             let start = std::time::Instant::now();
             log::debug!("[SYSTEM] Entering agent_pausing_system");
-            for (_entity, idle_pause) in query.iter_mut(world) {
+            log::debug!("[DEBUG] agent_pausing_system: before query iteration");
+            // Defensive: collect to Vec to avoid Legion archetype invalidation
+            let entities: Vec<_> = query.iter_mut(world).collect();
+            log::debug!("[DEBUG] agent_pausing_system: collected {} entities to Vec", entities.len());
+            let mut count = 0;
+            for (_entity, idle_pause) in entities {
+                count += 1;
+                log::trace!("[DEBUG] agent_pausing_system: inside loop, entity count {}", count);
                 if idle_pause.ticks_remaining > 0 {
                     idle_pause.ticks_remaining -= 1;
                 }
             }
+            log::debug!("[DEBUG] agent_pausing_system: after query iteration");
+            log::debug!("[DEBUG] agent_pausing_system: matched {} entities with IdlePause", count);
             let duration = start.elapsed();
             log::info!(target: "ecs_profile", "[PROFILE] System agent_pausing_system took {:?}", duration);
         })

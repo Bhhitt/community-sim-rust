@@ -10,8 +10,11 @@ use crate::ecs_components::{FoodPositions, FoodStats, InteractionStats};
 use crate::food::PendingFoodSpawns;
 use crate::map::Map;
 use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
+use crate::ecs::agent_events::AgentEventQueue;
+use log;
 
 pub fn insert_standard_resources(resources: &mut Resources, map: &Map) {
+    log::info!("[RESOURCE_INIT] insert_standard_resources called; inserting InteractionStats");
     resources.insert(map.clone());
     resources.insert(PendingFoodSpawns(VecDeque::new()));
     resources.insert(FoodPositions(Vec::new()));
@@ -22,4 +25,5 @@ pub fn insert_standard_resources(resources: &mut Resources, map: &Map) {
     resources.insert(LogConfig::default());
     // Insert PendingAgentSpawns for agent spawning
     resources.insert(PendingAgentSpawns::default());
+    resources.insert(AgentEventQueue::default());
 }
