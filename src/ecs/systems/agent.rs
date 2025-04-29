@@ -16,11 +16,14 @@ pub fn agent_path_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentPathMovementSystem")
         .with_query(<(&mut Path,)>::query())
         .build(|_, world, _, query| {
+            let start = std::time::Instant::now();
             for (path,) in query.iter_mut(world) {
                 if !path.waypoints.is_empty() {
                     path.waypoints.remove(0);
                 }
             }
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System agent_path_movement_system took {:?}", duration);
         })
 }
 
@@ -30,6 +33,7 @@ pub fn agent_direct_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentDirectMovementSystem")
         .with_query(<(&mut Position, &AgentType, &Path, &Target, &AgentState)>::query())
         .build(|_, world, _, query| {
+            let start = std::time::Instant::now();
             for (pos, agent_type, path, target, agent_state) in query.iter_mut(world) {
                 if (*agent_state == AgentState::Idle || *agent_state == AgentState::Moving)
                     && path.waypoints.is_empty()
@@ -45,6 +49,8 @@ pub fn agent_direct_movement_system() -> impl legion::systems::Runnable {
                     }
                 }
             }
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System agent_direct_movement_system took {:?}", duration);
         })
 }
 
@@ -53,6 +59,7 @@ pub fn agent_state_transition_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentStateTransitionSystem")
         .with_query(<(&mut Position, &Target, &mut AgentState, &Path)>::query())
         .build(|_, world, _, query| {
+            let start = std::time::Instant::now();
             log::debug!("[SYSTEM] Entering agent_state_transition_system");
             for (pos, target, agent_state, path) in query.iter_mut(world) {
                 if (*agent_state == AgentState::Moving || *agent_state == AgentState::Idle)
@@ -69,6 +76,8 @@ pub fn agent_state_transition_system() -> impl legion::systems::Runnable {
                     *agent_state = AgentState::Idle;
                 }
             }
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System agent_state_transition_system took {:?}", duration);
         })
 }
 
@@ -78,12 +87,15 @@ pub fn agent_pausing_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentPausingSystem")
         .with_query(<(Entity, &mut crate::agent::components::IdlePause)>::query())
         .build(|_, world, _, query| {
+            let start = std::time::Instant::now();
             log::debug!("[SYSTEM] Entering agent_pausing_system");
             for (_entity, idle_pause) in query.iter_mut(world) {
                 if idle_pause.ticks_remaining > 0 {
                     idle_pause.ticks_remaining -= 1;
                 }
             }
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System agent_pausing_system took {:?}", duration);
         })
 }
 
@@ -93,10 +105,13 @@ pub fn agent_movement_history_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("AgentMovementHistorySystem")
         .with_query(<(Entity, &Position, &mut crate::agent::components::MovementHistory)>::query())
         .build(|_, world, _, query| {
+            let start = std::time::Instant::now();
             for (_entity, pos, history) in query.iter_mut(world) {
                 history.add(pos.x, pos.y);
             }
-         })
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System agent_movement_history_system took {:?}", duration);
+        })
 }
 
 // --- ecs agent hunger/energy system ---
@@ -105,6 +120,7 @@ pub fn agent_hunger_energy_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("agent_hunger_energy_system")
         .with_query(<(Entity, &AgentType, &mut crate::agent::Hunger, &mut crate::agent::Energy, &AgentState)>::query())
         .build(|_, world, _, query| {
+            let start = std::time::Instant::now();
             log::debug!("[SYSTEM] Entering agent_hunger_energy_system");
             for (_entity, agent_type, hunger, energy, agent_state) in query.iter_mut(world) {
                 // Hunger logic for idle/arrived and moving states
@@ -116,5 +132,7 @@ pub fn agent_hunger_energy_system() -> impl legion::systems::Runnable {
                     // energy.value -= 1.0; // Disable energy depletion
                 }
             }
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System agent_hunger_energy_system took {:?}", duration);
         })
 }

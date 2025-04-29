@@ -6,6 +6,8 @@ use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 use crate::food::PendingFoodSpawns;
 use crate::map::Map;
 use rand::Rng;
+use std::time::Instant;
+use log::info;
 
 pub fn initial_spawn_system() -> impl Runnable {
     SystemBuilder::new("initial_spawn")
@@ -14,8 +16,11 @@ pub fn initial_spawn_system() -> impl Runnable {
         .write_resource::<InitConfig>()
         .read_resource::<Map>()
         .build(|_, _, (pending_agents, pending_food, init_config, map), _| {
+            let start = std::time::Instant::now();
             // Only run if not already initialized
             if init_config.initialized {
+                let duration = start.elapsed();
+                info!(target: "ecs_profile", "[PROFILE] System initial_spawn_system took {:?}", duration);
                 return;
             }
             // If agent_spawns is empty, generate random spawns
@@ -50,5 +55,7 @@ pub fn initial_spawn_system() -> impl Runnable {
             init_config.initialized = true;
             init_config.agent_spawns.clear();
             init_config.food_spawns.clear();
+            let duration = start.elapsed();
+            info!(target: "ecs_profile", "[PROFILE] System initial_spawn_system took {:?}", duration);
         })
 }

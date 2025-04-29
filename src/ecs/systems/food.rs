@@ -15,6 +15,7 @@ pub fn food_collection_system() -> impl Runnable {
         .with_query(<(Entity, &Position, &crate::agent::InteractionState)>::query()) // agents
         .with_query(<(Entity, &Position, &Food)>::query()) // food
         .build(|cmd, world, (food_stats, agent_event_log), (agent_query, food_query)| {
+            let start = std::time::Instant::now();
             log::debug!("[SYSTEM] [CLOSURE] ENTER food_collection_system");
             let agents: Vec<_> = agent_query.iter(world).map(|(entity, pos, _)| (*entity, pos.x, pos.y)).collect();
             let foods: Vec<_> = food_query.iter(world).map(|(e, pos, food)| (*e, pos.x, pos.y, food.nutrition)).collect();
@@ -43,6 +44,8 @@ pub fn food_collection_system() -> impl Runnable {
                 food_stats.collected_per_tick += 1;
             }
             log::debug!("[SYSTEM] [CLOSURE] EXIT food_collection_system");
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System food_collection_system took {:?}", duration);
         });
     log::debug!("[SYSTEM] END food_collection_system");
     sys

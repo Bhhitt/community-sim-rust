@@ -12,8 +12,10 @@ use crate::navigation::Path;
 use rand;
 use std::collections::VecDeque;
 use log;
+use std::time::Instant;
 
 pub fn agent_spawning_system() -> impl Runnable {
+    let start = Instant::now();
     log::debug!("[SYSTEM] START agent_spawning_system");
     let sys = SystemBuilder::new("AgentSpawningSystem")
         .write_resource::<PendingAgentSpawns>()
@@ -62,6 +64,8 @@ pub fn agent_spawning_system() -> impl Runnable {
             // Logging of agent count moved to agent_spawn_log_system
             log::debug!("[SYSTEM] [CLOSURE] EXIT agent_spawning_system");
         });
+    let duration = start.elapsed();
+    log::info!(target: "ecs_profile", "[PROFILE] System agent_spawning_system took {:?}", duration);
     log::debug!("[SYSTEM] END agent_spawning_system");
     sys
 }

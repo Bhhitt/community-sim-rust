@@ -21,6 +21,19 @@ where
     }
 }
 
+/// Helper to wrap a Legion system with timing and logging
+pub fn profile_system<S>(name: &'static str, mut system: S) -> impl FnMut(&mut legion::world::World, &mut legion::systems::Resources)
+where
+    S: FnMut(&mut legion::world::World, &mut legion::systems::Resources) + 'static,
+{
+    move |world, resources| {
+        let start = std::time::Instant::now();
+        system(world, resources);
+        let duration = start.elapsed();
+        log::info!(target: "ecs_profile", "[PROFILE] System {} took {:?}", name, duration);
+    }
+}
+
 pub fn build_main_schedule() -> legion::Schedule {
     let mut builder = legion::Schedule::builder();
 

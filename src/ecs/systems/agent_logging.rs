@@ -5,6 +5,7 @@ use legion::{Entity, IntoQuery};
 use legion::systems::Runnable;
 use std::sync::{Arc, Mutex};
 use log;
+use std::time::Instant;
 
 /// Logs agent arrival events (e.g., when AgentState::Arrived is detected)
 pub fn agent_arrival_logging_system() -> impl legion::systems::Runnable {
@@ -14,13 +15,17 @@ pub fn agent_arrival_logging_system() -> impl legion::systems::Runnable {
         .write_resource::<Arc<Mutex<crate::event_log::EventLog>>>()
         .read_resource::<crate::log_config::LogConfig>()
         .build(|_, world, resources, query| {
+            let start = Instant::now();
+            if resources.1.quiet { return; }
             for (entity, pos, agent_state) in query.iter(world) {
-                if *agent_state == crate::agent::AgentState::Arrived && !resources.1.quiet {
+                if *agent_state == crate::agent::AgentState::Arrived {
                     let msg = format!("[ARRIVAL] Agent {:?} arrived at ({:.2}, {:.2})", entity, pos.x, pos.y);
                     resources.0.lock().unwrap().push(msg.clone());
                     log::debug!("{}", msg);
                 }
             }
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System agent_arrival_logging_system took {:?}", duration);
         });
     log::debug!("[SYSTEM] END agent_arrival_logging_system");
     sys
@@ -35,13 +40,17 @@ pub fn agent_move_logging_system() -> impl legion::systems::Runnable {
         .write_resource::<Arc<Mutex<crate::event_log::EventLog>>>()
         .read_resource::<crate::log_config::LogConfig>()
         .build(|_, world, resources, query| {
+            let start = Instant::now();
+            if resources.1.quiet { return; }
             for (entity, pos, agent_state) in query.iter(world) {
-                if *agent_state == crate::agent::AgentState::Moving && !resources.1.quiet {
+                if *agent_state == crate::agent::AgentState::Moving {
                     let msg = format!("[MOVE] Agent {:?} moved to ({:.2}, {:.2})", entity, pos.x, pos.y);
                     resources.0.lock().unwrap().push(msg.clone());
                     log::debug!("{}", msg);
                 }
             }
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System agent_move_logging_system took {:?}", duration);
         });
     log::debug!("[SYSTEM] END agent_move_logging_system");
     sys
@@ -55,15 +64,15 @@ pub fn agent_spawn_logging_system() -> impl legion::systems::Runnable {
         .write_resource::<Arc<Mutex<crate::event_log::EventLog>>>()
         .read_resource::<crate::log_config::LogConfig>()
         .build(|_, world, resources, query| {
-            log::debug!("[SYSTEM] [CLOSURE] ENTER agent_spawn_logging_system");
+            let start = Instant::now();
+            if resources.1.quiet { return; }
             for (entity, pos, agent_type) in query.iter(world) {
-                if !resources.1.quiet {
-                    resources.0.lock().unwrap().push(
-                        format!("[SPAWN] Agent {:?} of type '{}' spawned at ({:.2}, {:.2})", entity, agent_type.name, pos.x, pos.y)
-                    );
-                }
+                let msg = format!("[SPAWN] Agent {:?} of type '{}' spawned at ({:.2}, {:.2})", entity, agent_type.name, pos.x, pos.y);
+                resources.0.lock().unwrap().push(msg.clone());
             }
             log::debug!("[SYSTEM] [CLOSURE] EXIT agent_spawn_logging_system");
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System agent_spawn_logging_system took {:?}", duration);
         });
     log::debug!("[SYSTEM] END agent_spawn_logging_system");
     sys

@@ -17,7 +17,7 @@
   map_width: 2000
   map_height: 1200
   num_agents: 2000
-  ticks: 100
+  ticks: 0
   benchmark: true
 - name: 50x
   map_width: 1200
@@ -48,7 +48,7 @@
   map_width: 700
   map_height: 500
   num_agents: 1000
-  ticks: 1000
+  ticks: 0
   log_info_eat: true
   log_info_interact: true
   benchmark: true

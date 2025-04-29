@@ -59,7 +59,7 @@ pub fn agent_target_assignment_system() -> impl Runnable {
                     }
                 }
             }
-            log::info!("[TARGET_ASSIGN] Total agents matched by query: {}", count);
+            log::debug!("[TARGET_ASSIGN] Total agents matched by query: {}", count);
         })
 }
 

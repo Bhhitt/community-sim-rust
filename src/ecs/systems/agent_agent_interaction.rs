@@ -6,6 +6,8 @@ use crate::ecs_components::{Position, InteractionStats};
 use crate::agent::{InteractionState};
 use std::sync::{Arc, Mutex};
 use crate::event_log::EventLog;
+use std::time::Instant;
+use log;
 
 pub fn agent_agent_interaction_system() -> impl Runnable {
     SystemBuilder::new("AgentAgentInteractionSystem")
@@ -13,6 +15,7 @@ pub fn agent_agent_interaction_system() -> impl Runnable {
         .write_resource::<Arc<Mutex<EventLog>>>()
         .with_query(<(Entity, &Position, &InteractionState)>::query()) // agents
         .build(|_cmd, world, (stats, event_log), agent_query| {
+            let start = Instant::now();
             let mut event_log = event_log.lock().unwrap();
             let agents: Vec<_> = agent_query.iter(world).map(|(entity, pos, _)| (*entity, pos.x, pos.y)).collect();
             let mut interacted = vec![false; agents.len()];
@@ -36,5 +39,7 @@ pub fn agent_agent_interaction_system() -> impl Runnable {
             }
             stats.agent_interactions += interactions_this_tick;
             stats.active_interactions = active_interactions;
+            let duration = start.elapsed();
+            log::info!(target: "ecs_profile", "[PROFILE] System agent_agent_interaction_system took {:?}", duration);
         })
 }

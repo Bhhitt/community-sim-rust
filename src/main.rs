@@ -64,8 +64,8 @@ pub struct Args {
     /// Enable stats logs
     #[arg(long)]
     log_stats: bool,
-    /// Enable quiet logs
-    #[arg(long)]
+    /// Enable quiet logs (disables most ECS event logging)
+    #[arg(long, alias = "quiet", help = "Suppress all ECS event logging for performance profiling")]
     log_quiet: bool,
 }
 
@@ -83,7 +83,8 @@ fn parse_log_level(level: &str) -> log::LevelFilter {
 // Logging setup with fern
 fn setup_logging(log_level: log::LevelFilter, event_log: Option<Arc<Mutex<event_log::EventLog>>>) {
     let log_file = "community_sim.log";
-    let mut dispatch = fern::Dispatch::new()
+    let profile_log_file = "ecs_profile.log";
+    let base_dispatch = fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
                 "{} [{}] {}",
@@ -93,9 +94,23 @@ fn setup_logging(log_level: log::LevelFilter, event_log: Option<Arc<Mutex<event_
             ))
         })
         .level(log_level)
-        .level_for("community_sim", log_level)
+        .level_for("community_sim", log_level);
+
+    // General log output (stdout + file, excluding ecs_profile target)
+    let general_dispatch = fern::Dispatch::new()
+        .filter(|metadata| metadata.target() != "ecs_profile")
         .chain(std::io::stdout())
         .chain(fern::log_file(log_file).unwrap());
+
+    // ECS profile logs to a separate file
+    let ecs_profile_dispatch = fern::Dispatch::new()
+        .filter(|metadata| metadata.target() == "ecs_profile")
+        .chain(fern::log_file(profile_log_file).unwrap());
+
+    // Compose all dispatches
+    let mut dispatch = base_dispatch
+        .chain(general_dispatch)
+        .chain(ecs_profile_dispatch);
 
     if let Some(event_log) = event_log {
         dispatch = dispatch.chain(Box::new(crate::event_log::EventLogWriter::new(event_log)) as Box<dyn std::io::Write + Send>);

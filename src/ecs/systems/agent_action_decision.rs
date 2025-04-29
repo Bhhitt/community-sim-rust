@@ -4,12 +4,15 @@
 use legion::{Entity, IntoQuery, systems::Runnable, systems::SystemBuilder};
 use crate::agent::components::{IntendedAction, AgentState, Hunger};
 use crate::agent::AgentType;
+use std::time::Instant;
+use log::info;
 
 pub fn agent_action_decision_system() -> impl Runnable {
     SystemBuilder::new("AgentActionDecisionSystem")
         .with_query(<(Entity, &AgentType, &Hunger, &AgentState)>::query())
         .write_component::<IntendedAction>()
         .build(|cmd, world, _, query| {
+            let start = Instant::now();
             for (entity, _agent_type, hunger, agent_state) in query.iter(world) {
                 // Only select actions for agents that are Idle (not paused, not moving, not arrived)
                 if *agent_state != AgentState::Idle {
@@ -24,5 +27,7 @@ pub fn agent_action_decision_system() -> impl Runnable {
                 };
                 cmd.add_component(*entity, intended_action);
             }
+            let duration = start.elapsed();
+            info!(target: "ecs_profile", "[PROFILE] System agent_action_decision_system took {:?}", duration);
         })
 }
