@@ -1,13 +1,14 @@
 // Agent-Agent Interaction System
 // Handles detection and logging of agent-agent interactions.
 
-use legion::{Entity, IntoQuery, systems::Runnable, systems::SystemBuilder};
-use crate::ecs_components::{Position, InteractionStats};
+use legion::{Entity, IntoQuery, systems::Runnable, systems::SystemBuilder, EntityStore};
+use crate::ecs_components::{Position, InteractionStats, InteractionIntent, Interacting};
 use crate::agent::{InteractionState};
 use std::sync::{Arc, Mutex};
 use crate::event_log::EventLog;
 use std::time::Instant;
 use log;
+use std::collections::HashMap;
 
 pub fn agent_agent_interaction_system() -> impl Runnable {
     SystemBuilder::new("AgentAgentInteractionSystem")
@@ -41,5 +42,177 @@ pub fn agent_agent_interaction_system() -> impl Runnable {
             stats.active_interactions = active_interactions;
             let duration = start.elapsed();
             log::info!(target: "ecs_profile", "[PROFILE] System agent_agent_interaction_system took {:?}", duration);
+        })
+}
+
+/// System that assigns InteractionIntent to idle agents who detect a valid target nearby.
+pub fn intent_assignment_system() -> impl legion::systems::Runnable {
+    legion::SystemBuilder::new("IntentAssignmentSystem")
+        .with_query(<(legion::Entity, &Position)>::query())
+        .build(|cmd, world, _resources, query| {
+            // Collect all agents and their positions
+            let all_agents: Vec<(legion::Entity, f32, f32)> = query.iter(world)
+                .map(|(entity, pos)| (*entity, pos.x, pos.y))
+                .collect();
+            for (entity, x, y) in &all_agents {
+                // Skip if already has InteractionIntent or Interacting
+                if world.entry_ref(*entity).map_or(false, |entry| entry.get_component::<InteractionIntent>().is_ok()) {
+                    continue;
+                }
+                if world.entry_ref(*entity).map_or(false, |entry| entry.get_component::<Interacting>().is_ok()) {
+                    continue;
+                }
+                // Find nearest eligible target (not self, not Interacting)
+                let mut nearest: Option<(legion::Entity, f32)> = None;
+                for (other, ox, oy) in &all_agents {
+                    if other == entity { continue; }
+                    if world.entry_ref(*other).map_or(false, |entry| entry.get_component::<Interacting>().is_ok()) {
+                        continue;
+                    }
+                    let dist2 = (x - ox).powi(2) + (y - oy).powi(2);
+                    if nearest.is_none() || dist2 < nearest.unwrap().1 {
+                        nearest = Some((*other, dist2));
+                    }
+                }
+                if let Some((target, _)) = nearest {
+                    cmd.add_component(
+                        *entity,
+                        InteractionIntent {
+                            target,
+                            ticks_pursued: 0,
+                            max_pursue_ticks: 50,
+                        },
+                    );
+                }
+            }
+        })
+}
+
+/// System that moves agents with InteractionIntent toward their target, increments pursuit ticks, and removes the intent if pursuit fails or target disappears.
+pub fn pursuit_movement_system() -> impl legion::systems::Runnable {
+    legion::SystemBuilder::new("PursuitMovementSystem")
+        .with_query(<(legion::Entity, &mut Position, &mut InteractionIntent)>::query())
+        .build(|cmd, world, _resources, query| {
+            // Collect all positions into a hashmap to avoid double borrow
+            let positions: HashMap<Entity, Position> = <(Entity, &Position)>::query()
+                .iter(world)
+                .map(|(e, p)| (*e, *p))
+                .collect();
+            for (entity, pos, intent) in query.iter_mut(world) {
+                if let Some(target_pos) = positions.get(&intent.target) {
+                    // Move agent toward target (simple step)
+                    let dx = target_pos.x - pos.x;
+                    let dy = target_pos.y - pos.y;
+                    let dist = (dx * dx + dy * dy).sqrt();
+                    if dist > 0.01 {
+                        let step = 1.0_f32.min(dist); // step size
+                        pos.x += dx / dist * step;
+                        pos.y += dy / dist * step;
+                    }
+                    intent.ticks_pursued += 1;
+                    log::info!("[pursuit] Entity {:?} pursuing {:?}: pos=({:.2},{:.2}), ticks_pursued={}, max_pursue_ticks={}", entity, intent.target, pos.x, pos.y, intent.ticks_pursued, intent.max_pursue_ticks);
+                    if intent.ticks_pursued >= intent.max_pursue_ticks {
+                        log::info!("[pursuit] Entity {:?} removing InteractionIntent: reached max ticks", entity);
+                        cmd.remove_component::<InteractionIntent>(*entity);
+                    }
+                } else {
+                    log::info!("[pursuit] Entity {:?} removing InteractionIntent: target {:?} not found (gone or no position)", entity, intent.target);
+                    // Target gone
+                    cmd.remove_component::<InteractionIntent>(*entity);
+                }
+            }
+        })
+}
+
+/// System that checks if agents with InteractionIntent are in range of their target, queues them, and starts interaction if possible.
+pub fn interaction_range_system() -> impl legion::systems::Runnable {
+    use crate::ecs_components::{InteractionIntent, InteractionQueue, Interacting, Position};
+    use std::collections::VecDeque;
+    const INTERACTION_RANGE: f32 = 2.0;
+
+    legion::SystemBuilder::new("InteractionRangeSystem")
+        .with_query(<(legion::Entity, &Position, &InteractionIntent)>::query())
+        .with_query(<(&mut InteractionQueue,)>::query())
+        .with_query(<(&Interacting,)>::query())
+        .build(|cmd, world, _resources, (intent_query, queue_query, interacting_query)| {
+            log::debug!("[range] Collecting all positions for lookup");
+            let positions: std::collections::HashMap<Entity, Position> = <(Entity, &Position)>::query()
+                .iter(world)
+                .map(|(e, p)| (*e, *p))
+                .collect();
+            log::debug!("[range] Positions collected: {:?}", positions.keys().collect::<Vec<_>>());
+            // First, collect all relevant data to break borrow chain
+            let mut to_process = Vec::new();
+            for (agent_entity, agent_pos, intent) in intent_query.iter(world) {
+                log::debug!("[range] intent_query: agent_entity={:?}, agent_pos=({:.2},{:.2}), target={:?}", agent_entity, agent_pos.x, agent_pos.y, intent.target);
+                to_process.push((*agent_entity, *agent_pos, intent.target));
+            }
+            log::debug!("[range] to_process list: {:?}", to_process);
+            for (agent_entity, agent_pos, target_entity) in to_process {
+                log::debug!("[range] Processing: agent_entity={:?}, agent_pos=({:.2},{:.2}), target_entity={:?}", agent_entity, agent_pos.x, agent_pos.y, target_entity);
+                if let (Some(agent_pos), Some(target_pos)) = (positions.get(&agent_entity), positions.get(&target_entity)) {
+                    let dx = target_pos.x - agent_pos.x;
+                    let dy = target_pos.y - agent_pos.y;
+                    let dist = (dx * dx + dy * dy).sqrt();
+                    log::debug!("[range] Distance between agent {:?} and target {:?}: {:.2}", agent_entity, target_entity, dist);
+                    if dist <= INTERACTION_RANGE {
+                        // Mutably borrow target's InteractionQueue
+                        log::debug!("[range] Attempting to mutably borrow target_entity={:?} for InteractionQueue", target_entity);
+                        if let Ok(mut entry) = world.entry_mut(target_entity) {
+                            match entry.get_component_mut::<InteractionQueue>() {
+                                Ok(queue) => {
+                                    // Only queue if not already present
+                                    if !queue.queue.contains(&agent_entity) {
+                                        queue.queue.push_back(agent_entity);
+                                        log::info!("[range] Agent {:?} queued for interaction with {:?}", agent_entity, target_entity);
+                                    } else {
+                                        log::debug!("[range] Agent {:?} already in queue for {:?}", agent_entity, target_entity);
+                                    }
+                                }
+                                Err(_) => {
+                                    log::warn!("[range] Target entity {:?} does not have InteractionQueue when expected (queue phase).", target_entity);
+                                    continue;
+                                }
+                            }
+                        } else {
+                            log::warn!("[range] Could not mutably borrow target entity {:?} (queue phase).", target_entity);
+                            continue;
+                        }
+                        // Remove agent's InteractionIntent
+                        log::debug!("[range] Removing InteractionIntent from agent_entity={:?}", agent_entity);
+                        cmd.remove_component::<InteractionIntent>(agent_entity);
+                        // If target is not currently Interacting, start interaction with next in queue
+                        let target_is_interacting = interacting_query.get(world, target_entity).is_ok();
+                        log::debug!("[range] target_is_interacting={:?} for target_entity={:?}", target_is_interacting, target_entity);
+                        if !target_is_interacting {
+                            log::debug!("[range] Attempting to start interaction for target_entity={:?}", target_entity);
+                            if let Ok(mut entry) = world.entry_mut(target_entity) {
+                                match entry.get_component_mut::<InteractionQueue>() {
+                                    Ok(queue) => {
+                                        if let Some(next_agent) = queue.queue.pop_front() {
+                                            log::debug!("[range] Starting interaction: next_agent={:?}, target_entity={:?}", next_agent, target_entity);
+                                            // Start interaction: add Interacting to both
+                                            cmd.add_component(next_agent, Interacting { partner: target_entity, ticks_remaining: 10 });
+                                            cmd.add_component(target_entity, Interacting { partner: next_agent, ticks_remaining: 10 });
+                                            log::info!("[range] Started interaction: {:?} <-> {:?}", next_agent, target_entity);
+                                        } else {
+                                            log::debug!("[range] No agents in queue for target_entity={:?}", target_entity);
+                                        }
+                                    }
+                                    Err(_) => {
+                                        log::warn!("[range] Target entity {:?} does not have InteractionQueue when expected (start phase).", target_entity);
+                                        continue;
+                                    }
+                                }
+                            } else {
+                                log::warn!("[range] Could not mutably borrow target entity {:?} (start phase).", target_entity);
+                                continue;
+                            }
+                        }
+                    }
+                } else {
+                    log::warn!("[range] Could not find positions for agent_entity={:?} or target_entity={:?}", agent_entity, target_entity);
+                }
+            }
         })
 }

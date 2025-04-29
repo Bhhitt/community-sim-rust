@@ -6,6 +6,7 @@ use rand::Rng;
 use crate::food::Food;
 use crate::agent::{InteractionState, event::{AgentEvent, AgentEventLog}};
 use std::sync::{Arc, Mutex};
+use std::collections::VecDeque;
 // Example usage in entity_interaction_system:
 // agent_event_log.push(AgentEvent::AteFood { agent, food, nutrition });
 
@@ -149,6 +150,32 @@ pub fn entity_interaction_system() -> impl legion::systems::Runnable {
             }
             stats.active_interactions_history.push_back(active_interactions);
         })
+}
+
+/// Marks an agent as intending to interact with a target.
+/// - `target`: The entity being pursued for interaction.
+/// - `ticks_pursued`: How many ticks the agent has spent pursuing.
+/// - `max_pursue_ticks`: Maximum ticks to pursue before giving up.
+#[derive(Clone, Debug, PartialEq)]
+pub struct InteractionIntent {
+    pub target: legion::Entity,
+    pub ticks_pursued: u32,
+    pub max_pursue_ticks: u32, // e.g., 50
+}
+
+/// Queue of agents waiting to interact with this agent.
+#[derive(Clone, Debug, PartialEq)]
+pub struct InteractionQueue {
+    pub queue: VecDeque<legion::Entity>,
+}
+
+/// Marks an agent as currently interacting with another agent.
+/// - `partner`: The other entity in the interaction.
+/// - `ticks_remaining`: How many ticks remain before the interaction ends.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Interacting {
+    pub partner: legion::Entity,
+    pub ticks_remaining: u32,
 }
 
 // --- EventLog moved to event_log.rs ---
