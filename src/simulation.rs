@@ -1,3 +1,7 @@
+// DEPRECATED: This module's simulation entrypoint is superseded by the unified simulation loop and setup in main.rs and sim_loop_unified.rs.
+// All core simulation logic should be routed through the unified setup and loop.
+// This file is retained for reference and will be removed after migration is complete.
+
 //! Main simulation loop and logic
 
 use crate::agent::{AgentType, event::AgentEventLog};
@@ -22,6 +26,7 @@ use crate::spawn_config::SpawnConfig;
 use crate::sim_loop_unified::{SimulationRenderer, SimulationInput, SimulationProfiler, run_simulation_loop, NoOpInput, NoOpProfiler, NoOpRenderer};
 use crate::sim_state::SimState;
 
+// DEPRECATED: Use the unified simulation loop instead of this function.
 pub fn run_simulation(
     map_width: i32,
     map_height: i32,

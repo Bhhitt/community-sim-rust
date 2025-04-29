@@ -24,6 +24,7 @@ pub mod sim_loop_unified;
 pub mod util;
 pub mod sim_state;
 pub mod spawn_config;
+pub mod unified_sim_entry;
 
 pub use ecs::{
     schedules,

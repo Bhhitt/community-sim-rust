@@ -19,21 +19,25 @@ pub fn process_input_intents(
     let resources = &mut sim_ui_state.resources;
     let intents = sim_ui_state.input_queue.drain();
     for intent in intents {
+        log::debug!("[INPUT] Processing intent: {:?}", intent);
         match intent {
             InputIntent::Quit => {
                 std::process::exit(0);
             }
             InputIntent::TogglePause => {
                 *paused = !*paused;
+                log::info!("[INPUT] Paused state toggled: {}", *paused);
             }
             InputIntent::AdvanceOneTick => {
                 *advance_one = true;
-                log::debug!("[DEBUG] Advance one tick (paused)");
+                log::info!("[INPUT] Advance one tick triggered");
             }
             InputIntent::MoveCamera { dx, dy } => {
                 sim_ui_state.camera.move_by(dx, dy, render_map.width, render_map.height);
+                log::info!("[INPUT] Camera move: dx={}, dy={}", dx, dy);
             }
             InputIntent::SpawnAgentRandom => {
+                log::info!("[INPUT] SpawnAgentRandom intent received");
                 use rand::Rng;
                 let mut rng = rand::thread_rng();
                 let mut x;
@@ -63,6 +67,7 @@ pub fn process_input_intents(
                 }
             }
             InputIntent::SpawnAgentsRandom { count } => {
+                log::info!("[INPUT] SpawnAgentsRandom intent received: count={}", count);
                 use rand::Rng;
                 let mut rng = rand::thread_rng();
                 let mut spawned = 0;
@@ -87,6 +92,7 @@ pub fn process_input_intents(
                 log::debug!("[DEBUG] Spawned {} agents ({} attempts)", spawned, attempts);
             }
             InputIntent::SelectAgentAt { x, y } => {
+                log::info!("[INPUT] SelectAgentAt intent: x={}, y={}", x, y);
                 use sdl2::rect::Rect;
                 let mouse_x = x;
                 let mouse_y = y;

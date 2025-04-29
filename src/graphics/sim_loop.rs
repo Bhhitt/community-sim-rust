@@ -1,3 +1,7 @@
+// DEPRECATED: This module's simulation loop is superseded by the unified simulation loop in sim_loop_unified.rs.
+// All graphics simulation logic should be routed through the unified setup and loop.
+// This file is retained for reference and will be removed after migration is complete.
+
 use sdl2::pixels::Color;
 use sdl2::render::Canvas;
 use sdl2::video::Window;

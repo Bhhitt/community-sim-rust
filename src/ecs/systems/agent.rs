@@ -110,10 +110,10 @@ pub fn agent_hunger_energy_system() -> impl legion::systems::Runnable {
                 // Hunger logic for idle/arrived and moving states
                 if *agent_state == AgentState::Idle || *agent_state == AgentState::Arrived {
                     hunger.value -= agent_type.hunger_rate * 0.1;
-                    energy.value -= 0.1;
+                    // energy.value -= 0.1; // Disable energy depletion
                 } else if *agent_state == AgentState::Moving {
                     hunger.value -= agent_type.hunger_rate;
-                    energy.value -= 1.0;
+                    // energy.value -= 1.0; // Disable energy depletion
                 }
             }
         })

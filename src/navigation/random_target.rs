@@ -1,6 +1,7 @@
 use crate::map::Map;
 use crate::agent::AgentType;
 use rand::Rng;
+use log;
 
 /// Returns a random passable target within a given radius of (cx, cy).
 fn random_passable_target_within_radius<R: Rng>(
@@ -32,9 +33,10 @@ fn random_passable_target_within_radius<R: Rng>(
             _ => terrain.movement_cost().is_some(),
         };
         if passable {
+            log::debug!("[RANDOM_TARGET] Picked local target ({}, {}) for agent type {}", nx, ny, agent_type.name);
             return (
-                nx as f32 + rng.gen_range(0.0..1.0),
-                ny as f32 + rng.gen_range(0.0..1.0),
+                (nx as f32 + rng.gen_range(0.0..1.0)).clamp(0.0, map.width as f32 - 1.0),
+                (ny as f32 + rng.gen_range(0.0..1.0)).clamp(0.0, map.height as f32 - 1.0),
             );
         }
         tries += 1;
@@ -43,13 +45,17 @@ fn random_passable_target_within_radius<R: Rng>(
     // fallback: pick a global random
     let x = rng.gen_range(0..map.width) as i32;
     let y = rng.gen_range(0..map.height) as i32;
-    (x as f32, y as f32)
+    log::warn!("[RANDOM_TARGET] Fallback to global random ({}, {}) for agent type {} (map size: {}x{})", x, y, agent_type.name, map.width, map.height);
+    (
+        x.clamp(0, map.width - 1) as f32,
+        y.clamp(0, map.height - 1) as f32
+    )
 }
 
 pub fn random_passable_target<R: Rng>(map: &Map, agent_type: &AgentType, rng: &mut R, origin: Option<(f32, f32)>) -> (f32, f32) {
     if let Some((cx, cy)) = origin {
-        // 120-unit local random
-        random_passable_target_within_radius(map, agent_type, rng, cx, cy, 120.0)
+        // 20-unit local random
+        random_passable_target_within_radius(map, agent_type, rng, cx, cy, 20.0)
     } else {
         // fallback to global random
         let mut tries = 0;
@@ -62,9 +68,18 @@ pub fn random_passable_target<R: Rng>(map: &Map, agent_type: &AgentType, rng: &m
                 crate::map::Terrain::Mountain => is_scout,
                 _ => terrain.movement_cost().is_some(),
             };
-            if passable { return (x as f32 + rng.gen_range(0.0..1.0), y as f32 + rng.gen_range(0.0..1.0)); }
+            if passable {
+                log::debug!("[RANDOM_TARGET] Picked global target ({}, {}) for agent type {}", x, y, agent_type.name);
+                return (
+                    x.clamp(0, map.width - 1) as f32,
+                    y.clamp(0, map.height - 1) as f32
+                );
+            }
             tries += 1;
-            if tries > 1000 { return (x as f32, y as f32); }
+            if tries > 1000 {
+                log::warn!("[RANDOM_TARGET] Fallback to (0,0) after 1000 tries for agent type {} (map size: {}x{})", agent_type.name, map.width, map.height);
+                return (0.0, 0.0);
+            }
         }
     }
 }

@@ -15,7 +15,7 @@ pub trait SimulationRenderer {
 /// Trait for handling simulation input (GUI, headless, etc.)
 pub trait SimulationInput {
     fn handle_input(&mut self, sim_state: &mut SimState, tick: usize) { let _ = (sim_state, tick); }
-    fn handle_input_ui(&mut self, _sim_ui_state: &mut SimUIState, _tick: usize) {}
+    fn handle_input_ui(&mut self, _sim_ui_state: &mut SimUIState, _agent_types: &[crate::agent::AgentType], _render_map: &crate::map::Map, _cell_size: f32, _log_config: &crate::log_config::LogConfig, _paused: &mut bool, _tick: usize) {}
 }
 
 /// Trait for profiling the simulation (no-op, CSV, etc.)
@@ -38,14 +38,26 @@ pub fn run_simulation_loop<R, P, I>(
     P: SimulationProfiler,
     I: SimulationInput,
 {
-    for tick in 0..ticks {
-        profiler.on_tick_start(tick);
-        sim_state.schedule.execute(&mut sim_state.world, &mut sim_state.resources);
-        renderer.render(sim_state, tick);
-        input.handle_input(sim_state, tick);
-        profiler.on_tick_end(tick);
+    if ticks == 0 {
+        let mut tick = 0;
+        loop {
+            profiler.on_tick_start(tick);
+            sim_state.schedule.execute(&mut sim_state.world, &mut sim_state.resources);
+            renderer.render(sim_state, tick);
+            input.handle_input(sim_state, tick);
+            profiler.on_tick_end(tick);
+            tick += 1;
+        }
+    } else {
+        for tick in 0..ticks {
+            profiler.on_tick_start(tick);
+            sim_state.schedule.execute(&mut sim_state.world, &mut sim_state.resources);
+            renderer.render(sim_state, tick);
+            input.handle_input(sim_state, tick);
+            profiler.on_tick_end(tick);
+        }
+        profiler.on_simulation_end(sim_state, ticks);
     }
-    profiler.on_simulation_end(sim_state, ticks);
 }
 
 /// Unified simulation loop for graphics mode.
@@ -55,19 +67,60 @@ pub fn run_simulation_loop_ui<R, P, I>(
     renderer: &mut R,
     profiler: &mut P,
     input: &mut I,
+    agent_types: &[crate::agent::AgentType],
+    render_map: &crate::map::Map,
+    cell_size: f32,
+    log_config: &crate::log_config::LogConfig,
+    mut paused: bool,
 ) where
     R: SimulationRenderer,
     P: SimulationProfiler,
     I: SimulationInput,
 {
-    for tick in 0..ticks {
-        profiler.on_tick_start(tick);
-        sim_ui_state.schedule.execute(&mut sim_ui_state.world, &mut sim_ui_state.resources);
-        renderer.render_ui(sim_ui_state, tick);
-        input.handle_input_ui(sim_ui_state, tick);
-        profiler.on_tick_end(tick);
+    if ticks == 0 {
+        let mut tick = 0;
+        let mut advance_one = false;
+        loop {
+            input.handle_input_ui(sim_ui_state, agent_types, render_map, cell_size, log_config, &mut paused, tick);
+            crate::graphics::input_systems::process_input_intents(
+                sim_ui_state,
+                agent_types,
+                render_map,
+                cell_size,
+                &mut paused,
+                &mut advance_one,
+            );
+            profiler.on_tick_start(tick);
+            if !paused || advance_one {
+                sim_ui_state.schedule.execute(&mut sim_ui_state.world, &mut sim_ui_state.resources);
+                advance_one = false;
+            }
+            renderer.render_ui(sim_ui_state, tick);
+            profiler.on_tick_end(tick);
+            tick += 1;
+        }
+    } else {
+        let mut advance_one = false;
+        for tick in 0..ticks {
+            input.handle_input_ui(sim_ui_state, agent_types, render_map, cell_size, log_config, &mut paused, tick);
+            crate::graphics::input_systems::process_input_intents(
+                sim_ui_state,
+                agent_types,
+                render_map,
+                cell_size,
+                &mut paused,
+                &mut advance_one,
+            );
+            profiler.on_tick_start(tick);
+            if !paused || advance_one {
+                sim_ui_state.schedule.execute(&mut sim_ui_state.world, &mut sim_ui_state.resources);
+                advance_one = false;
+            }
+            renderer.render_ui(sim_ui_state, tick);
+            profiler.on_tick_end(tick);
+        }
+        profiler.on_simulation_end_ui(sim_ui_state, ticks);
     }
-    profiler.on_simulation_end_ui(sim_ui_state, ticks);
 }
 
 /// No-op renderer for headless mode.

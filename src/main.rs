@@ -23,6 +23,7 @@ use community_sim::event_log;
 use community_sim::util;
 use community_sim::spawn_config::SpawnConfig;
 use community_sim::spawn_config;
+use community_sim::unified_sim_entry::run_unified_simulation;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -160,9 +161,11 @@ fn main() {
     };
 
     let (map_width, map_height, num_agents, ticks) = if let Some(profile) = &sim_profile {
-        let width = profile.map_width.or(profile.map_size).unwrap_or(args.map_size);
-        let height = profile.map_height.or(profile.map_size).unwrap_or(args.map_size);
-        (width, height, profile.num_agents, profile.ticks)
+        let width = if args.map_size != 20 { args.map_size } else { profile.map_width.or(profile.map_size).unwrap_or(20) };
+        let height = if args.map_size != 20 { args.map_size } else { profile.map_height.or(profile.map_size).unwrap_or(20) };
+        let num_agents = if args.agents != 10 { args.agents } else { profile.num_agents };
+        let ticks = if args.ticks != 10 { args.ticks } else { profile.ticks };
+        (width, height, num_agents, ticks)
     } else {
         (args.map_size, args.map_size, args.agents, args.ticks)
     };
@@ -173,57 +176,27 @@ fn main() {
         None
     };
 
-    if args.headless {
-        log::info!("Running in headless mode");
-        if let Some(profile) = &sim_profile {
-            log::info!("[INFO] Loaded profile: {:?}", profile);
-            // Use profile values for simulation
-            crate::simulation::run_simulation(
-                profile.map_width.or(profile.map_size).unwrap_or(args.map_size),
-                profile.map_height.or(profile.map_size).unwrap_or(args.map_size),
-                profile.num_agents,
-                profile.ticks,
-                &profile.name,
-                &agent_types,
-                args.profile_systems,
-                &args.profile_csv,
-                spawn_config.as_ref(),
-            );
-        } else {
-            // Use CLI args for simulation
-            crate::simulation::run_simulation(
-                args.map_size,
-                args.map_size,
-                args.agents,
-                args.ticks,
-                &args.profile,
-                &agent_types,
-                args.profile_systems,
-                &args.profile_csv,
-                spawn_config.as_ref(),
-            );
-        }
-    } else {
-        log::info!("Running with graphics");
-        let mut world = legion::World::default();
-        let mut resources = legion::Resources::default();
-        crate::graphics::sim_render::run_sim_render(
-            sim_profile.as_ref().unwrap_or(&SimProfile {
-                name: "cli_args".to_string(),
-                map_width: Some(map_width),
-                map_height: Some(map_height),
-                map_size: None,
-                num_agents,
-                ticks,
-                benchmark: None,
-                quiet: None,
-                spawn_config: None, // <--- Added this line
-            }),
-            &agent_types,
-            args.profile_systems,
-            &args.profile_csv,
-            &mut world,
-            &mut resources,
-        );
-    }
+    // --- UNIFIED SIMULATION ENTRYPOINT ---
+    // This replaces legacy simulation.rs and sim_render.rs entrypoints.
+    // Always runs the unified ECS schedule; rendering/input is a plug-in.
+
+    // --- UNIFIED ENTRYPOINT ---
+    run_unified_simulation(
+        &SimProfile {
+            name: sim_profile.as_ref().map(|p| p.name.clone()).unwrap_or_else(|| "cli_args".to_string()),
+            map_width: Some(map_width),
+            map_height: Some(map_height),
+            map_size: None,
+            num_agents,
+            ticks,
+            benchmark: sim_profile.as_ref().and_then(|p| p.benchmark),
+            quiet: sim_profile.as_ref().and_then(|p| p.quiet),
+            spawn_config: sim_profile.as_ref().and_then(|p| p.spawn_config.clone()),
+        },
+        &agent_types,
+        args.headless,
+        ticks,
+        &log_config,
+    );
+    // --- End of main ---
 }

@@ -4,23 +4,43 @@ use legion::{system, IntoQuery, Resources, World, systems::{SystemBuilder, Runna
 use crate::ecs::resources::init_config::InitConfig;
 use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 use crate::food::PendingFoodSpawns;
+use crate::map::Map;
+use rand::Rng;
 
 pub fn initial_spawn_system() -> impl Runnable {
     SystemBuilder::new("initial_spawn")
         .write_resource::<PendingAgentSpawns>()
         .write_resource::<PendingFoodSpawns>()
         .write_resource::<InitConfig>()
-        .build(|_, _, (pending_agents, pending_food, init_config), _| {
+        .read_resource::<Map>()
+        .build(|_, _, (pending_agents, pending_food, init_config, map), _| {
             // Only run if not already initialized
             if init_config.initialized {
                 return;
             }
-            // Enqueue agent spawns
-            for (x, y, agent_type) in &init_config.agent_spawns {
-                pending_agents.add(
-                    crate::ecs_components::Position { x: *x, y: *y },
-                    agent_type.clone(),
-                );
+            // If agent_spawns is empty, generate random spawns
+            if init_config.agent_spawns.is_empty() && init_config.num_agents > 0 && !init_config.agent_types.is_empty() {
+                let mut rng = rand::thread_rng();
+                let width = map.width as f32;
+                let height = map.height as f32;
+                for _ in 0..init_config.num_agents {
+                    let agent_type = init_config.agent_types[rng.gen_range(0..init_config.agent_types.len())].clone();
+                    // Find a passable tile
+                    let (x, y) = loop {
+                        let x = rng.gen_range(0.0..width);
+                        let y = rng.gen_range(0.0..height);
+                        let tile = map.tiles[y as usize][x as usize];
+                        if tile == crate::map::Terrain::Grass || tile == crate::map::Terrain::Forest {
+                            break (x, y);
+                        }
+                    };
+                    pending_agents.add(crate::ecs_components::Position { x, y }, agent_type);
+                }
+            } else {
+                // Enqueue explicit agent spawns
+                for (x, y, agent_type) in &init_config.agent_spawns {
+                    pending_agents.add(crate::ecs_components::Position { x: *x, y: *y }, agent_type.clone());
+                }
             }
             // Enqueue food spawns
             for (x, y) in &init_config.food_spawns {

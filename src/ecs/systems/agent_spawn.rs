@@ -4,7 +4,7 @@
 use legion::systems::Runnable;
 use legion::systems::SystemBuilder;
 use legion::IntoQuery;
-use crate::agent::components::{Hunger, Energy, AgentState, IdlePause, SwimmingProfile, InteractionState, MovementHistory, Target};
+use crate::agent::components::{Hunger, Energy, AgentState, IdlePause, SwimmingProfile, InteractionState, MovementHistory, Target, IntendedAction};
 use crate::ecs::systems::pending_agent_spawns::{PendingAgentSpawns, AgentSpawnRequest};
 use crate::agent::event::{AgentEvent, AgentEventLog};
 use crate::map::Map;
@@ -42,7 +42,7 @@ pub fn agent_spawning_system() -> impl Runnable {
                         swim_ticks_remaining: 0,
                     };
                     let hunger_threshold = agent_type.hunger_threshold;
-                    let entity = cmd.push((pos.clone(), agent_type.clone(), Hunger { value: 100.0, threshold: hunger_threshold }, Energy { value: 100.0 }, AgentState::Idle));
+                    let entity = cmd.push((pos.clone(), agent_type.clone(), Hunger { value: 100.0, threshold: hunger_threshold }, Energy { value: 100.0 }, AgentState::Idle, IntendedAction::Wander));
                     log::debug!("[DEBUG][AgentSpawningSystem] Spawned agent entity {:?} at ({}, {}) of type {}", entity, pos.x, pos.y, agent_type.name);
                     tick_spawn_count += 1;
                     cmd.add_component(entity, IdlePause::default());
@@ -51,6 +51,7 @@ pub fn agent_spawning_system() -> impl Runnable {
                     cmd.add_component(entity, MovementHistory::new(12));
                     cmd.add_component(entity, Path::default());
                     cmd.add_component(entity, Target::default());
+                    log::info!("[SPAWN_DEBUG] Entity {:?} components: Position=({}, {}), AgentType={}, Hunger=100, Energy=100, AgentState=Idle, IdlePause=default, SwimmingProfile={{swim_chance_percent:{}, swim_ticks_remaining:0}}, InteractionState=default, MovementHistory=12, Path=default, Target=default", entity, pos.x, pos.y, agent_type.name, swim_chance_percent);
                     agent_event_log.push(AgentEvent::Spawned {
                         agent: entity,
                         agent_type: agent_type.name.clone(),

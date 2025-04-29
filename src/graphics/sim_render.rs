@@ -1,3 +1,7 @@
+// DEPRECATED: This module's simulation entrypoint is superseded by the unified simulation loop and setup in main.rs and sim_loop_unified.rs.
+// All graphics simulation logic should be routed through the unified setup and loop.
+// This file is retained for reference and will be removed after migration is complete.
+
 // Unified Event Log Access Pattern: ALWAYS access EventLog via ECS resources as Arc<Mutex<EventLog>>.
 // Do not pass EventLog as a direct argument. This ensures a single, obvious pattern for all systems.
 
@@ -20,7 +24,127 @@ const CELL_SIZE: f32 = 6.0;
 
 // All unused imports removed for a clean build
 
-// Main SDL2 rendering/event loop, extracted from graphics.rs
+// --- Make SDL2 plug-in types public for unified simulation entry ---
+pub struct SdlRenderer {
+    pub canvas: sdl2::render::Canvas<sdl2::video::Window>,
+    pub stats_canvas: sdl2::render::Canvas<sdl2::video::Window>,
+    pub log_canvas_opt: Option<sdl2::render::Canvas<sdl2::video::Window>>,
+}
+
+impl crate::sim_loop_unified::SimulationRenderer for SdlRenderer {
+    fn render_ui(&mut self, sim_ui_state: &mut crate::graphics::sim_state::SimUIState, tick: usize) {
+        // Clear the main window BEFORE drawing terrain
+        self.canvas.set_draw_color(sdl2::pixels::Color::RGB(20, 20, 20));
+        self.canvas.clear();
+
+        // --- Terrain rendering ---
+        crate::graphics::render::terrain::draw_terrain(
+            &mut self.canvas,
+            &*sim_ui_state.resources.get::<crate::map::Map>().expect("Map missing in resources for terrain rendering"),
+            sim_ui_state.camera.x,
+            sim_ui_state.camera.y,
+            CELL_SIZE,
+        );
+
+        // Draw food
+        crate::graphics::render::food_system::food_render_system(
+            sim_ui_state.world,
+            &mut self.canvas,
+            sim_ui_state.camera.x,
+            sim_ui_state.camera.y,
+            CELL_SIZE,
+            sim_ui_state.selected_agent,
+        );
+
+        // Draw agents
+        crate::graphics::render::agent_system::agent_render_system(
+            sim_ui_state.world,
+            &mut self.canvas,
+            sim_ui_state.camera.x,
+            sim_ui_state.camera.y,
+            CELL_SIZE,
+        );
+
+        // Draw selected agent path
+        crate::graphics::render::selected_agent_path_system::selected_agent_path_render(
+            sim_ui_state.world,
+            &mut self.canvas,
+            sim_ui_state.selected_agent,
+            sim_ui_state.camera.x,
+            sim_ui_state.camera.y,
+            CELL_SIZE,
+        );
+
+        // Present the main window
+        self.canvas.present();
+
+        // Update cached stats before rendering overlays
+        crate::graphics::sim_state::update_cached_stats(
+            sim_ui_state.world,
+            sim_ui_state.resources,
+            &mut sim_ui_state.cached_stats,
+        );
+
+        // Render overlays (stats, event log) to their canvases if those windows are enabled
+        if let Some(ref mut log_canvas) = self.log_canvas_opt {
+            crate::graphics::render::event_log_system::event_log_window_render(
+                sim_ui_state.world,
+                sim_ui_state.resources,
+                log_canvas,
+                sim_ui_state.font,
+                true, // or toggle based on UI state
+            );
+            log_canvas.present();
+        }
+        crate::graphics::render::stats_system::stats_window_render(
+            sim_ui_state.world,
+            &mut self.stats_canvas,
+            sim_ui_state.font,
+            &sim_ui_state.cached_stats,
+            sim_ui_state.selected_agent,
+            false, // or toggle based on UI state
+        );
+        self.stats_canvas.present();
+    }
+}
+
+pub struct SdlInput {
+    pub event_pump: sdl2::EventPump,
+    pub window_id: u32,
+}
+
+impl crate::sim_loop_unified::SimulationInput for SdlInput {
+    fn handle_input_ui(&mut self,
+        sim_ui_state: &mut crate::graphics::sim_state::SimUIState,
+        agent_types: &[crate::agent::AgentType],
+        render_map: &crate::map::Map,
+        cell_size: f32,
+        log_config: &crate::log_config::LogConfig,
+        paused: &mut bool,
+        tick: usize,
+    ) {
+        crate::graphics::input::collect_input_events(
+            &mut self.event_pump,
+            self.window_id,
+            sim_ui_state,
+            agent_types,
+            render_map,
+            cell_size,
+            log_config,
+            *paused,
+        );
+    }
+}
+
+pub struct SdlProfiler;
+
+impl crate::sim_loop_unified::SimulationProfiler for SdlProfiler {
+    fn on_simulation_end_ui(&mut self, sim_ui_state: &crate::graphics::sim_state::SimUIState, ticks: usize) {
+        // TODO: profiling/summary logic for graphics mode
+    }
+}
+
+// DEPRECATED: Use the unified simulation loop instead of this function.
 #[allow(clippy::too_many_arguments)]
 pub fn run_sim_render(
     profile: &SimProfile,
@@ -100,31 +224,6 @@ pub fn run_sim_render(
     };
 
     // --- MAIN SIMULATION LOOP ---
-    struct SdlRenderer {
-        canvas: sdl2::render::Canvas<sdl2::video::Window>,
-        stats_canvas: sdl2::render::Canvas<sdl2::video::Window>,
-        log_canvas_opt: Option<sdl2::render::Canvas<sdl2::video::Window>>,
-    }
-    impl SimulationRenderer for SdlRenderer {
-        fn render_ui(&mut self, sim_ui_state: &mut SimUIState, tick: usize) {
-            // TODO: Move SDL2 rendering logic here, using sim_ui_state
-        }
-    }
-    struct SdlInput {
-        event_pump: sdl2::EventPump,
-        window_id: u32,
-    }
-    impl SimulationInput for SdlInput {
-        fn handle_input_ui(&mut self, sim_ui_state: &mut SimUIState, tick: usize) {
-            // TODO: Move SDL2 input logic here, using sim_ui_state
-        }
-    }
-    struct SdlProfiler { }
-    impl SimulationProfiler for SdlProfiler {
-        fn on_simulation_end_ui(&mut self, sim_ui_state: &SimUIState, ticks: usize) {
-            // TODO: profiling/summary logic for graphics mode
-        }
-    }
     let mut renderer = SdlRenderer {
         canvas,
         stats_canvas,
@@ -141,6 +240,11 @@ pub fn run_sim_render(
         &mut renderer,
         &mut profiler,
         &mut input,
+        agent_types,
+        &render_map,
+        CELL_SIZE,
+        &log_config,
+        _paused,
     );
     let tick = sim_ui_state.tick;
     use crate::sim_summary::write_simulation_summary_and_ascii;

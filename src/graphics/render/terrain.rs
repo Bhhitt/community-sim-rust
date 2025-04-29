@@ -9,7 +9,7 @@ pub fn draw_terrain(canvas: &mut Canvas<Window>, render_map: &crate::map::Map, c
     // Fill the entire window with black before drawing terrain
     // let (win_w, win_h) = canvas.window().size();
     canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
-    canvas.clear();
+    // canvas.clear();
     for y in 0..render_map.height as usize {
         for x in 0..render_map.width as usize {
             let rect = Rect::new(

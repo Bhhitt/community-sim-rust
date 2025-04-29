@@ -1,3 +1,7 @@
+// DEPRECATED: This module's schedule builder and setup are superseded by the unified simulation loop and schedule in sim_loop_unified.rs and ecs/schedules/mod.rs.
+// All simulation logic should be routed through the unified setup and loop.
+// This file is retained for reference and will be removed after migration is complete.
+
 //! Unified simulation core logic: world/resource setup for both headless and graphics modes.
 
 use crate::agent::{AgentType, event::AgentEventLog};
