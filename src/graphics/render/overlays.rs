@@ -14,7 +14,7 @@ use std::time::Instant;
 use std::sync::{Arc, Mutex};
 
 /// Draws the event log window
-pub fn draw_event_log_window(canvas: &mut Canvas<Window>, font: &Font, event_log: &Arc<Mutex<EventLog>>, log_window_enabled: bool) {
+pub fn draw_event_log_window(canvas: &mut Canvas<Window>, font: &'static Font<'static, 'static>, event_log: &Arc<Mutex<EventLog>>, log_window_enabled: bool) {
     let event_log = event_log.lock().unwrap();
     canvas.set_draw_color(Color::RGB(30, 30, 30));
     canvas.clear();
@@ -72,16 +72,18 @@ pub fn empty_cell_flash_render(_world: &World, canvas: &mut Canvas<Window>, fx: 
 /// Draws the stats window (agent/food counts, interactions, graph, selected agent details)
 pub fn draw_stats_window(
     canvas: &mut Canvas<Window>,
-    font: &Font,
+    font: &'static Font<'static, 'static>,
     cached_stats: &CachedStats,
     selected_agent: Option<legion::Entity>,
     _world: &World,
     _resources: &Resources,
     log_stats: bool,
 ) {
-    let (win_w, win_h) = canvas.window().size();
+    // Force the stats window height to 800 px
+    let (win_w, _) = canvas.window().size();
+    let win_h = 800u32;
     if log_stats {
-        log::info!("[STATS][DRAW] stats window size: {}x{} (id: {})", win_w, win_h, canvas.window().id());
+        log::info!("[STATS][DRAW] stats window size (fixed): {}x{} (id: {})", win_w, win_h, canvas.window().id());
     }
     canvas.set_draw_color(Color::RGB(30, 30, 30));
     canvas.clear();
@@ -179,11 +181,11 @@ pub fn draw_stats_window(
                         10,
                         y,
                         300,
-                        60,
+                        120, // Increased from 60 to 120 for taller graph
                         &cached_stats.active_interactions_history,
                         Color::RGB(120, 180, 255),
                     );
-                    y += 70;
+                    y += 130;
                 }
                 "selected_agent" => {
                     if let Some(agent) = selected_agent {
@@ -368,7 +370,7 @@ pub fn draw_stats_window(
 // Helper function for rendering a single stats row
 fn render_stat_row(
     canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
-    font: &sdl2::ttf::Font,
+    font: &'static Font<'static, 'static>,
     texture_creator: &sdl2::render::TextureCreator<sdl2::video::WindowContext>,
     text: &str,
     color: sdl2::pixels::Color,

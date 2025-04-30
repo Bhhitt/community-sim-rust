@@ -54,8 +54,8 @@ pub fn build_main_schedule() -> legion::Schedule {
     builder.flush();
 
     // --- Interaction systems ---
-    // interaction::add_interaction_systems(&mut builder);
-    // builder.flush();
+    interaction::add_interaction_systems(&mut builder);
+    builder.flush();
 
     // --- Death systems ---
     death::add_agent_death_systems(&mut builder);

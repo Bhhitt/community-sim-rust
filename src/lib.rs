@@ -8,7 +8,7 @@ pub mod food; // food/mod.rs handles its own pub uses
 pub mod navigation; // navigation/mod.rs handles its own pub uses
 pub mod terrain; // terrain/mod.rs handles its own pub uses
 pub mod log_config;
-pub mod simulation;
+// pub mod simulation;
 pub mod interaction;
 pub mod graphics;
 pub mod event_log;
@@ -18,7 +18,7 @@ pub mod config;
 pub mod sim_summary;
 pub mod ecs_simulation;
 pub mod sim_profile;
-pub mod sim_core;
+// pub mod sim_core;
 pub mod sim_loop;
 pub mod sim_loop_unified;
 pub mod util;

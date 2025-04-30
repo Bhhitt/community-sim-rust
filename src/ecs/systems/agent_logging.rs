@@ -20,7 +20,11 @@ pub fn agent_arrival_logging_system() -> impl legion::systems::Runnable {
             for (entity, pos, agent_state) in query.iter(world) {
                 if *agent_state == crate::agent::AgentState::Arrived {
                     let msg = format!("[ARRIVAL] Agent {:?} arrived at ({:.2}, {:.2})", entity, pos.x, pos.y);
-                    resources.0.lock().unwrap().push(msg.clone());
+                    if let Ok(mut event_log) = resources.0.lock() {
+                        event_log.push(msg.clone());
+                    } else {
+                        log::error!("[ARRIVAL_LOG] Failed to acquire lock on event_log for agent arrival");
+                    }
                     log::debug!("{}", msg);
                 }
             }
@@ -45,7 +49,11 @@ pub fn agent_move_logging_system() -> impl legion::systems::Runnable {
             for (entity, pos, agent_state) in query.iter(world) {
                 if *agent_state == crate::agent::AgentState::Moving {
                     let msg = format!("[MOVE] Agent {:?} moved to ({:.2}, {:.2})", entity, pos.x, pos.y);
-                    resources.0.lock().unwrap().push(msg.clone());
+                    if let Ok(mut event_log) = resources.0.lock() {
+                        event_log.push(msg.clone());
+                    } else {
+                        log::error!("[MOVE_LOG] Failed to acquire lock on event_log for agent move");
+                    }
                     log::debug!("{}", msg);
                 }
             }
@@ -68,7 +76,13 @@ pub fn agent_spawn_logging_system() -> impl legion::systems::Runnable {
             if resources.1.quiet { return; }
             for (entity, pos, agent_type) in query.iter(world) {
                 let msg = format!("[SPAWN] Agent {:?} of type '{}' spawned at ({:.2}, {:.2})", entity, agent_type.name, pos.x, pos.y);
-                resources.0.lock().unwrap().push(msg.clone());
+                if resources.0.lock().is_ok() {
+                    if let Ok(mut event_log) = resources.0.lock() {
+                        event_log.push(msg.clone());
+                    }
+                } else {
+                    log::error!("[SPAWN_LOG] Failed to acquire lock on event_log for agent spawn");
+                }
             }
             log::debug!("[SYSTEM] [CLOSURE] EXIT agent_spawn_logging_system");
             let duration = start.elapsed();

@@ -12,7 +12,9 @@ pub fn agent_state_transition_system() -> impl Runnable {
         .write_resource::<AgentEventQueue>()
         .build(|_, world, resources, query| {
             let events = resources;
+            let mut count = 0;
             for (entity, pos, maybe_target, agent_state) in query.iter_mut(world) {
+                count += 1;
                 log::debug!("[STATE_TRANSITION] Agent {:?} at ({:.2}, {:.2}) current state: {:?}", entity, pos.x, pos.y, agent_state);
                 if *agent_state == AgentState::Moving || *agent_state == AgentState::Idle {
                     if let Some(target) = maybe_target {
@@ -30,6 +32,10 @@ pub fn agent_state_transition_system() -> impl Runnable {
                         log::debug!("[STATE_TRANSITION] No target assigned for agent {:?} at ({:.2}, {:.2})", entity, pos.x, pos.y);
                     }
                 }
+            }
+            log::debug!("[STATE_TRANSITION] Total agents matched by query: {}", count);
+            if count == 0 {
+                log::debug!("[STATE_TRANSITION] No agents matched by query this tick.");
             }
         })
 }

@@ -5,7 +5,7 @@ pub mod input_intent;
 pub mod input_systems;
 pub mod render;
 pub mod sim_render;
-pub mod sim_loop;
+// pub mod sim_loop;
 pub mod terrain;
 pub mod utils;
 pub mod agent_render;

@@ -8,7 +8,7 @@ use legion::World;
 use legion::Resources;
 
 /// Event log window rendering function
-pub fn event_log_window_render(world: &World, resources: &Resources, canvas: &mut Canvas<Window>, font: &Font, log_window_enabled: bool) {
+pub fn event_log_window_render(world: &World, resources: &Resources, canvas: &mut Canvas<Window>, font: &'static Font<'static, 'static>, log_window_enabled: bool) {
     // use legion::world::SubWorld;
     // use legion::systems::ResourceSet;
     // use crate::event_log::EventLog;

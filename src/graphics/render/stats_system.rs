@@ -8,7 +8,7 @@ use sdl2::ttf::Font;
 pub fn stats_window_render(
     world: &World,
     canvas: &mut Canvas<Window>,
-    font: &Font,
+    font: &'static Font<'static, 'static>,
     cached_stats: &CachedStats,
     selected_agent: Option<legion::Entity>,
     log_stats: bool,

@@ -21,7 +21,13 @@ pub fn agent_agent_interaction_system() -> impl Runnable {
         .with_query(<(Entity, &mut InteractionState)>::query()) // for updating recent partners
         .build(|_cmd, world, (stats, event_log), (agent_query, interactionstate_query)| {
             let start = Instant::now();
-            let mut event_log = event_log.lock().unwrap();
+            let mut event_log = match event_log.lock() {
+                Ok(lock) => lock,
+                Err(e) => {
+                    log::error!("[INTERACT_LOG] Failed to acquire lock on event_log: {}", e);
+                    return;
+                }
+            };
             let agents: Vec<_> = agent_query.iter(world).map(|(entity, pos, _)| (*entity, pos.x, pos.y)).collect();
             let mut interacted = vec![false; agents.len()];
             let mut interactions_this_tick = 0;
@@ -134,7 +140,9 @@ pub fn pursuit_movement_system() -> impl legion::systems::Runnable {
                 .iter(world)
                 .map(|(e, p)| (*e, *p))
                 .collect();
+            let mut matched = false;
             for (entity, pos, intent) in query.iter_mut(world) {
+                matched = true;
                 if let Some(target) = intent.target {
                     if let Some(target_pos) = positions.get(&target) {
                         // Move agent toward target (simple step)
@@ -162,6 +170,9 @@ pub fn pursuit_movement_system() -> impl legion::systems::Runnable {
                     cmd.remove_component::<InteractionIntent>(*entity);
                 }
             }
+            if !matched {
+                log::debug!("[pursuit] No agents matched by (Entity, &mut Position, &mut InteractionIntent) query");
+            }
         })
 }
 
@@ -176,90 +187,78 @@ pub fn interaction_range_system() -> impl legion::systems::Runnable {
         .with_query(<(&Interacting,)>::query())
         .write_resource::<AgentEventQueue>()
         .build(|cmd, world, events, (intent_query, queue_query, interacting_query)| {
-            log::debug!("[range] Collecting all positions for lookup");
+            // Collect all positions for lookup
             let positions: std::collections::HashMap<Entity, Position> = <(Entity, &Position)>::query()
                 .iter(world)
                 .map(|(e, p)| (*e, *p))
                 .collect();
-            log::debug!("[range] Positions collected: {:?}", positions.keys().collect::<Vec<_>>() );
-            // First, collect all relevant data to break borrow chain
+            // Collect all agents with InteractionIntent and their targets
             let mut to_process = Vec::new();
             for (agent_entity, agent_pos, intent) in intent_query.iter(world) {
-                log::debug!("[range] intent_query: agent_entity={:?}, agent_pos=({:.2},{:.2}), target={:?}", agent_entity, agent_pos.x, agent_pos.y, intent.target);
-                if let Some(target) = intent.target {
-                    to_process.push((*agent_entity, *agent_pos, target));
-                }
+                to_process.push((*agent_entity, *agent_pos, intent.target));
             }
-            log::debug!("[range] to_process list: {:?}", to_process);
-            for (agent_entity, agent_pos, target_entity) in to_process {
-                log::debug!("[range] Processing: agent_entity={:?}, agent_pos=({:.2},{:.2}), target_entity={:?}", agent_entity, agent_pos.x, agent_pos.y, target_entity);
-                if let Some(target_pos) = positions.get(&target_entity) {
-                    let dx = target_pos.x - agent_pos.x;
-                    let dy = target_pos.y - agent_pos.y;
-                    let dist = (dx * dx + dy * dy).sqrt();
-                    log::debug!("[range] Distance between agent {:?} and target {:?}: {:.2}", agent_entity, target_entity, dist);
-                    if dist <= INTERACTION_RANGE {
-                        // Mutably borrow target's InteractionQueue
-                        log::debug!("[range] Attempting to mutably borrow target_entity={:?} for InteractionQueue", target_entity);
-                        if let Ok(mut entry) = world.entry_mut(target_entity) {
-                            match entry.get_component_mut::<InteractionQueue>() {
-                                Ok(queue) => {
-                                    // Only queue if not already present
-                                    if !queue.queue.contains(&agent_entity) {
-                                        queue.queue.push_back(agent_entity);
-                                        log::info!("[range] Agent {:?} queued for interaction with {:?}", agent_entity, target_entity);
-                                    } else {
-                                        log::debug!("[range] Agent {:?} already in queue for {:?}", agent_entity, target_entity);
+            if to_process.is_empty() {
+                log::debug!("[range] No agents matched by (Entity, &Position, &InteractionIntent) query");
+            }
+            for (agent_entity, agent_pos, target) in to_process {
+                if let Some(target_entity) = target {
+                    if let (Some(target_pos), Some(_agent_pos)) = (positions.get(&target_entity), positions.get(&agent_entity)) {
+                        let dx = target_pos.x - agent_pos.x;
+                        let dy = target_pos.y - agent_pos.y;
+                        let dist = (dx * dx + dy * dy).sqrt();
+                        if dist <= INTERACTION_RANGE {
+                            // Try to mutably borrow target's InteractionQueue
+                            match world.entry_mut(target_entity) {
+                                Ok(mut entry) => {
+                                    match entry.get_component_mut::<InteractionQueue>() {
+                                        Ok(queue) => {
+                                            if !queue.queue.contains(&agent_entity) {
+                                                queue.queue.push_back(agent_entity);
+                                                log::info!("[range] Agent {:?} queued for interaction with {:?}", agent_entity, target_entity);
+                                            }
+                                        }
+                                        Err(_) => {
+                                            log::warn!("[range] Target entity {:?} does not have InteractionQueue (queue phase)", target_entity);
+                                            continue;
+                                        }
                                     }
                                 }
-                                Err(_) => {
-                                    log::warn!("[range] Target entity {:?} does not have InteractionQueue when expected (queue phase).", target_entity);
+                                Err(e) => {
+                                    log::warn!("[range] Could not mutably borrow target entity {:?} (queue phase): {}", target_entity, e);
                                     continue;
                                 }
                             }
-                        } else {
-                            log::warn!("[range] Could not mutably borrow target entity {:?} (queue phase).", target_entity);
-                            continue;
-                        }
-                        // Remove agent's InteractionIntent
-                        log::debug!("[range] Removing InteractionIntent from agent_entity={:?}", agent_entity);
-                        cmd.remove_component::<InteractionIntent>(agent_entity);
-                        // If target is not currently Interacting, start interaction with next in queue
-                        let target_is_interacting = interacting_query.get(world, target_entity).is_ok();
-                        log::debug!("[range] target_is_interacting={:?} for target_entity={:?}", target_is_interacting, target_entity);
-                        if !target_is_interacting {
-                            log::debug!("[range] Attempting to start interaction for target_entity={:?}", target_entity);
-                            if let Ok(mut entry) = world.entry_mut(target_entity) {
-                                match entry.get_component_mut::<InteractionQueue>() {
-                                    Ok(queue) => {
-                                        if let Some(next_agent) = queue.queue.pop_front() {
-                                            log::debug!("[range] Starting interaction: next_agent={:?}, target_entity={:?}", next_agent, target_entity);
-                                            // Start interaction: add Interacting to both
-                                            cmd.add_component(next_agent, Interacting { partner: target_entity, ticks_remaining: 5 });
-                                            cmd.add_component(target_entity, Interacting { partner: next_agent, ticks_remaining: 5 });
-                                            log::info!("[range] Started interaction: {:?} <-> {:?}", next_agent, target_entity);
-                                            // Emit AgentEvent::InteractionStarted
-                                            events.0.push(AgentEvent::InteractionStarted {
-                                                initiator: next_agent,
-                                                target: target_entity,
-                                            });
-                                        } else {
-                                            log::debug!("[range] No agents in queue for target_entity={:?}", target_entity);
+                            // Remove agent's InteractionIntent (they are now waiting in queue)
+                            cmd.remove_component::<InteractionIntent>(agent_entity);
+                            // If target is not currently Interacting, start interaction with next in queue
+                            let target_is_interacting = interacting_query.get(world, target_entity).is_ok();
+                            if !target_is_interacting {
+                                match world.entry_mut(target_entity) {
+                                    Ok(mut entry) => {
+                                        match entry.get_component_mut::<InteractionQueue>() {
+                                            Ok(queue) => {
+                                                if let Some(next_agent) = queue.queue.pop_front() {
+                                                    cmd.add_component(next_agent, Interacting { partner: target_entity, ticks_remaining: 5 });
+                                                    cmd.add_component(target_entity, Interacting { partner: next_agent, ticks_remaining: 5 });
+                                                    log::info!("[range] Started interaction: {:?} <-> {:?}", next_agent, target_entity);
+                                                    events.0.push(AgentEvent::InteractionStarted {
+                                                        initiator: next_agent,
+                                                        target: target_entity,
+                                                    });
+                                                }
+                                            }
+                                            Err(_) => {
+                                                log::warn!("[range] Target entity {:?} does not have InteractionQueue (start phase)", target_entity);
+                                            }
                                         }
                                     }
-                                    Err(_) => {
-                                        log::warn!("[range] Target entity {:?} does not have InteractionQueue when expected (start phase).", target_entity);
-                                        continue;
+                                    Err(e) => {
+                                        log::warn!("[range] Could not mutably borrow target entity {:?} (start phase): {}", target_entity, e);
                                     }
                                 }
-                            } else {
-                                log::warn!("[range] Could not mutably borrow target entity {:?} (start phase).", target_entity);
-                                continue;
                             }
                         }
                     }
-                } else {
-                    log::warn!("[range] Could not find positions for agent_entity={:?} or target_entity={:?}", agent_entity, target_entity);
                 }
             }
         })

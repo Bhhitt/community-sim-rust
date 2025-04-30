@@ -1,9 +1,9 @@
 use crate::graphics::input_intent::InputIntent;
 use crate::graphics::sim_state::SimUIState;
-use crate::agent::{AgentType, event::AgentEventLog};
+use crate::agent::AgentType;
 use crate::ecs_components::Position;
 use crate::map::Terrain;
-use crate::ecs::systems::pending_agent_spawns::{AgentSpawnRequest, PendingAgentSpawns};
+use crate::ecs::systems::pending_agent_spawns::PendingAgentSpawns;
 use legion::IntoQuery;
 use legion::systems::Resources;
 
@@ -55,7 +55,6 @@ pub fn process_input_intents(
                         return;
                     }
                 }
-                let mut agent_event_log = resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
                 if let Some(agent_type) = agent_types.get(0) {
                     let agent_type = agent_type.clone();
                     let mut pending_spawns = resources.get_mut::<PendingAgentSpawns>().unwrap();
@@ -73,7 +72,6 @@ pub fn process_input_intents(
                 let mut attempts = 0;
                 let max_tries_per_agent = 1000;
                 let num_types = agent_types.len().max(1);
-                let mut agent_event_log = resources.get_mut::<AgentEventLog>().expect("AgentEventLog missing");
                 while spawned < count && attempts < count * max_tries_per_agent {
                     let x = rng.gen_range(0..render_map.width) as f32;
                     let y = rng.gen_range(0..render_map.height) as f32;

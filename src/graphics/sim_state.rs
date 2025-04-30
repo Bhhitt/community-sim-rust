@@ -11,7 +11,7 @@ pub struct SimUIState<'a> {
     pub resources: &'a mut Resources,
     pub schedule: &'a mut Schedule,
     pub camera: &'a mut Camera,
-    pub font: &'a Font<'static, 'static>,
+    pub font: &'static Font<'static, 'static>,
     pub cached_stats: CachedStats,
     pub selected_agent: Option<legion::Entity>,
     pub empty_cell_flash: Option<(i32, i32, std::time::Instant)>,

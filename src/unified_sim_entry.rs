@@ -8,6 +8,8 @@ use crate::graphics::sim_render::{SdlRenderer, SdlInput, SdlProfiler};
 use crate::graphics::sim_state::SimUIState;
 use crate::log_config::LogConfig;
 use legion::{World, Resources, Schedule};
+use crate::map::Map;
+use crate::ecs::resources::{insert_standard_resources, init_config};
 
 /// Sets up world, resources, schedule, and map for the simulation.
 pub fn setup_simulation_core(
@@ -17,14 +19,16 @@ pub fn setup_simulation_core(
     let map_width = profile.map_width.or(profile.map_size).unwrap();
     let map_height = profile.map_height.or(profile.map_size).unwrap();
     let num_agents = profile.num_agents;
-    let (mut world, mut resources, _map) = crate::sim_core::create_world_and_resources(map_width, map_height);
-    crate::sim_core::insert_init_config(
-        &mut resources,
+    let map = Map::new(map_width, map_height);
+    let world = World::default();
+    let mut resources = Resources::default();
+    insert_standard_resources(&mut resources, &map);
+    resources.insert(init_config::InitConfig::new(
         agent_types.to_vec(),
         num_agents,
         vec![],
         vec![],
-    );
+    ));
     let schedule = build_main_schedule();
     (world, resources, schedule)
 }
@@ -37,7 +41,10 @@ pub fn run_unified_simulation(
     ticks: usize,
     log_config: &LogConfig,
 ) {
-    let (mut world, mut resources, mut schedule) = setup_simulation_core(profile, agent_types);
+    let (world, resources, schedule) = setup_simulation_core(profile, agent_types);
+    let mut world = world;
+    let mut resources = resources;
+    let mut schedule = schedule;
     if headless {
         let mut sim_state = crate::sim_state::SimState::new(&mut world, &mut resources, &mut schedule);
         let mut renderer = NoOpRenderer;
@@ -51,7 +58,7 @@ pub fn run_unified_simulation(
             &mut input,
         );
         // --- Print summary and ASCII snapshot at end of headless sim ---
-        if let Some(map) = sim_state.resources.get::<crate::map::Map>() {
+        if let Some(map) = sim_state.resources.get::<Map>() {
             crate::sim_summary::write_simulation_summary_and_ascii(
                 sim_state.world,
                 sim_state.resources,
@@ -68,7 +75,7 @@ pub fn run_unified_simulation(
         let map_height = profile.map_height.or(profile.map_size).unwrap();
         let log_config = log_config.clone();
         let (canvas, stats_canvas, log_canvas_opt, event_pump, window_id, _stats_window_id, _log_window_id, camera, font) =
-            crate::graphics::sim_loop::init_sdl2(
+            crate::graphics::sim_render::init_sdl2(
                 map_width, map_height, 6.0, 1280, 800, &log_config);
         let mut schedule = build_main_schedule();
         let mut sim_ui_state = SimUIState {
@@ -76,7 +83,7 @@ pub fn run_unified_simulation(
             resources: &mut resources,
             schedule: &mut schedule,
             camera: Box::leak(Box::new(camera)),
-            font: &font,
+            font: font, // font: &'static Font<'static, 'static>
             cached_stats: crate::graphics::sim_state::CachedStats::default(),
             selected_agent: None,
             empty_cell_flash: None,
@@ -87,11 +94,11 @@ pub fn run_unified_simulation(
         let mut input = SdlInput { event_pump, window_id };
         let mut profiler = SdlProfiler {};
         let render_map = {
-            let render_map_ref = sim_ui_state.resources.get::<crate::map::Map>().expect("Map not found in resources");
+            let render_map_ref = sim_ui_state.resources.get::<Map>().expect("Map not found in resources");
             render_map_ref.clone()
         };
         let cell_size = 6.0; // TODO: Use actual cell size if variable
-        let mut paused = false;
+        let paused = false;
         run_simulation_loop_ui(
             &mut sim_ui_state,
             ticks,

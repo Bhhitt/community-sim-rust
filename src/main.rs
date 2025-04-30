@@ -7,7 +7,6 @@ use log;
 use std::sync::{Arc, Mutex};
 use community_sim::log_config;
 use community_sim::ecs;
-use community_sim::simulation;
 use community_sim::navigation;
 use community_sim::graphics;
 use community_sim::config;
