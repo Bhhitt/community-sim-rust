@@ -53,7 +53,13 @@ pub fn agent_spawning_system() -> impl Runnable {
                     cmd.add_component(entity, MovementHistory::new(12));
                     cmd.add_component(entity, Path::default());
                     cmd.add_component(entity, Target::default());
-                    log::info!("[SPAWN_DEBUG] Entity {:?} components: Position=({}, {}), AgentType={}, Hunger=100, Energy=100, AgentState=Idle, IdlePause=default, SwimmingProfile={{swim_chance_percent:{}, swim_ticks_remaining:0}}, InteractionState=default, MovementHistory=12, Path=default, Target=default", entity, pos.x, pos.y, agent_type.name, swim_chance_percent);
+                    // Add InteractionIntent for testing panic with pursuit_movement_system
+                    cmd.add_component(entity, crate::ecs_components::InteractionIntent {
+                        target: None,
+                        ticks_pursued: 0,
+                        max_pursue_ticks: 50,
+                    });
+                    log::info!("[SPAWN_DEBUG] Entity {:?} components: Position=({}, {}), AgentType={}, Hunger=100, Energy=100, AgentState=Idle, IdlePause=default, SwimmingProfile={{swim_chance_percent:{} , swim_ticks_remaining:0}}, InteractionState=default, MovementHistory=12, Path=default, Target=default, InteractionIntent=default", entity, pos.x, pos.y, agent_type.name, swim_chance_percent);
                     agent_event_log.push(AgentEvent::Spawned {
                         agent: entity,
                         agent_type: agent_type.name.clone(),

@@ -131,11 +131,38 @@ pub fn intent_assignment_system() -> impl legion::systems::Runnable {
 }
 
 /// System that moves agents with InteractionIntent toward their target, increments pursuit ticks, and removes the intent if pursuit fails or target disappears.
+fn move_toward_target(pos: &mut Position, target_pos: &Position) {
+    let dx = target_pos.x - pos.x;
+    let dy = target_pos.y - pos.y;
+    let dist = (dx * dx + dy * dy).sqrt();
+    if dist > 0.01 {
+        let step = 1.0_f32.min(dist); // step size
+        pos.x += dx / dist * step;
+        pos.y += dy / dist * step;
+    }
+}
+
+fn should_remove_intent(intent: &InteractionIntent, target_exists: bool) -> Option<&'static str> {
+    if intent.target.is_none() {
+        Some("no target set")
+    } else if !target_exists {
+        Some("target not found (gone or no position)")
+    } else if intent.ticks_pursued >= intent.max_pursue_ticks {
+        Some("reached max ticks")
+    } else {
+        None
+    }
+}
+
+fn handle_intent_removal(cmd: &mut legion::systems::CommandBuffer, entity: Entity, reason: &str) {
+    log::info!("[pursuit] Entity {:?} removing InteractionIntent: {}", entity, reason);
+    cmd.remove_component::<InteractionIntent>(entity);
+}
+
 pub fn pursuit_movement_system() -> impl legion::systems::Runnable {
     legion::SystemBuilder::new("PursuitMovementSystem")
         .with_query(<(legion::Entity, &mut Position, &mut InteractionIntent)>::query())
         .build(|cmd, world, _resources, query| {
-            // Collect all positions into a hashmap to avoid double borrow
             let positions: HashMap<Entity, Position> = <(Entity, &Position)>::query()
                 .iter(world)
                 .map(|(e, p)| (*e, *p))
@@ -143,31 +170,22 @@ pub fn pursuit_movement_system() -> impl legion::systems::Runnable {
             let mut matched = false;
             for (entity, pos, intent) in query.iter_mut(world) {
                 matched = true;
+                let target_exists = intent.target.and_then(|t| positions.get(&t)).is_some();
+                if let Some(reason) = should_remove_intent(intent, target_exists) {
+                    handle_intent_removal(cmd, *entity, reason);
+                    continue;
+                }
+                // Safe to move toward target
                 if let Some(target) = intent.target {
                     if let Some(target_pos) = positions.get(&target) {
-                        // Move agent toward target (simple step)
-                        let dx = target_pos.x - pos.x;
-                        let dy = target_pos.y - pos.y;
-                        let dist = (dx * dx + dy * dy).sqrt();
-                        if dist > 0.01 {
-                            let step = 1.0_f32.min(dist); // step size
-                            pos.x += dx / dist * step;
-                            pos.y += dy / dist * step;
-                        }
+                        move_toward_target(pos, target_pos);
                         intent.ticks_pursued += 1;
                         log::info!("[pursuit] Entity {:?} pursuing {:?}: pos=({:.2},{:.2}), ticks_pursued={}, max_pursue_ticks={}", entity, intent.target, pos.x, pos.y, intent.ticks_pursued, intent.max_pursue_ticks);
-                        if intent.ticks_pursued >= intent.max_pursue_ticks {
-                            log::info!("[pursuit] Entity {:?} removing InteractionIntent: reached max ticks", entity);
-                            cmd.remove_component::<InteractionIntent>(*entity);
+                        // Check again if we need to remove after increment
+                        if let Some(reason) = should_remove_intent(intent, true) {
+                            handle_intent_removal(cmd, *entity, reason);
                         }
-                    } else {
-                        log::info!("[pursuit] Entity {:?} removing InteractionIntent: target {:?} not found (gone or no position)", entity, intent.target);
-                        // Target gone
-                        cmd.remove_component::<InteractionIntent>(*entity);
                     }
-                } else {
-                    log::info!("[pursuit] Entity {:?} removing InteractionIntent: no target set", entity);
-                    cmd.remove_component::<InteractionIntent>(*entity);
                 }
             }
             if !matched {

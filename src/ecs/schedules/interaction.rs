@@ -2,15 +2,18 @@ use legion::systems::Builder;
 use log;
 
 pub fn add_interaction_systems(builder: &mut Builder) {
-    log::debug!("[ECS_SCHEDULE] About to add agent_agent_interaction_system");
-    builder.add_system(crate::ecs::systems::agent_agent_interaction::agent_agent_interaction_system());
-    builder.flush();
-    log::debug!("[ECS_SCHEDULE] Finished agent_agent_interaction_system");
 
-    // log::debug!("[ECS_SCHEDULE] About to add pursuit_movement_system");
-    // builder.add_system(crate::ecs::systems::agent_agent_interaction::pursuit_movement_system());
-    // builder.flush();
-    // log::debug!("[ECS_SCHEDULE] Finished pursuit_movement_system");
+    //log::debug!("[ECS_SCHEDULE] About to add agent_agent_interaction_system");
+    //builder.add_system(crate::ecs::systems::agent_agent_interaction::agent_agent_interaction_system());
+    //builder.flush();
+    //log::debug!("[ECS_SCHEDULE] Finished agent_agent_interaction_system");
+    
+    // //this is a system that causes a panic with the agent system
+    log::debug!("[ECS_SCHEDULE] About to add pursuit_movement_system");
+    builder.add_system(crate::ecs::systems::agent_agent_interaction::pursuit_movement_system());
+    builder.flush();
+    log::debug!("[ECS_SCHEDULE] Finished pursuit_movement_system");
+    // //this is a system that causes a panic with the agent system
 
     // log::debug!("[ECS_SCHEDULE] About to add interaction_range_system");
     // builder.add_system(crate::ecs::systems::agent_agent_interaction::interaction_range_system());
